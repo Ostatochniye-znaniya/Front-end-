@@ -560,7 +560,9 @@
             const isChecked = testing != undefined && testing != null;
             const recommendationId = testing && testing.id ? testing.id : null;
             const key = `${groupId}_${semesterId}`;
-
+            if (isReadOnly) {
+                isChecked = testing && testing.isChosen === true;
+            } 
             if (!(key in originalCheckboxState)) {
                 originalCheckboxState[key] = {
                     isChecked: isChecked,
