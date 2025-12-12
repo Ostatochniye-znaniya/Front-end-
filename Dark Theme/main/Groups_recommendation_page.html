@@ -5,204 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Проверка остаточных знаний</title>
     <link rel="stylesheet" type="text/css" href="style.css">
-    <style>
-        .filters {
-            display: flex;
-            gap: 30px;
-            margin: 25px 0;
-        }
-        
-        .filter-column {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            flex: 1;
-        }
-        
-        .filter-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .filter-label {
-            width: 140px;
-            font-weight: 500;
-            color: #ffffff;
-            font-size: 14px;
-        }
-        
-        .filter-select {
-            padding: 10px 15px;
-            border: 1px solid #444;
-            border-radius: 6px;
-            background: #2a2a3e;
-            color: white;
-            width: 200px;
-            font-size: 14px;
-        }
-        
-        .filter-select option {
-            background: #2a2a3e;
-            color: white;
-        }
-        
-        .buttons-row {
-            display: flex;
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
-        .filter-btn {
-            padding: 10px 25px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            margin-bottom: 10px;
-        }
-        
-        .apply-btn {
-            background: #6c63ff;
-            color: white;
-        }
-        
-        .reset-btn {
-            background: #2a2a3e;
-            color: #B2BAF9;
-            border: 1px solid #444;
-        }
-        
-        .reset-btn:hover {
-            background: #3a3a4e;
-        }
-        
-        .apply-btn:hover {
-            background: #5a52d5;
-        }
-
-        /* Стили для тестирований */
-        .testing-container, .planned-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-height: 100px;
-        }
-
-        .checkbox-container {
-            display: inline-block;
-            position: relative;
-            cursor: pointer;
-            user-select: none;
-            width: 24px;
-            height: 24px;
-        }
-
-        .checkbox-container input {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-            height: 0;
-            width: 0;
-        }
-
-        .checkmark {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 24px;
-            width: 24px;
-            background-color: #2a2a3e;
-            border: 2px solid #444;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .checkbox-container:hover input ~ .checkmark {
-            border-color: #6c63ff;
-        }
-
-        .checkbox-container input:checked ~ .checkmark {
-            background-color: #6c63ff;
-            border-color: #6c63ff;
-        }
-
-        .checkmark:after {
-            content: "";
-            position: absolute;
-            display: none;
-        }
-
-        .checkbox-container input:checked ~ .checkmark:after {
-            display: block;
-            left: 7px;
-            top: 3px;
-            width: 6px;
-            height: 12px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-        }
-
-        .no-data {
-            color: #aaa;
-            font-style: italic;
-            padding: 20px;
-            text-align: center;
-            grid-column: 1 / -1;
-        }
-
-        /* Новые стили для ограничения таблицы */
-        .table-container {
-            width: 100%;
-            max-height: 500px; 
-            overflow-y: auto; 
-            overflow-x: auto; 
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        .planned-item {
-            display: flex;
-            justify-content: center; 
-            align-items: center;
-        }
-
-
-        table {
-            width: 100%;
-            min-width: 800px; 
-            border-collapse: collapse;
-            background: #2a2a3e;
-            border-radius: 10px;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border: 1px solid #444;
-            color: #ddd;
-            white-space: nowrap; 
-        }
-
-        th {
-            background: #3a3a4e;
-            color: white;
-            text-align: center;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-
-        .generate-btn-container {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-start; 
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="recommendation_styles.css">
 </head>
 <body>
     <div class="sidebar">
@@ -222,7 +25,9 @@
 
     <div class="content">
         <h1>Формирование списка рекомендуемых групп</h1>
-        
+        <div class="records-count" id="recordsCount">
+            Найдено записей: 0
+        </div>
         <div class="filters">
             <div class="filter-column">
                 <div class="filter-row">
@@ -240,13 +45,10 @@
                 </div>
             </div>
         </div>
-        
         <div class="buttons-row">
             <button class="filter-btn reset-btn" id="resetBtn">Сбросить</button>
             <button class="filter-btn apply-btn" id="applyBtn">Применить</button>
         </div>
-
-        <!-- Контейнер для таблицы со скроллом -->
         <div class="table-container">
             <table>
                 <thead>
@@ -270,8 +72,6 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- Контейнер для кнопки сформировать (прижата к левому краю) -->
         <div class="generate-btn-container">
             <button class="filter-btn apply-btn" id="generateBtn">Сформировать</button>
         </div>
@@ -288,13 +88,17 @@
         let semesterMap = {};
         let originalCheckboxState = {}; 
         let changedCheckboxes = {}; 
-
+        let departments = [];
+        let faculties = [];
         
-        async function loadFaculties() {
+
+        async function loadDepartmentsAndFaculties() {
             try {
-                const response = await fetch(`${API_BASE_URL}/Faculty/GetFaculties`);
-                const faculties = await response.json();
+                const facultiesResponse = await fetch(`${API_BASE_URL}/Faculty/GetFaculties`);
+                faculties = await facultiesResponse.json();
                 
+                const deptResponse = await fetch(`${API_BASE_URL}/Department/GetDepartments`);
+                departments = await deptResponse.json();
                 faculties.forEach(faculty => {
                     const option = document.createElement('option');
                     option.value = faculty.id;
@@ -302,20 +106,24 @@
                     facultySelect.appendChild(option);
                 });
             } catch (error) {
-                console.error('Ошибка загрузки факультетов:', error);
+                console.error('Ошибка загрузки данных:', error);
             }
         }
         
         async function loadDirections() {
             try {
                 const response = await fetch(`${API_BASE_URL}/StudyProgram/GetAll`);
-                const directions = await response.json();
+                const studyPrograms = await response.json();
                 
-                if (directions && Array.isArray(directions)) {
-                    directions.forEach(direction => {
+                directionSelect.innerHTML = '<option value="">Все</option>';
+                
+                if (studyPrograms && Array.isArray(studyPrograms)) {
+                    studyPrograms.forEach(program => {
                         const option = document.createElement('option');
-                        option.value = direction.id;
-                        option.textContent = direction.name;
+                        option.value = program.id;
+                        option.textContent = program.name;
+                        option.dataset.departmentId = program.departmentId;
+                        option.dataset.originalText = program.name; 
                         directionSelect.appendChild(option);
                     });
                 }
@@ -324,41 +132,58 @@
             }
         }
         
-        //userId = 12
         function resetFilters() {
             facultySelect.value = "";
             directionSelect.value = "";
-            applyFilters();
-        }
-        
-        async function applyFilters() {
-            let facultyId = null;
-            if(facultySelect.value && facultySelect.value.length > 0) {
-                facultyId = facultySelect.value;
-            }
             
-            let directionId = null;
-            if(directionSelect.value && directionSelect.value.length > 0) {
-                directionId = directionSelect.value;
-            }
+            Array.from(directionSelect.options).forEach(option => {
+                if (option.dataset.originalText) {
+                    option.textContent = option.dataset.originalText;
+                }
+            });
+            
+            applyFilters();
+        }   
+        async function applyFilters() {
+            let facultyId = facultySelect.value;
+            let directionId = directionSelect.value;
             
             try {
-                let queryParams = [];
-                if (facultyId) queryParams.push(`facultyId=${facultyId}`);
-                if (directionId) queryParams.push(`studyProgrammId=${directionId}`);
-                
-                const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-                showLoading();
-                
-                const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered${queryString}`);
-                
-                if (response.ok) {
-                    const groups = await response.json();
-                    currentGroups = groups;
-                    updateTableWithTimeline(groups);
+                if (directionId) {
+                    const selectedOption = directionSelect.options[directionSelect.selectedIndex];
+                    const departmentId = selectedOption.dataset.departmentId;
+                    let queryParams = [];
+                    if (departmentId) queryParams.push(`studyProgrammId=${directionId}`);
+                    if (facultyId) queryParams.push(`facultyId=${facultyId}`);
+                    
+                    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+                    
+                    showLoading();
+                    const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered${queryString}`);
+                    
+                    if (response.ok) {
+                        const groups = await response.json();
+                        currentGroups = groups;
+                        updateTableWithTimeline(groups);
+                    }
+                } else if (facultyId) {
+                    showLoading();
+                    const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered?facultyId=${facultyId}`);
+                    
+                    if (response.ok) {
+                        const groups = await response.json();
+                        currentGroups = groups;
+                        updateTableWithTimeline(groups);
+                    }
                 } else {
-                    console.error('Ошибка загрузки групп:', response.status);
-                    showNoData();
+                    showLoading();
+                    const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered`);
+                    
+                    if (response.ok) {
+                        const groups = await response.json();
+                        currentGroups = groups;
+                        updateTableWithTimeline(groups);
+                    }
                 }
             } catch (error) {
                 console.error('Ошибка загрузки групп:', error);
@@ -369,45 +194,44 @@
         function calculateCourse(groupNumber) {
             if (!groupNumber) return '-';
             
-            const match = groupNumber.match(/^(\d{2})\d-/) || groupNumber.match(/^(\d{2})-/);
-            if (match) {
-                const admissionYearTwoDigits = parseInt(match[1]);
-                const admissionYearFull = 2000 + admissionYearTwoDigits; 
-                
-                const currentDate = new Date();
-                const currentYearFull = currentDate.getFullYear(); 
-                const currentMonth = currentDate.getMonth();
-                
-                let academicYear = currentYearFull;
-                if (currentMonth < 8) { 
-                    academicYear = currentYearFull - 1;
-                }
-                
-                let course = academicYear - admissionYearFull;
-                course += 1;
-                return Math.max(1, Math.min(6, course));
-            }
+            const parts = groupNumber.split('-');
+            if (parts.length < 2) return '-';
             
-            return '-';
+            const beforeDash = parts[0];
+            if (beforeDash.length < 2) return '-';
+            
+            const lastTwo = beforeDash.slice(-2);
+            if (!/^\d{2}$/.test(lastTwo)) return '-';
+            
+            const admissionYear = 2000 + parseInt(lastTwo);
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const month = now.getMonth();
+            
+            const academicYear = month >= 8 ? currentYear : currentYear - 1;
+            let course = academicYear - admissionYear;
+            
+            if (course < 1) return 1;
+            if (course > 5) return 5;
+            
+            return course;
         }
-        
+                        
         function updateTableWithTimeline(groups) {
             tableBody.innerHTML = '';
             
             if (!groups || groups.length === 0) {
                 showNoData();
+                updateRecordsCount(0); 
                 return;
             }
-            
             groups.forEach((group, index) => {
                 const row = document.createElement('tr');
                 const course = calculateCourse(group.groupNumber || group.name);
-                
                 // Форматируем прошлые тестирования (3 колонки)
                 const pastTesting1 = group.testings && group.testings.length > 0 ? group.testings[0] : null;
                 const pastTesting2 = group.testings && group.testings.length > 1 ? group.testings[1] : null;
                 const pastTesting3 = group.testings && group.testings.length > 2 ? group.testings[2] : null;
-                
                 // Форматируем запланированные тестирования (2 колонки)
                 const planned1 = group.testingsPlanned && group.testingsPlanned.length > 0 ? group.testingsPlanned[0] : null;
                 const planned2 = group.testingsPlanned && group.testingsPlanned.length > 1 ? group.testingsPlanned[1] : null;
@@ -428,9 +252,15 @@
                 
                 tableBody.appendChild(row);
             });
+            updateRecordsCount(groups.length);
             
         }
-        
+        function updateRecordsCount(count) {
+            const recordsCountElement = document.getElementById('recordsCount');
+            if (recordsCountElement) {
+                recordsCountElement.textContent = `Найдено записей: ${count}`;
+            }
+        }
 
         
         async function handleGenerate() {
@@ -497,8 +327,9 @@
                     </td>
                 </tr>
             `;
+            updateRecordsCount(0);
         }
-        
+
         function showLoading() {
             tableBody.innerHTML = `
                 <tr>
@@ -507,6 +338,7 @@
                     </td>
                 </tr>
             `;
+            updateRecordsCount(0); 
         }
 
        async function loadSemesterHeaders() {
@@ -556,20 +388,28 @@
             if (!semesterId || semesterId === "0") {
                 return `<div class="planned-item" style="color: #aaa; font-style: italic;">Нет информации</div>`;
             }
+            
+            let isChecked = false;
+            let recommendationId = null;
+            
+            if (testing) {
+                if (isReadOnly) {
+                    isChecked = testing.isChosen === true;
+                } else {
+                    isChecked = testing != null;
+                }
+                recommendationId = testing.id ? testing.id : null;
+            }
 
-            const isChecked = testing != undefined && testing != null;
-            const recommendationId = testing && testing.id ? testing.id : null;
             const key = `${groupId}_${semesterId}`;
-            if (isReadOnly) {
-                isChecked = testing && testing.isChosen === true;
-            } 
+            
             if (!(key in originalCheckboxState)) {
                 originalCheckboxState[key] = {
                     isChecked: isChecked,
                     recommendationId: recommendationId
                 };
             }
-
+            
             return `
                 <div class="planned-item">
                     <label class="checkbox-container">
@@ -578,6 +418,8 @@
                             data-testing-id="${testing ? testing.id : ''}"
                             data-semester-id="${semesterId}"
                             data-recommendation-id="${recommendationId || ''}"
+                            data-group-semester-key="${key}"
+                            data-column-index="${columnIndex}"
                             ${isChecked ? 'checked' : ''}
                             ${isReadOnly ? 'disabled' : ''}>
                         <span class="checkmark"></span>
@@ -585,25 +427,132 @@
                 </div>
             `;
         }
+        function buildGroupsByDirection() {
+            const map = {};
 
-        tableBody.addEventListener('change', (e) => {
+            currentGroups.forEach(g => {
+                const p = g.studyProgrammId;
+                if (!p) return;
+
+                if (!map[p]) map[p] = [];
+                map[p].push(g);
+            });
+
+            return map;
+            }   
+        function getGroupsCountForGroup(groupId) {
+            const g = currentGroups.find(x => x.id == groupId);
+            if (!g) return 0;
+
+            return currentGroups.filter(x => x.studyProgramId == g.studyProgramId).length;
+        }
+
+
+
+        tableBody.addEventListener('change', async (e) => {
             if (e.target.type === 'checkbox') {
                 const checkbox = e.target;
                 const groupId = checkbox.dataset.groupId;
                 const semesterId = checkbox.dataset.semesterId;
+                const columnIndex = parseInt(checkbox.dataset.columnIndex);
                 const key = `${groupId}_${semesterId}`;
                 const isChecked = checkbox.checked;
+               if (isChecked) {
+                    const groupsCount = getGroupsCountForGroup(groupId);
+                    console.log(currentGroups[0]);
+                    if (groupsCount > 3) {
+                        const group = currentGroups.find(g => g.id == groupId);
+                        const groupName = group?.groupNumber || group?.name || 'Группа';
 
-                if (originalCheckboxState[key].isChecked === isChecked) {
+                        const adjacentSemesters = getAdjacentSemesters(groupId, columnIndex);
+
+                        if (adjacentSemesters.length > 0) {
+                            const directionName = getDirectionNameByGroupId(groupId);
+                            const shouldCancel = await showWarning(
+                                groupName,
+                                groupsCount,
+                                adjacentSemesters,
+                                directionName
+                            );
+                            if (shouldCancel) {
+                                checkbox.checked = false;
+
+                                const key = `${groupId}_${semesterId}`;
+                                changedCheckboxes[key] = {
+                                    isChecked: false,
+                                    recommendationId: originalCheckboxState[key]?.recommendationId
+                                };
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                if (originalCheckboxState[key] && originalCheckboxState[key].isChecked === isChecked) {
                     delete changedCheckboxes[key];
                 } else {
                     changedCheckboxes[key] = {
                         isChecked: isChecked,
-                        recommendationId: originalCheckboxState[key].recommendationId
+                        recommendationId: originalCheckboxState[key]?.recommendationId
                     };
                 }
             }
         });
+        function getAdjacentSemesters(groupId, currentColumnIndex) {
+            const adjacentSemesters = [];
+            const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked && 
+                    checkbox.dataset.groupId == groupId && 
+                    checkbox.dataset.columnIndex) {
+                    const checkboxColumnIndex = parseInt(checkbox.dataset.columnIndex);
+                    if (Math.abs(checkboxColumnIndex - currentColumnIndex) === 1) {
+                        const semesterName = getSemesterNameByColumn(checkboxColumnIndex);
+                        adjacentSemesters.push({
+                            columnIndex: checkboxColumnIndex,
+                            semesterName: semesterName
+                        });
+                    }
+                }
+            });
+            
+            return adjacentSemesters;
+        }
+        function getSemesterNameByColumn(columnIndex) {
+            const headers = document.querySelectorAll('thead tr:nth-child(2) th');
+            if (columnIndex >= 0 && columnIndex < headers.length) {
+                return headers[columnIndex].textContent;
+            }
+            return `семестр ${columnIndex}`;
+        }
+        async function showWarning(groupName, totalGroupsCount, adjacentSemesters, directionName) {
+            const semesterNames = adjacentSemesters.map(s => s.semesterName).join(', ');
+            const message =
+                `Внимание! Все группы относятся к направлению "${directionName}".\n` +
+                `Всего групп в направлении: ${totalGroupsCount}.\n\n` +
+                `Группа "${groupName}" уже выбрана в соседнем семестре:\n` +
+                `${semesterNames}\n\n` +
+                `Обычно рекомендуется распределять группы равномерно.\n\n` +
+                `Вы уверены, что хотите выбрать эту группу?`;
+            return !confirm(message); 
+        }
+        function getDirectionNameByGroupId(groupId) {
+            const g = currentGroups.find(x => x.id == groupId);
+            if (!g) return "Неизвестное направление";
+
+            const programId = g.studyProgramId;
+            if (!programId) return "Неизвестное направление";
+            const option = Array.from(directionSelect.options)
+                .find(o => o.value == programId);
+
+            if (!option) return "Неизвестное направление";
+            if (option.dataset.originalText)
+                return option.dataset.originalText;
+
+            return option.textContent;
+        }
+
 
 
         function replaceHeaderText(oldText, newText) {
@@ -612,20 +561,57 @@
             );
             if (th) th.textContent = newText;
         }
-        
         document.addEventListener('DOMContentLoaded', () => {
             const generateBtn = document.getElementById('generateBtn');
             generateBtn.addEventListener('click', handleGenerate);
             loadSemesterHeaders();
-            loadFaculties();
-            loadDirections();
-            
-            resetBtn.addEventListener('click', resetFilters);
-            applyBtn.addEventListener('click', applyFilters);
-            
-            setTimeout(() => {
-                applyFilters();
-            }, 500);
+            loadDepartmentsAndFaculties().then(() => {
+                loadDirections().then(() => {
+                    resetBtn.addEventListener('click', resetFilters);
+                    applyBtn.addEventListener('click', applyFilters);
+                    
+                    facultySelect.addEventListener('change', function() {
+                        const facultyId = this.value;
+                        if (facultyId) {
+                            const facultyDepartments = departments.filter(dept => dept.facultyId == facultyId);
+                            const deptIds = facultyDepartments.map(dept => dept.id);
+                            
+                            Array.from(directionSelect.options).forEach(option => {
+                                if (option.value) {
+                                    const deptId = option.dataset.departmentId;
+                                    option.style.display = deptIds.includes(parseInt(deptId)) ? '' : 'none';
+                                }
+                            });
+                            
+                            const selectedOption = directionSelect.options[directionSelect.selectedIndex];
+                            if (selectedOption.value && !deptIds.includes(parseInt(selectedOption.dataset.departmentId))) {
+                                directionSelect.value = "";
+                            }
+                        } else {
+                            Array.from(directionSelect.options).forEach(option => {
+                                option.style.display = '';
+                            });
+                        }
+                    });
+                    
+                    directionSelect.addEventListener('change', function() {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption.value && selectedOption.dataset.departmentId) {
+                            const deptId = parseInt(selectedOption.dataset.departmentId);
+                            const department = departments.find(dept => dept.id == deptId);
+                            
+                            if (department && facultySelect.value != department.facultyId) {
+                                facultySelect.value = department.facultyId;
+                                facultySelect.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    });
+                    
+                    setTimeout(() => {
+                        applyFilters();
+                    }, 500);
+                });
+            });
         });
     </script>
 </body>
