@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка остаточных знаний</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="recommendation_styles.css">
+</head>
+<body>
+    <div class="sidebar">
+        <img src="Polytech_darktheme.png" id="1">
+        <div class="line"></div>
+        <h1>Проверка<br>остаточных знаний</h1>
+        <img src="Circle.png" style="top: 20%; width: 7%; height: 11.7%; margin-left: 3.85%;">
+        <h2>Иванов<br>Иван Иванович</h2>
+    
+        <a href="" style="color: #B2BAF9; font-weight: 800;">Главная</a>
+        <div class="purple_circle"></div>
+        <a href="" style="top: 47%;">Приказы</a>
+        <a href="" style="top: 52%;">Списки<br>рекомендованных<br>групп</a>
+        <a href="" style="top: 63%;">Отчёты</a>
+        <a href="" style="top: 68%;">Настройки<br>доступа</a>
+    </div>
+
+    <div class="content">
+        <h1>Формирование списка рекомендуемых групп</h1>
+        <div class="records-count" id="recordsCount">
+            Найдено записей: 0
+        </div>
+        <div class="filters">
+            <div class="filter-column">
+                <div class="filter-row">
+                    <div class="filter-label">Факультет/институт:</div>
+                    <select class="filter-select" id="facultySelect">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+                
+                <div class="filter-row">
+                    <div class="filter-label">Направление:</div>
+                    <select class="filter-select" id="directionSelect">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="buttons-row">
+            <button class="filter-btn reset-btn" id="resetBtn">Сбросить</button>
+            <button class="filter-btn apply-btn" id="applyBtn">Применить</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="border-radius: 10px 0px 0px 0px;">Группа</th>
+                        <th rowspan="2">Курс</th>
+                        <th colspan="3" style="text-align: center;">Предыдущие тестирования</th>
+                        <th colspan="1">Текущее тестирование</th>
+                        <th colspan="2" style="text-align: center;">Запланированные тестирования</th>
+                    </tr>
+                    <tr>
+                        <th>3 семестра назад</th>
+                        <th>2 семестра назад</th>
+                        <th>Предыдущий семестр</th>
+                        <th>Текущий семестр</th>
+                        <th>Следующий семестр</th>
+                        <th style="border-radius: 0px 10px 0px 0px;">Через семестр</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        <div class="generate-btn-container">
+            <button class="filter-btn apply-btn" id="generateBtn">Сформировать</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5134';
+        const facultySelect = document.getElementById('facultySelect');
+        const directionSelect = document.getElementById('directionSelect');
+        const resetBtn = document.getElementById('resetBtn');
+        const applyBtn = document.getElementById('applyBtn');
+        const tableBody = document.getElementById('tableBody');
+        let currentGroups = [];
+        let semesterMap = {};
+        let originalCheckboxState = {}; 
+        let changedCheckboxes = {}; 
+        let departments = [];
+        let faculties = [];
+        
+
+        async function loadDepartmentsAndFaculties() {
+            try {
+                const facultiesResponse = await fetch(`${API_BASE_URL}/Faculty/GetFaculties`);
+                faculties = await facultiesResponse.json();
+                
+                const deptResponse = await fetch(`${API_BASE_URL}/Department/GetDepartments`);
+                departments = await deptResponse.json();
+                faculties.forEach(faculty => {
+                    const option = document.createElement('option');
+                    option.value = faculty.id;
+                    option.textContent = faculty.facultyName;
+                    facultySelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+        
+        async function loadDirections() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/StudyProgram/GetAll`);
+                const studyPrograms = await response.json();
+                
+                directionSelect.innerHTML = '<option value="">Все</option>';
+                
+                if (studyPrograms && Array.isArray(studyPrograms)) {
+                    studyPrograms.forEach(program => {
+                        const option = document.createElement('option');
+                        option.value = program.id;
+                        option.textContent = program.name;
+                        option.dataset.departmentId = program.departmentId;
+                        option.dataset.originalText = program.name; 
+                        directionSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки направлений:', error);
+            }
+        }
+        
+        function resetFilters() {
+            facultySelect.value = "";
+            directionSelect.value = "";
+            
+            Array.from(directionSelect.options).forEach(option => {
+                if (option.dataset.originalText) {
+                    option.textContent = option.dataset.originalText;
+                }
+            });
+            
+            applyFilters();
+        }   
+        async function applyFilters() {
+            let facultyId = facultySelect.value;
+            let directionId = directionSelect.value;
+            
+            try {
+                if (directionId) {
+                    const selectedOption = directionSelect.options[directionSelect.selectedIndex];
+                    const departmentId = selectedOption.dataset.departmentId;
+                    let queryParams = [];
+                    if (departmentId) queryParams.push(`studyProgrammId=${directionId}`);
+                    if (facultyId) queryParams.push(`facultyId=${facultyId}`);
+                    
+                    const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+                    
+                    showLoading();
+                    const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered${queryString}`);
+                    
+                    if (response.ok) {
+                        const groups = await response.json();
+                        currentGroups = groups;
+                        updateTableWithTimeline(groups);
+                    }
+                } else if (facultyId) {
+                    showLoading();
+                    const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered?facultyId=${facultyId}`);
+                    
+                    if (response.ok) {
+                        const groups = await response.json();
+                        currentGroups = groups;
+                        updateTableWithTimeline(groups);
+                    }
+                } else {
+                    showLoading();
+                    const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAllFiltered`);
+                    
+                    if (response.ok) {
+                        const groups = await response.json();
+                        currentGroups = groups;
+                        updateTableWithTimeline(groups);
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки групп:', error);
+                showNoData();
+            }
+        }
+        
+        function calculateCourse(groupNumber) {
+            if (!groupNumber) return '-';
+            
+            const parts = groupNumber.split('-');
+            if (parts.length < 2) return '-';
+            
+            const beforeDash = parts[0];
+            if (beforeDash.length < 2) return '-';
+            
+            const lastTwo = beforeDash.slice(-2);
+            if (!/^\d{2}$/.test(lastTwo)) return '-';
+            
+            const admissionYear = 2000 + parseInt(lastTwo);
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const month = now.getMonth();
+            
+            const academicYear = month >= 8 ? currentYear : currentYear - 1;
+            let course = academicYear - admissionYear;
+            
+            if (course < 1) return 1;
+            if (course > 5) return 5;
+            
+            return course;
+        }
+                        
+        function updateTableWithTimeline(groups) {
+            tableBody.innerHTML = '';
+            
+            if (!groups || groups.length === 0) {
+                showNoData();
+                updateRecordsCount(0); 
+                return;
+            }
+            groups.forEach((group, index) => {
+                const row = document.createElement('tr');
+                const course = calculateCourse(group.groupNumber || group.name);
+                // Форматируем прошлые тестирования (3 колонки)
+                const pastTesting1 = group.testings && group.testings.length > 0 ? group.testings[0] : null;
+                const pastTesting2 = group.testings && group.testings.length > 1 ? group.testings[1] : null;
+                const pastTesting3 = group.testings && group.testings.length > 2 ? group.testings[2] : null;
+                // Форматируем запланированные тестирования (2 колонки)
+                const planned1 = group.testingsPlanned && group.testingsPlanned.length > 0 ? group.testingsPlanned[0] : null;
+                const planned2 = group.testingsPlanned && group.testingsPlanned.length > 1 ? group.testingsPlanned[1] : null;
+                
+                row.innerHTML = `
+                    <td>${group.groupNumber || group.name || 'Нет названия'}</td>
+                    <td>${course}</td>
+                    <td class="testing-column">${formatTestingCell(pastTesting1, true, group.id, 0)}</td>
+                    <td class="testing-column">${formatTestingCell(pastTesting2, true, group.id, 1)}</td>
+                    <td class="testing-column">${formatTestingCell(pastTesting3, true, group.id, 2)}</td>
+                    
+                    <td class="testing-column">${formatTestingCell(group.testingNow, false, group.id, 3)}</td>
+                    
+                    <!-- Запланированные тестирования (2 колонки) -->
+                    <td class="testing-column">${formatTestingCell(planned1, false, group.id, 4)}</td>
+                    <td class="testing-column">${formatTestingCell(planned2, false, group.id, 5)}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            updateRecordsCount(groups.length);
+            
+        }
+        function updateRecordsCount(count) {
+            const recordsCountElement = document.getElementById('recordsCount');
+            if (recordsCountElement) {
+                recordsCountElement.textContent = `Найдено записей: ${count}`;
+            }
+        }
+
+        
+        async function handleGenerate() {
+            const toDelete = [];
+            const toCreate = [];
+
+            for (const key in changedCheckboxes) {
+                const change = changedCheckboxes[key];
+                console.log(change);
+                if (!change.isChecked && change.recommendationId) {
+                    toDelete.push(change.recommendationId);
+                }
+
+                if (change.isChecked && !change.recommendationId) {
+                    const [groupId, semesterId] = key.split('_').map(Number);
+                    toCreate.push({
+                        recommendedById: 12,
+                        studyGroupId: groupId,
+                        semesterId: semesterId
+                    });
+                }
+            }
+
+            if (toDelete.length > 0) {
+                await fetch(`${API_BASE_URL}/RecommendationHistory/DeleteBulk`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(toDelete)
+                });
+            }
+
+            if (toCreate.length > 0) {
+                await fetch(`${API_BASE_URL}/RecommendationHistory/CreateOrChangeBulk`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(toCreate)
+                });
+            }
+
+            changedCheckboxes = {}; 
+            alert('Список успешно обновлен');
+        }
+
+
+
+        function updateCheckboxesAfterSave(newList) {
+            newList.forEach(rec => {
+                const key = `${rec.studyGroupId}_${rec.semesterId}`;
+                const checkbox = tableBody.querySelector(`input[data-group-semester-key="${key}"]`);
+                if (checkbox) {
+                    checkbox.dataset.recommendationId = rec.id; 
+                    originalCheckboxState[key] = checkbox.checked; 
+                }
+            });
+        }
+
+
+        
+        function showNoData() {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #aaa;">
+                        Нет данных для отображения
+                    </td>
+                </tr>
+            `;
+            updateRecordsCount(0);
+        }
+
+        function showLoading() {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="loading">
+                        Загрузка данных...
+                    </td>
+                </tr>
+            `;
+            updateRecordsCount(0); 
+        }
+
+       async function loadSemesterHeaders() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/Semester/GetCurrentSemester`);
+                if (!response.ok) return;
+                const current = await response.json();
+
+                const fromYear = current.semesterYear - 1;
+                const fromPart = current.semesterPart === 1 ? 2 : 1;
+                const toYear = current.semesterYear + 1;
+                const toPart = current.semesterPart === 2 ? 2 : 1;
+
+                const timelineResponse = await fetch(`${API_BASE_URL}/Semester/GetSemesterTimeline?FromYear=${fromYear}&FromPart=${fromPart}&ToYear=${toYear}&ToPart=${toPart}`);
+                const timeline = await timelineResponse.json();
+                console.log(timelineResponse)
+                semesterMap = {};
+                timeline.forEach(s => semesterMap[`${s.semesterYear}_${s.semesterPart}`] = s);
+
+                const headers = timeline.map(s => s ? (s.semesterPart === 1 ? "Весенний " : "Осенний ") + s.semesterYear : "Нет информации");
+
+                const ths = document.querySelectorAll("thead tr:nth-child(2) th");
+                const columnMapping = [0,1,2,3,4,5]; 
+                columnMapping.forEach((colIdx, idx) => {
+                    const sem = timeline[idx];
+                    if (!sem) return;
+                    ths[colIdx].textContent = sem.semesterPart === 1 ? "Весенний " + sem.semesterYear : "Осенний " + sem.semesterYear;
+                    ths[colIdx].dataset.semesterId = sem.id || "0";
+                });
+            } catch (e) {
+                console.error("Ошибка загрузки семестров:", e);
+            }
+        }
+
+
+
+        function formatTestingCell(testing, isReadOnly, groupId, columnIndex) {
+            const headerRow = document.querySelector('thead tr:nth-child(2)');
+            if (!headerRow) return '<div class="no-data">-</div>';
+
+            const headers = headerRow.querySelectorAll('th');
+            if (columnIndex >= headers.length) return '<div class="no-data">-</div>';
+
+            const header = headers[columnIndex];
+            const semesterId = header.dataset.semesterId;
+
+            if (!semesterId || semesterId === "0") {
+                return `<div class="planned-item" style="color: #aaa; font-style: italic;">Нет информации</div>`;
+            }
+            
+            let isChecked = false;
+            let recommendationId = null;
+            
+            if (testing) {
+                if (isReadOnly) {
+                    isChecked = testing.isChosen === true;
+                } else {
+                    isChecked = testing != null;
+                }
+                recommendationId = testing.id ? testing.id : null;
+            }
+
+            const key = `${groupId}_${semesterId}`;
+            
+            if (!(key in originalCheckboxState)) {
+                originalCheckboxState[key] = {
+                    isChecked: isChecked,
+                    recommendationId: recommendationId
+                };
+            }
+            
+            return `
+                <div class="planned-item">
+                    <label class="checkbox-container">
+                        <input type="checkbox" 
+                            data-group-id="${groupId}"
+                            data-testing-id="${testing ? testing.id : ''}"
+                            data-semester-id="${semesterId}"
+                            data-recommendation-id="${recommendationId || ''}"
+                            data-group-semester-key="${key}"
+                            data-column-index="${columnIndex}"
+                            ${isChecked ? 'checked' : ''}
+                            ${isReadOnly ? 'disabled' : ''}>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            `;
+        }
+        function buildGroupsByDirection() {
+            const map = {};
+
+            currentGroups.forEach(g => {
+                const p = g.studyProgrammId;
+                if (!p) return;
+
+                if (!map[p]) map[p] = [];
+                map[p].push(g);
+            });
+
+            return map;
+            }   
+        function getGroupsCountForGroup(groupId) {
+            const g = currentGroups.find(x => x.id == groupId);
+            if (!g) return 0;
+
+            return currentGroups.filter(x => x.studyProgramId == g.studyProgramId).length;
+        }
+
+
+
+        tableBody.addEventListener('change', async (e) => {
+            if (e.target.type === 'checkbox') {
+                const checkbox = e.target;
+                const groupId = checkbox.dataset.groupId;
+                const semesterId = checkbox.dataset.semesterId;
+                const columnIndex = parseInt(checkbox.dataset.columnIndex);
+                const key = `${groupId}_${semesterId}`;
+                const isChecked = checkbox.checked;
+               if (isChecked) {
+                    const groupsCount = getGroupsCountForGroup(groupId);
+                    console.log(currentGroups[0]);
+                    if (groupsCount > 3) {
+                        const group = currentGroups.find(g => g.id == groupId);
+                        const groupName = group?.groupNumber || group?.name || 'Группа';
+
+                        const adjacentSemesters = getAdjacentSemesters(groupId, columnIndex);
+
+                        if (adjacentSemesters.length > 0) {
+                            const directionName = getDirectionNameByGroupId(groupId);
+                            const shouldCancel = await showWarning(
+                                groupName,
+                                groupsCount,
+                                adjacentSemesters,
+                                directionName
+                            );
+                            if (shouldCancel) {
+                                checkbox.checked = false;
+
+                                const key = `${groupId}_${semesterId}`;
+                                changedCheckboxes[key] = {
+                                    isChecked: false,
+                                    recommendationId: originalCheckboxState[key]?.recommendationId
+                                };
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                if (originalCheckboxState[key] && originalCheckboxState[key].isChecked === isChecked) {
+                    delete changedCheckboxes[key];
+                } else {
+                    changedCheckboxes[key] = {
+                        isChecked: isChecked,
+                        recommendationId: originalCheckboxState[key]?.recommendationId
+                    };
+                }
+            }
+        });
+        function getAdjacentSemesters(groupId, currentColumnIndex) {
+            const adjacentSemesters = [];
+            const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked && 
+                    checkbox.dataset.groupId == groupId && 
+                    checkbox.dataset.columnIndex) {
+                    const checkboxColumnIndex = parseInt(checkbox.dataset.columnIndex);
+                    if (Math.abs(checkboxColumnIndex - currentColumnIndex) === 1) {
+                        const semesterName = getSemesterNameByColumn(checkboxColumnIndex);
+                        adjacentSemesters.push({
+                            columnIndex: checkboxColumnIndex,
+                            semesterName: semesterName
+                        });
+                    }
+                }
+            });
+            
+            return adjacentSemesters;
+        }
+        function getSemesterNameByColumn(columnIndex) {
+            const headers = document.querySelectorAll('thead tr:nth-child(2) th');
+            if (columnIndex >= 0 && columnIndex < headers.length) {
+                return headers[columnIndex].textContent;
+            }
+            return `семестр ${columnIndex}`;
+        }
+        async function showWarning(groupName, totalGroupsCount, adjacentSemesters, directionName) {
+            const semesterNames = adjacentSemesters.map(s => s.semesterName).join(', ');
+            const message =
+                `Внимание! Все группы относятся к направлению "${directionName}".\n` +
+                `Всего групп в направлении: ${totalGroupsCount}.\n\n` +
+                `Группа "${groupName}" уже выбрана в соседнем семестре:\n` +
+                `${semesterNames}\n\n` +
+                `Обычно рекомендуется распределять группы равномерно.\n\n` +
+                `Вы уверены, что хотите выбрать эту группу?`;
+            return !confirm(message); 
+        }
+        function getDirectionNameByGroupId(groupId) {
+            const g = currentGroups.find(x => x.id == groupId);
+            if (!g) return "Неизвестное направление";
+
+            const programId = g.studyProgramId;
+            if (!programId) return "Неизвестное направление";
+            const option = Array.from(directionSelect.options)
+                .find(o => o.value == programId);
+
+            if (!option) return "Неизвестное направление";
+            if (option.dataset.originalText)
+                return option.dataset.originalText;
+
+            return option.textContent;
+        }
+
+
+
+        function replaceHeaderText(oldText, newText) {
+            const th = [...document.querySelectorAll("th")].find(x =>
+                x.textContent.trim() === oldText
+            );
+            if (th) th.textContent = newText;
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.addEventListener('click', handleGenerate);
+            loadSemesterHeaders();
+            loadDepartmentsAndFaculties().then(() => {
+                loadDirections().then(() => {
+                    resetBtn.addEventListener('click', resetFilters);
+                    applyBtn.addEventListener('click', applyFilters);
+                    
+                    facultySelect.addEventListener('change', function() {
+                        const facultyId = this.value;
+                        if (facultyId) {
+                            const facultyDepartments = departments.filter(dept => dept.facultyId == facultyId);
+                            const deptIds = facultyDepartments.map(dept => dept.id);
+                            
+                            Array.from(directionSelect.options).forEach(option => {
+                                if (option.value) {
+                                    const deptId = option.dataset.departmentId;
+                                    option.style.display = deptIds.includes(parseInt(deptId)) ? '' : 'none';
+                                }
+                            });
+                            
+                            const selectedOption = directionSelect.options[directionSelect.selectedIndex];
+                            if (selectedOption.value && !deptIds.includes(parseInt(selectedOption.dataset.departmentId))) {
+                                directionSelect.value = "";
+                            }
+                        } else {
+                            Array.from(directionSelect.options).forEach(option => {
+                                option.style.display = '';
+                            });
+                        }
+                    });
+                    
+                    directionSelect.addEventListener('change', function() {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption.value && selectedOption.dataset.departmentId) {
+                            const deptId = parseInt(selectedOption.dataset.departmentId);
+                            const department = departments.find(dept => dept.id == deptId);
+                            
+                            if (department && facultySelect.value != department.facultyId) {
+                                facultySelect.value = department.facultyId;
+                                facultySelect.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    });
+                    
+                    setTimeout(() => {
+                        applyFilters();
+                    }, 500);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
