@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка остаточных знаний</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <!-- Боковая панель с кнопками -->
+    <div class="sidebar">
+        <img src="Polytech_darktheme.png" id="1" style="position: absolute;
+                                                        width: 251.56px;
+                                                        height: 66.21px;
+                                                        left: 24px;
+                                                        top: 28px;">
+        <div class="line"></div>
+        <h1>Проверка<br>остаточных знаний</h1>
+        <img src="Circle.png" style="position: absolute;
+                                      left: 100px;
+                                      top: 200px;
+                                      width: 96px; 
+                                      height: 96px; ">
+        <h2>Иванов<br>Иван Иванович</h2>
+    
+        <a href="">Главная</a>
+        <a href="" style="top: 460px;">Выбор групп</a>
+        <a href="" style="top: 510px;">Выбор<br>дисциплин</a>
+        
+        <a href="" style="color: #B2BAF9; font-weight: 800; top: 590px;">Выбор<br>преподавателей</a>
+        <div class="purple_circle">
+
+        </div>
+    </div>
+
+    <!-- Основное содержимое -->
+    <div class="content">
+        <h1>Выбор преподавателей</h1>
+        <label for="my-dropdown" style="margin-right: 10px; color: white; font-weight: 500;";">Группа:</label>
+        <select id="my-dropdown" name="my-dropdown" class="rounded-slct">
+            <option value="opt1">Не выбрано</option>
+            <option value="opt2">Опция 2</option>
+            <option value="opt3">Опция 3</option>
+        </select>
+        <label for="my-dropdown" style="margin-right: 10px; color: white; font-weight: 500;";">Дисциплина:</label>
+        <select id="my-dropdown" name="my-dropdown" class="rounded-slct">
+            <option value="opt1">Не выбрано</option>
+            <option value="opt2">Опция 2</option>
+            <option value="opt3">Опция 3</option>
+        </select>
+        <table id="teachers_table">
+            <thead>
+                <tr>
+                    <th style="border-radius: 10px 0px 0px 0px;">Группа</th>
+                    <th>Дисциплина</th>
+                    <th style="border-radius: 0px 10px 0px 0px;">Преподаватель</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            </tbody>
+        </table>
+    </div>
+</body>
+<script>
+const tbody = document.querySelector('#teachers_table tbody');
+
+function createRow() {
+  const row = document.createElement('tr');
+  tbody.appendChild(row);
+  return row;
+}
+
+function addToRow(row, data) {
+  const nameCell = document.createElement('td');
+  nameCell.textContent = data; 
+  row.appendChild(nameCell);
+}
+
+function makeRequest(testing, report)  {
+  if(report){
+    fetch(`http://localhost:5134/Report/ReportDisciplineIdUpdate/${report.id}`,{
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ disciplineId: testing.disciplineId})
+    })
+  }
+}
+
+function addButtonToRow(row, testing, report) {
+    const cell = document.createElement('td');
+    
+    const button = document.createElement('button');
+    button.textContent = `Отправить запрос`;
+    button.className = 'rounded-btn';
+    
+    button.addEventListener('click', function() {
+      makeRequest(testing, report)
+      button.disabled = true;
+      button.textContent = `Запрос отправлен`;
+    });
+    if(currentReport.disciplineId != 0 && currentReport.disciplineId != null){
+      button.disabled = true;
+      button.textContent = `Запрос отправлен`;
+    }
+    cell.appendChild(button);
+    row.appendChild(cell);
+}
+
+let currentUserData = null;
+let currentReport = null;
+
+fetch(`http://localhost:5134/User/GetCurrentUserDataTest/current`)
+  .then(response => response.json())
+  .then(userData => {
+    currentUserData = userData;
+    return fetch(`http://localhost:5134/Testing/GetTestingsByDepartment/department/${userData.departmentId}`);
+  })
+  .then(response => response.json())
+  .then(testings => {
+    const promises = testings.map(testing => {
+  return new Promise((resolve) => {
+    const curRow = createRow();
+    let showButton = false;
+    
+    fetch(`http://localhost:5134/StudyGroup/GetById/${testing.groupId}`)
+      .then(groupResponse => groupResponse.json())
+      .then(group => {
+        addToRow(curRow, group.groupNumber);
+        return fetch(`http://localhost:5134/Discipline/GetDisciplineById/${testing.disciplineId}`);
+      })
+      .then(disciplineResponse => disciplineResponse.json())
+      .then(discipline => {
+        addToRow(curRow, discipline.name);
+        if(currentUserData.departmentId === discipline.departmentId){
+          showButton = false;
+        }
+        else
+        {
+          showButton = true;
+        }
+        return fetch(`http://localhost:5134/Report/GetReportById/${testing.reportId}`);
+      })
+      .then(reportResponse => {
+        return reportResponse ? reportResponse.json() : null;
+      })
+      .then(report => {
+        currentReport = report;
+        if (showButton || !report) {
+          return Promise.resolve(null);
+        }
+        return fetch(`http://localhost:5134/User/GetUserById/${report.teacherId}`);
+      })
+      .then(teacherResponse => {
+        if (showButton || !teacherResponse) {
+          return Promise.resolve(null);
+        }
+        return teacherResponse.json();
+      })
+      .then(teacher => {
+        if (showButton) {
+          addButtonToRow(curRow, testing, currentReport);
+        } else if (teacher) {
+          addToRow(curRow, teacher.name);
+        } else {
+          addToRow(curRow, "N/A");
+        }
+        resolve();
+      })
+      .catch(error => {
+        console.error(`Error for testing ${testing.id}:`, error);
+        resolve();
+      });
+  });
+});
+    
+    return Promise.all(promises);
+  })
+  .catch(error => {
+    console.error('Common error:', error);
+  });
+</script>
+</html>
