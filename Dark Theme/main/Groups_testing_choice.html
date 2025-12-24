@@ -475,9 +475,9 @@ async function applyFilters() {
                             group.studyProgramId,
                             semesterId
                         );
-                        if (chosenCount > 2) {
+                        if (chosenCount > 1) {
                             alert(
-                                `В одном семестре можно выбрать не более двух групп ` +
+                                `В одном семестре можно выбрать не более одной группы ` +
                                 `из одного направления («${getDirectionNameByGroupId(groupId)}»).`
                             );
                             checkbox.checked = false;
