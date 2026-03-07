@@ -45,7 +45,7 @@ const getCheckIcon = (type: string, isDark: boolean) => {
     return (
         <svg className="svg-up" width="12" height="9" viewBox="0 0 12 9" fill="none" xmlns="http://www.w3.org/2000/svg" style={{
             pointerEvents: 'none',
-            margin: '2px 0 0 1px',
+            margin: '2.5px 0 0 0px',
         }}>
             <mask id="path-1-inside-1_521_3906" fill="white">
             <path d="M3.98197 7.92672C3.78671 7.73146 3.78671 7.41488 3.98197 7.21961L11.0551 0.146447C11.2504 -0.0488153 11.567 -0.0488158 11.7622 0.146446C11.9575 0.341708 11.9575 0.658291 11.7622 0.853553L4.68908 7.92672C4.49382 8.12198 4.17723 8.12198 3.98197 7.92672Z"/>
