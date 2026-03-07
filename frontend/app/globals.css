@@ -176,12 +176,67 @@
     opacity: var(--button-hover-opacity);
     cursor: not-allowed;
   }
+
+  .cb-container {
+    display: flex;
+    gap: 8px;
+    height: 20px;
+    align-items: center;
+    margin: 5px;
+  }
+
+  .cb-block {
+    width: 16px;
+    height: 16px;
+    outline-width: 2px;
+    border-radius: 6px;
+    align-items: center;
+    border-style: solid;
+    outline-style: solid;
+    padding: 0px;
+    justify-content: center;
+    display: flex;
+  }
+
+  .cb-block:hover {
+    box-shadow: 0 0 0 5px var(--secondary-border-c);
+  }
+
+  .cb-block-deactive {
+    background-color: var(--background-c);
+    border-color: var(--background-c);
+    outline-color: var(--secondary-any-icons-c);
+  }
+
+  .cb-block-active-blue {
+    background-color: var(--btn-blue-c);
+    border-color: var(--btn-blue-c);
+    outline-color: var(--btn-blue-c);
+  }
+
+  .cb-block-active-red {
+    background-color: var(--btn-red-c);
+    border-color: var(--btn-red-c);
+    outline-color: var(--btn-red-c);
+  }
+
+  .cb-text {
+    height: fit-content;
+    color: var(--secondary-font-c);
+    font-size: 14px;
+  }
+  
+  .svg-up {
+    width: fit-content;
+    height: fit-content;
+    z-index: 2;
+    position: relative;
+  }
 }
 
 /* Базовые стили body */
 body {
-  background: var(--background);
+  background: var(--background-c);
   color: var(--foreground);
   font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
