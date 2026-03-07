@@ -1,15 +1,18 @@
 "use client";
 
-import Button from "../components/button/Button";
-import CheckBox from "../components/checkbox/CheckBox";
-import Alert from "../components/alert/Alert";
+import Button from "@/components/button/Button";
+import CheckBox from "@/components/checkbox/CheckBox";
+import Alert from "@/components/alert/Alert";
 import Input from "@/components/input/Input";
+import Search from "@/components/search/Search";
 
 import { useState } from "react";
 
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [inputBigValue, setInputBigValue] = useState('');
+  const [searchValue, setSearchValue] = useState('');
+  const [searchBigValue, setSearchBigValue] = useState('');
   return (
     <div>
       <p className="title">Московский Политехнический Университет - Остаточные знания</p>
@@ -32,7 +35,9 @@ export default function Home() {
         <CheckBox text="Чек бокс с крестиком" type="red" />
       </div>
       <p className="title">Поиск</p>
+      <Search hint="Поиск" value={searchValue} onChange={(value) => setSearchValue(value)} size="small" />
       <p className="title">Большой поиск</p>
+      <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
       <p className="title">Выпадающий список</p>
       <p className="title">Ввод</p>
       <Input hint="Введите текст..." value={inputValue} onChange={(value) => setInputValue(value)} />

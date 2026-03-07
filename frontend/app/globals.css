@@ -365,6 +365,58 @@
     font-family: 'Montserrat', sans-serif;
     font-weight: 400;
   }
+
+  .search-container {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .search-small {
+    max-width: 200px;
+    border-radius: 17px;
+    outline-width: 1px;
+    outline-color: var(--secondary-border-c);
+    outline-style: solid;
+  }
+
+  .search-large {
+    width: 100%;
+    border-radius: 7px;
+    background-color: var(--secondary-any-element-c);
+  }
+
+  .search-input {
+    background: none;
+    border: none;
+    color: var(--secondary-font-c);
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700 !important;
+    width: 100%;
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--secondary-lock-font-c);
+    opacity: 1;
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+  }
+
+  .search-large:focus-within {
+    outline-width: 3px;
+    outline-color: var(--secondary-border-c);
+    outline-style: solid;
+  }
+
+  .search-small:focus-within {
+    background-color: color-mix(in srgb, var(--background-inner-main-element-c) 75%, transparent);
+  }
 }
 
 /* Базовые стили body */
