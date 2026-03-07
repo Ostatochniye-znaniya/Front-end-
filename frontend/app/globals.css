@@ -337,6 +337,34 @@
   .alert-logo-detail {
     background-color: var(--background-main-element-c);
   }
+
+  .input-field {
+    background-color: var(--secondary-any-element-c);
+    border: none;
+    border-radius: 7px;
+    padding: 10px;
+    color: var(--secondary-font-c);
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700 !important;
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+
+  .input-field:focus {
+    outline-width: 3px;
+    outline-color: var(--secondary-border-c);
+    outline-style: solid;
+  }
+
+  .input-field::placeholder {
+    color: var(--secondary-lock-font-c);
+    opacity: 1;
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+  }
 }
 
 /* Базовые стили body */
