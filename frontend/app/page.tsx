@@ -9,6 +9,63 @@ import Table from "@/components/table/Table";
 
 import { useState } from "react";
 
+const users = [
+  { 
+    id: 1,
+    name: 'Иван Иванов', 
+    age: 25, 
+    active: true,
+    role: 'Администратор',
+    email: 'ivan@mail.ru',
+    registered: '2023-01-15'
+  },
+  { 
+    id: 2,
+    name: 'Петр Петров', 
+    age: 30, 
+    active: false,
+    role: 'Пользователь',
+    email: 'petr@mail.ru',
+    registered: '2023-03-20'
+  },
+  { 
+    id: 3,
+    name: 'Анна Смирнова', 
+    age: 28, 
+    active: true,
+    role: 'Модератор',
+    email: 'anna@mail.ru',
+    registered: '2023-02-10'
+  },
+  { 
+    id: 4,
+    name: 'Елена Козлова', 
+    age: 35, 
+    active: true,
+    role: 'Администратор',
+    email: 'elena@mail.ru',
+    registered: '2022-11-05'
+  },
+  { 
+    id: 5,
+    name: 'Дмитрий Новиков', 
+    age: 22, 
+    active: false,
+    role: 'Пользователь',
+    email: 'dima@mail.ru',
+    registered: '2023-05-30'
+  },
+  { 
+    id: 6,
+    name: 'Ольга Морозова', 
+    age: 27, 
+    active: true,
+    role: 'Модератор',
+    email: 'olga@mail.ru',
+    registered: '2023-04-12'
+  }
+];
+
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [inputBigValue, setInputBigValue] = useState('');
@@ -61,37 +118,36 @@ export default function Home() {
       <p className="title">Таблица</p>
       <Table 
         columns={[
-          { header: "Заголовок 1", accessor: "z_1" },
-          { header: "Заголовок 2", accessor: "z_2" },
-          { header: "Заголовок 3", accessor: "z_3" },
-          { header: "Заголовок 4", accessor: "z_4" }
-        ]}
-        data={[
-          {
-            z_1: <span>Данные</span>,
-            z_2: <span>Данные</span>,
-            z_3: <span>Данные</span>,
-            z_4: <span>Данные</span>,
+          { 
+            header: 'Имя', 
+            accessor: 'name',
+            sortFn: (a, b) => a.name.localeCompare(b.name)
           },
-          {
-            z_1: <span>Данные</span>,
-            z_2: <span>Данные</span>,
-            z_3: <span>Данные</span>,
-            z_4: <span>Данные</span>,
+          { 
+            header: 'Возраст', 
+            accessor: 'age',
+            sortFn: (a, b) => a.age - b.age
           },
-          {
-            z_1: <span>Данные</span>,
-            z_2: <span>Данные</span>,
-            z_3: <span>Данные</span>,
-            z_4: <span>Данные</span>,
+          { 
+            header: 'Роль', 
+            accessor: 'role',
+            sortFn: (a, b) => a.role.localeCompare(b.role)
           },
-          {
-            z_1: <span>Данные</span>,
-            z_2: <span>Данные</span>,
-            z_3: <span>Данные</span>,
-            z_4: <span>Данные</span>,
+          { 
+            header: 'Email', 
+            accessor: 'email'
+          },
+          { 
+            header: 'Статус', 
+            accessor: (row) => (
+              <span style={{ color: row.active ? 'green' : 'red' }}>
+                {row.active ? 'Активен' : 'Неактивен'}
+              </span>
+            ),
+            sortFn: (a, b) => (a.active === b.active ? 0 : a.active ? -1 : 1)
           }
         ]}
+        data={users}
       />
     </div>
   );
