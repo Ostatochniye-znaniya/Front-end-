@@ -709,6 +709,39 @@
       content: url('/mpu_logo_d.png');
     }
   }
+
+  .bg-gradient {
+    position: fixed; /* или absolute, если нужен относительно родителя */
+    top: 0;
+    left: 0;
+    width: 100vw; /* вся ширина окна */
+    height: 761px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-blue-c) 50%, #fff), var(--background-c));
+    
+    z-index: -1;
+    pointer-events: none; /* чтобы не мешал кликам */
+  }
+
+  .bg-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 1152px;
+    width: 100%;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    background-color: var(--background-c);
+    margin-top: 100px;
+    margin-left: 201px;
+    margin-right: 201px;
+    padding: 40px 50px;
+  }
 }
 
 /* Базовые стили body */
