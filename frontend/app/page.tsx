@@ -5,6 +5,7 @@ import CheckBox from "@/components/checkbox/CheckBox";
 import Alert from "@/components/alert/Alert";
 import Input from "@/components/input/Input";
 import Search from "@/components/search/Search";
+import Table from "@/components/table/Table";
 
 import { useState } from "react";
 
@@ -58,6 +59,40 @@ export default function Home() {
       }}></div>
       <Alert type="info" title="Информация" text="Текст" />
       <p className="title">Таблица</p>
+      <Table 
+        columns={[
+          { header: "Заголовок 1", accessor: "z_1" },
+          { header: "Заголовок 2", accessor: "z_2" },
+          { header: "Заголовок 3", accessor: "z_3" },
+          { header: "Заголовок 4", accessor: "z_4" }
+        ]}
+        data={[
+          {
+            z_1: <span>Данные</span>,
+            z_2: <span>Данные</span>,
+            z_3: <span>Данные</span>,
+            z_4: <span>Данные</span>,
+          },
+          {
+            z_1: <span>Данные</span>,
+            z_2: <span>Данные</span>,
+            z_3: <span>Данные</span>,
+            z_4: <span>Данные</span>,
+          },
+          {
+            z_1: <span>Данные</span>,
+            z_2: <span>Данные</span>,
+            z_3: <span>Данные</span>,
+            z_4: <span>Данные</span>,
+          },
+          {
+            z_1: <span>Данные</span>,
+            z_2: <span>Данные</span>,
+            z_3: <span>Данные</span>,
+            z_4: <span>Данные</span>,
+          }
+        ]}
+      />
     </div>
   );
 }
