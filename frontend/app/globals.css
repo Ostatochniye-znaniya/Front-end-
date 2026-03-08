@@ -59,7 +59,7 @@
   --alert-info-c: var(--btn-blue-c);
 
   --table-thead-bg-c: var(--background-c);
-  
+
 
   /* Размеры шрифтов */
   --font-size-heading: 20px;
@@ -435,6 +435,7 @@
     border-spacing: 0;
     overflow: hidden;
     color: var(--secondary-font-c);
+    font-size: 14px;
 
   }
 
@@ -491,6 +492,104 @@
 
   .table-container th:last-child {
     border-right: none;
+  }
+
+  /* Dropdown.css */
+
+  .dropdown-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .dropdown-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    color: var(--secondary-font-c, #333);
+    font-weight: 500;
+  }
+
+  .dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background-color: var(--secondary-any-element-c, #f5f5f5);
+    border: 2px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dropdown-header:hover {
+    background-color: color-mix(in srgb, var(--secondary-any-element-c, #f5f5f5) 90%, black);
+  }
+
+  .dropdown-header.open {
+    border-radius: 7px 7px 0 0;
+  }
+
+  .dropdown-selected {
+    color: var(--secondary-font-c);
+
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .dropdown-arrow {
+    transition: transform 0.2s;
+    color: var(--secondary-font-c);
+  }
+
+  .dropdown-arrow.open {
+    transform: rotate(180deg);
+  }
+
+  .dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px 0;
+    background-color: var(--secondary-any-element-c, #ffffff);
+    border: 2px solid var(--secondary-border-c, #4a90e2);
+    border-top: none;
+    border-radius: 0 0 7px 7px;
+    list-style: none;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--secondary-font-c, #333);
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+
+  .dropdown-item:hover {
+    background-color: color-mix(in srgb, var(--secondary-any-element-c, #f5f5f5) 80%, black);
+  }
+
+  .dropdown-item.selected {
+    background-color: var(--secondary-border-c, #4a90e2);
+    
+  }
+
+  .dropdown-header:has(.dropdown-selected:empty) {
+    color: var(--secondary-lock-font-c);
+  }
+
+  @media (max-width: 768px) {
+    .dropdown-container {
+      max-width: 100%;
+    }
   }
 }
 

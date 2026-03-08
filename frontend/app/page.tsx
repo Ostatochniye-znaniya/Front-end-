@@ -6,6 +6,7 @@ import Alert from "@/components/alert/Alert";
 import Input from "@/components/input/Input";
 import Search from "@/components/search/Search";
 import Table from "@/components/table/Table";
+import Dropdown from "@/components/dropdown/Dropdown";
 
 import { useState } from "react";
 
@@ -66,11 +67,28 @@ const users = [
   }
 ];
 
+const cities = [
+    { value: 'msk', label: 'Москва' },
+    { value: 'spb', label: 'Санкт-Петербург' },
+    { value: 'kazan', label: 'Казань' },
+    { value: 'novosib', label: 'Новосибирск' },
+    { value: 'ekb', label: 'Екатеринбург' }
+  ];
+
+  const roles = [
+    { value: 'admin', label: 'Администратор' },
+    { value: 'user', label: 'Пользователь' },
+    { value: 'moder', label: 'Модератор' },
+    { value: 'guest', label: 'Гость' }
+  ];
+
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [inputBigValue, setInputBigValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
   const [searchBigValue, setSearchBigValue] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
   return (
     <div>
       <p className="title">Московский Политехнический Университет - Остаточные знания</p>
@@ -97,6 +115,23 @@ export default function Home() {
       <p className="title">Большой поиск</p>
       <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
       <p className="title">Выпадающий список</p>
+      <div style={{ display: 'flex', gap: '20px' }}>
+      <Dropdown 
+          options={cities}
+          value={selectedCity}
+          onChange={setSelectedCity}
+          placeholder="Выберите город"
+          label="Город"
+        />
+        
+        <Dropdown 
+          options={roles}
+          value={selectedRole}
+          onChange={setSelectedRole}
+          placeholder="Выберите роль"
+          label="Роль"
+        />
+      </div>
       <p className="title">Ввод</p>
       <Input hint="Введите текст..." value={inputValue} onChange={(value) => setInputValue(value)} />
       <p className="title">Большой ввод</p>
