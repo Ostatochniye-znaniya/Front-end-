@@ -60,6 +60,11 @@
 
   --table-thead-bg-c: var(--background-c);
 
+  --line-c: #515151;
+
+  --navbar-font-c: #515151;
+  --navbar-title-font-c: var(--accent-blue-c);
+
 
   /* Размеры шрифтов */
   --font-size-heading: 20px;
@@ -125,6 +130,11 @@
     --alert-info-c: #B2BAF9;
 
     --table-thead-bg-c: var(--background-inner-main-element-c);
+
+    --line-c: var(--secondary-lock-font-c);
+
+    --navbar-font-c: #f0f0f0;
+    --navbar-title-font-c: var(--accent-blue-font-c);
 
     /* Размеры шрифтов */
     --font-size-heading: 20px;
@@ -591,6 +601,83 @@
       max-width: 100%;
     }
   }
+
+  .navbar-container {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    height: 1080px;
+    width: fit-content;
+    padding: 10px 20px;
+    background-color: var(--background-main-element-c);
+    border-bottom-right-radius: 30px;
+    border-top-right-radius: 30px;
+    padding-top: 28px;
+    padding-left: 59px;
+    padding-right: 59px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .line {
+    width: 250px;
+    height: 1px;
+    background-color: var(--line-c);
+  }
+
+  .navbar-title-text-block {
+    width: 250px;
+    font-size: 20px;
+    line-height: 1.2;
+    word-wrap: break-word;
+    font-weight: 600;
+    color: var(--navbar-title-font-c);
+    margin-bottom: 39px;
+  }
+
+  .navbar-avatar {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 9px;
+  }
+
+  .navbar-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 57px;
+  }
+
+  .navbar-text-container p {
+    margin: 0px;
+    padding: 0px;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--navbar-font-c);
+  }
+
+  .navbar-link-container {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+  }
+
+  .navbar-link-container a{
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--navbar-font-c);
+    font-family: 'Montserrat', sans-serif;
+    text-decoration: none;
+  }
+
+  .theme-aware-logo {
+    content: url('/mpu_logo_l.png');
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .theme-aware-logo {
+      content: url('/mpu_logo_d.png');
+    }
+  }
 }
 
 /* Базовые стили body */
@@ -598,4 +685,7 @@ body {
   background: var(--background-c);
   color: var(--foreground);
   font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+  padding: 0px;
+  margin: 0px;
+
 }
