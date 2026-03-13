@@ -65,6 +65,10 @@
   --navbar-font-c: #515151;
   --navbar-title-font-c: var(--accent-blue-c);
 
+  --pagination-bg-select-c: var(--background-inner-main-element-c);
+  --pagination-disable-button-c: var(--secondary-border-c);
+
+
 
   /* Размеры шрифтов */
   --font-size-heading: 20px;
@@ -135,6 +139,9 @@
 
     --navbar-font-c: #f0f0f0;
     --navbar-title-font-c: var(--accent-blue-font-c);
+
+    --pagination-bg-select-c: #3a3a3a;
+    --pagination-disable-button-c: #757575;
 
     /* Размеры шрифтов */
     --font-size-heading: 20px;
@@ -711,15 +718,15 @@
   }
 
   .bg-gradient {
-    position: fixed; /* или absolute, если нужен относительно родителя */
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100vw; /* вся ширина окна */
+    width: 100vw;
     height: 761px;
     background: linear-gradient(180deg, color-mix(in srgb, var(--accent-blue-c) 50%, #fff), var(--background-c));
     
     z-index: -1;
-    pointer-events: none; /* чтобы не мешал кликам */
+    pointer-events: none;
   }
 
   .bg-container {
@@ -741,6 +748,78 @@
     margin-left: 201px;
     margin-right: 201px;
     padding: 40px 50px;
+  }
+
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+
+  .pagination-list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 5px;
+  }
+
+  .pagination-item {
+    margin: 0;
+
+  }
+
+  .pagination-button {
+    min-width: 32px;
+    height: 32px;
+
+    padding: 0 8px;
+    border: none;
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--pagination-disable-button-c);
+
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .pagination-button.active {
+    background-color: var(--pagination-bg-select-c);
+    border-color: var(--pagination-bg-select-c);
+    color: var(--secondary-any-icons-c);
+
+    
+  }
+
+  .pagination-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .pagination-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    color: var(--pagination-disable-button-c);
+
+    font-size: 14px;
+  }
+
+  .pagination-button svg {
+    width: 12px;
+    height: 12px;
+
+  }
+
+  .pagination-arrow{
+    color: var(--secondary-any-icons-c);
   }
 }
 

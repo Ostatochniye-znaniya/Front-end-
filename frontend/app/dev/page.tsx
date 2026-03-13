@@ -7,6 +7,7 @@ import Input from "@/components/input/Input";
 import Search from "@/components/search/Search";
 import Table from "@/components/table/Table";
 import Dropdown from "@/components/dropdown/Dropdown";
+import Pagination from "@/components/pagination/Pagination";
 
 import { useState } from "react";
 
@@ -89,6 +90,15 @@ export default function Home() {
   const [searchBigValue, setSearchBigValue] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = 20;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Здесь можно добавить логику загрузки данных для новой страницы
+    console.log('Переход на страницу:', page);
+  };
+
   return (
     <div>
       <p className="title">Московский Политехнический Университет - Остаточные знания</p>
@@ -183,6 +193,14 @@ export default function Home() {
           }
         ]}
         data={users}
+      />
+      <p className="title">Пагинация</p>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        siblingCount={2}
+        showFirstLast={true}
       />
     </div>
   );
