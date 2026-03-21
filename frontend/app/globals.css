@@ -823,6 +823,23 @@
   }
 }
 
+/* стили, добавленные Podorvan-Anton */
+.p-block-with-padding {
+  padding: 16px 0;
+}
+.p-block-header {
+  display: flex;
+  align-items: center;
+}
+.p-block-header h1 {
+  flex-grow: 1;
+}
+.p-list-item {
+  border-bottom: 2px solid;
+  padding-top: 16px;
+  padding-bottom: 4px;
+}
+
 /* Базовые стили body */
 body {
   background: var(--background-c);
