@@ -245,45 +245,44 @@ jobs:
         echo "✅ Package copied successfully"
         echo "🚀 Executing deployment script on remote server..."
         
-        # Выполняем деплой (без использования sudo)
+        # Выполняем деплой - исправленная версия с правильной передачей compose files
         ssh -p $SERVER_PORT \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o ConnectTimeout=30 \
-          $SERVER_USER@$SERVER_HOST << REMOTE_SCRIPT
+          $SERVER_USER@$SERVER_HOST << 'REMOTE_SCRIPT'
           set -e
           
-          PROJECT_DIR="$PROJECT_DIR"
-          COMPOSE_FILES="$COMPOSE_FILES"
+          PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
           
-          echo "📁 Preparing project directory: \$PROJECT_DIR"
+          echo "📁 Preparing project directory: $PROJECT_DIR"
           
           # Создаем директорию (если не существует)
-          mkdir -p "\$PROJECT_DIR"
+          mkdir -p "$PROJECT_DIR"
           
           # Проверяем права на запись
-          if [ ! -w "\$PROJECT_DIR" ]; then
-            echo "❌ No write permission to \$PROJECT_DIR"
-            echo "Current user: \$(whoami)"
-            echo "Directory owner: \$(stat -c '%U' \$PROJECT_DIR 2>/dev/null || echo 'unknown')"
-            echo "Directory permissions: \$(stat -c '%a' \$PROJECT_DIR 2>/dev/null || echo 'unknown')"
+          if [ ! -w "$PROJECT_DIR" ]; then
+            echo "❌ No write permission to $PROJECT_DIR"
+            echo "Current user: $(whoami)"
+            echo "Directory owner: $(stat -c '%U' $PROJECT_DIR 2>/dev/null || echo 'unknown')"
+            echo "Directory permissions: $(stat -c '%a' $PROJECT_DIR 2>/dev/null || echo 'unknown')"
             echo ""
             echo "Please run on server to fix permissions:"
-            echo "  sudo mkdir -p \$PROJECT_DIR"
-            echo "  sudo chown -R \$(whoami):\$(whoami) \$PROJECT_DIR"
-            echo "  chmod 755 \$PROJECT_DIR"
+            echo "  sudo mkdir -p $PROJECT_DIR"
+            echo "  sudo chown -R $(whoami):$(whoami) $PROJECT_DIR"
+            echo "  chmod 755 $PROJECT_DIR"
             exit 1
           fi
           
-          echo "✅ Directory ready: \$PROJECT_DIR"
+          echo "✅ Directory ready: $PROJECT_DIR"
           echo "📦 Extracting deployment package..."
-          tar -xzf /tmp/deploy.tar.gz -C "\$PROJECT_DIR"
+          tar -xzf /tmp/deploy.tar.gz -C "$PROJECT_DIR"
           
-          cd "\$PROJECT_DIR"
+          cd "$PROJECT_DIR"
           
           # Бэкап существующего .env
           if [ -f .env ] && [ ! -f .env.backup ]; then
-            cp .env .env.backup.\$(date +%Y%m%d_%H%M%S)
+            cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
             echo "💾 Created backup of existing .env"
           fi
           
@@ -301,10 +300,10 @@ jobs:
           echo "🔍 Checking Docker..."
           if ! docker info > /dev/null 2>&1; then
             echo "⚠️  Docker permission issue detected"
-            echo "Current groups: \$(groups)"
+            echo "Current groups: $(groups)"
             echo ""
             echo "To fix Docker permissions, run on server:"
-            echo "  sudo usermod -aG docker \$(whoami)"
+            echo "  sudo usermod -aG docker $(whoami)"
             echo "  # Then logout and login again"
             echo ""
             echo "Attempting to continue anyway..."
@@ -312,23 +311,74 @@ jobs:
             echo "✅ Docker is available"
           fi
           
+          # Исправленный скрипт деплоя с правильным использованием compose files
+          cat > deploy_fixed.sh << 'DEPLOY_SCRIPT'
+          #!/bin/bash
+          set -e
+          
+          echo "🚀 Starting deployment..."
+          
+          # Проверка Docker
+          if ! command -v docker &> /dev/null; then
+              echo "❌ Docker is not installed"
+              exit 1
+          fi
+          
+          if ! command -v docker-compose &> /dev/null; then
+              echo "❌ Docker Compose is not installed"
+              exit 1
+          fi
+          
+          # Используем compose files из переменной окружения
+          COMPOSE_CMD="docker-compose $COMPOSE_FILES"
+          echo "Running: $COMPOSE_CMD"
+          
+          # Остановка существующих контейнеров
+          echo "📦 Stopping existing containers..."
+          eval "$COMPOSE_CMD down" || true
+          
+          # Pull latest images
+          echo "📥 Pulling latest images..."
+          eval "$COMPOSE_CMD pull" || true
+          
+          # Запуск контейнеров
+          echo "🚀 Starting containers..."
+          eval "$COMPOSE_CMD up -d --build"
+          
+          # Ожидание и проверка
+          echo "⏳ Waiting for containers to start..."
+          sleep 10
+          
+          # Проверка статуса
+          echo "📊 Container status:"
+          eval "$COMPOSE_CMD ps"
+          
+          # Очистка
+          echo "🧹 Cleaning up..."
+          docker image prune -f
+          
+          echo "✅ Deployment completed successfully"
+          DEPLOY_SCRIPT
+          
+          chmod +x deploy_fixed.sh
+          
           # Устанавливаем переменные окружения для docker-compose
-          export COMPOSE_FILES="\$COMPOSE_FILES"
+          # Важно: COMPOSE_FILES должна быть строкой с флагами
+          export COMPOSE_FILES="${{ steps.vars.outputs.compose_files }}"
+          
+          echo "🔧 Deployment configuration:"
+          echo "  Compose files: $COMPOSE_FILES"
+          echo "  Docker command: docker-compose $COMPOSE_FILES"
           
           # Выполняем деплой
           echo "🏃 Running deployment..."
-          echo "Using compose files: \$COMPOSE_FILES"
-          
-          # Делаем скрипт исполняемым
-          chmod +x deploy.sh
-          
-          # Запускаем деплой
-          ./deploy.sh
+          ./deploy_fixed.sh
           
           echo "✅ Deployment completed successfully"
           
           # Очистка
           rm -f /tmp/deploy.tar.gz
+          rm -f deploy_fixed.sh
           
         REMOTE_SCRIPT
         
