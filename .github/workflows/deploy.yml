@@ -312,37 +312,114 @@ jobs:
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o ConnectTimeout=30 \
-          $SERVER_USER@$SERVER_HOST << REMOTE_SCRIPT
+          $SERVER_USER@$SERVER_HOST << 'REMOTE_SCRIPT'
           set -e
           
           PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
           
-          echo "📁 Preparing project directory: \$PROJECT_DIR"
+          echo "📁 Preparing project directory: $PROJECT_DIR"
           
           # Очищаем директорию проекта
-          rm -rf \$PROJECT_DIR/*
-          mkdir -p \$PROJECT_DIR
+          rm -rf $PROJECT_DIR/*
+          mkdir -p $PROJECT_DIR
           
           echo "📦 Extracting deployment package..."
-          tar -xzf /tmp/deploy.tar.gz -C \$PROJECT_DIR
+          tar -xzf /tmp/deploy.tar.gz -C $PROJECT_DIR
           
-          cd \$PROJECT_DIR
+          cd $PROJECT_DIR
           
-          echo "Current directory: \$(pwd)"
-          echo "Files in project directory:"
+          echo "Current directory: $(pwd)"
+          echo "Directory structure:"
+          ls -la
+          
+          # Ищем Dockerfile в текущей директории или поддиректориях
+          if [ ! -f "Dockerfile" ]; then
+            echo "🔍 Looking for Dockerfile in subdirectories..."
+            DOCKERFILE_PATH=$(find . -name "Dockerfile" -type f | head -1)
+            if [ -n "$DOCKERFILE_PATH" ]; then
+              DOCKERFILE_DIR=$(dirname "$DOCKERFILE_PATH")
+              echo "✅ Found Dockerfile in: $DOCKERFILE_DIR"
+              cd "$DOCKERFILE_DIR"
+              echo "Changed to directory: $(pwd)"
+            else
+              echo "❌ No Dockerfile found in current directory or subdirectories"
+              echo "Current directory contents:"
+              find . -maxdepth 3 -type f -name "Dockerfile" || echo "No Dockerfile found"
+              exit 1
+            fi
+          fi
+          
+          # Проверяем наличие docker-compose файла
+          if [ ! -f "docker-compose.dev.yml" ] && [ ! -f "docker-compose.yml" ]; then
+            echo "🔍 Looking for docker-compose files..."
+            COMPOSE_FILE=$(find . -name "docker-compose*.yml" -type f | head -1)
+            if [ -n "$COMPOSE_FILE" ]; then
+              COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
+              cd "$COMPOSE_DIR"
+              echo "Changed to directory with compose file: $(pwd)"
+            else
+              echo "❌ No docker-compose file found"
+              exit 1
+            fi
+          fi
+          
+          echo "Final working directory: $(pwd)"
+          echo "Files in working directory:"
           ls -la
           
           # Создаем .env если его нет
           if [ ! -f .env ]; then
-            cp .env.example .env 2>/dev/null || echo "No .env.example found"
+            echo "Creating .env file..."
+            cat > .env << 'ENV_EOF'
+            PROJECT_NAME=${{ env.PROJECT_NAME }}
+            ENVIRONMENT=${{ steps.vars.outputs.environment }}
+            NODE_ENV=${{ steps.vars.outputs.environment }}
+            ENV_EOF
           fi
           
           # Даем права на выполнение скрипта
-          chmod +x deploy.sh
+          if [ -f "deploy.sh" ]; then
+            chmod +x deploy.sh
+          fi
+          
+          # Останавливаем старые контейнеры
+          echo "🛑 Stopping old containers..."
+          if [ -f "docker-compose.dev.yml" ]; then
+            docker-compose -f docker-compose.dev.yml down --remove-orphans || true
+          fi
+          if [ -f "docker-compose.yml" ]; then
+            docker-compose -f docker-compose.yml down --remove-orphans || true
+          fi
+          
+          # Очистка старых образов
+          echo "🧹 Cleaning up old images..."
+          docker system prune -af || true
           
           # Запускаем деплой
-          echo "🏃 Running deployment..."
-          ./deploy.sh
+          if [ -f "deploy.sh" ]; then
+            echo "🏃 Running deploy.sh..."
+            ./deploy.sh
+          else
+            echo "🏃 Running manual deployment..."
+            
+            # Определяем какой compose файл использовать
+            if [ -f "docker-compose.dev.yml" ]; then
+              COMPOSE_FILE="docker-compose.dev.yml"
+            else
+              COMPOSE_FILE="docker-compose.yml"
+            fi
+            
+            echo "Using compose file: $COMPOSE_FILE"
+            
+            # Сборка и запуск
+            docker-compose -f $COMPOSE_FILE up -d --build --force-recreate
+            
+            # Ожидание запуска
+            sleep 10
+            
+            # Проверка статуса
+            docker-compose -f $COMPOSE_FILE ps
+          fi
           
           echo "✅ Deployment completed successfully"
           
