@@ -61,14 +61,12 @@ jobs:
           SERVER_USER="${{ vars.PROD_SERVER_USER }}"
           SERVER_PORT="${{ vars.PROD_SERVER_PORT }}"
           PROJECT_DIR="${{ vars.PROD_PROJECT_DIR }}"
-          COMPOSE_FILES="${{ vars.PROD_COMPOSE_FILES }}"
         else
           ENVIRONMENT="dev"
           SERVER_HOST="${{ vars.DEV_SERVER_HOST }}"
           SERVER_USER="${{ vars.DEV_SERVER_USER }}"
           SERVER_PORT="${{ vars.DEV_SERVER_PORT }}"
           PROJECT_DIR="${{ vars.DEV_PROJECT_DIR }}"
-          COMPOSE_FILES="${{ vars.DEV_COMPOSE_FILES }}"
         fi
         
         # Проверяем обязательные переменные
@@ -84,13 +82,7 @@ jobs:
         
         # Устанавливаем значения по умолчанию
         SERVER_PORT="${SERVER_PORT:-22}"
-        PROJECT_DIR="${PROJECT_DIR:-/opt/csh/frontend}"
-        
-        if [ "$ENVIRONMENT" == "prod" ]; then
-          COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.prod.yml}"
-        else
-          COMPOSE_FILES="${COMPOSE_FILES:--f docker-compose.dev.yml}"
-        fi
+        PROJECT_DIR="${PROJECT_DIR:-/home/oz-admin/csh/frontend}"
         
         # Сохраняем в output
         echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
@@ -98,14 +90,12 @@ jobs:
         echo "server_user=$SERVER_USER" >> $GITHUB_OUTPUT
         echo "server_port=$SERVER_PORT" >> $GITHUB_OUTPUT
         echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
-        echo "compose_files=$COMPOSE_FILES" >> $GITHUB_OUTPUT
         
         # Debug info
         echo "=== Deployment Configuration ==="
         echo "Environment: $ENVIRONMENT"
         echo "Server: $SERVER_USER@$SERVER_HOST:$SERVER_PORT"
         echo "Project directory: $PROJECT_DIR"
-        echo "Compose files: $COMPOSE_FILES"
         echo "================================"
     
     - name: Prepare deployment package
@@ -116,36 +106,26 @@ jobs:
         echo "📦 Copying project files..."
         
         # Копируем все необходимые файлы
-        # Копируем docker-compose файлы
         if [ -f "docker-compose.dev.yml" ]; then
           cp docker-compose.dev.yml deploy-package/
           echo "✅ Copied docker-compose.dev.yml"
         fi
         
-        if [ -f "docker-compose.yml" ]; then
-          cp docker-compose.yml deploy-package/
-          echo "✅ Copied docker-compose.yml"
-        fi
-        
-        # Копируем nginx.conf если есть
         if [ -f "nginx.conf" ]; then
           cp nginx.conf deploy-package/
           echo "✅ Copied nginx.conf"
         fi
         
-        # Копируем Makefile если есть
         if [ -f "Makefile" ]; then
           cp Makefile deploy-package/
           echo "✅ Copied Makefile"
         fi
         
-        # Копируем README.md если есть
         if [ -f "README.md" ]; then
           cp README.md deploy-package/
           echo "✅ Copied README.md"
         fi
         
-        # Копируем .env.example если есть
         if [ -f ".env.example" ]; then
           cp .env.example deploy-package/
           echo "✅ Copied .env.example"
@@ -157,7 +137,7 @@ jobs:
           echo "✅ Copied frontend directory"
         fi
         
-        # Создаем улучшенный скрипт деплоя
+        # Создаем скрипт деплоя
         cat > deploy-package/deploy.sh << 'DEPLOY_SCRIPT'
         #!/bin/bash
         
@@ -171,10 +151,6 @@ jobs:
         
         log_info() {
             echo -e "${GREEN}[INFO]${NC} $1"
-        }
-        
-        log_warn() {
-            echo -e "${YELLOW}[WARN]${NC} $1"
         }
         
         log_error() {
@@ -196,10 +172,8 @@ jobs:
         # Проверяем наличие compose файла
         if [ -f "docker-compose.dev.yml" ]; then
             COMPOSE_FILE="docker-compose.dev.yml"
-        elif [ -f "docker-compose.yml" ]; then
-            COMPOSE_FILE="docker-compose.yml"
         else
-            log_error "docker-compose файл не найден"
+            log_error "docker-compose.dev.yml не найден"
             exit 1
         fi
         
@@ -256,17 +230,12 @@ jobs:
         EOF
         
         # Создаем архив
-        echo "📦 Creating deployment archive..."
         cd deploy-package
         tar -czf ../deploy.tar.gz .
         cd ..
         
-        echo "✅ Deployment package created"
+        echo "✅ Deployment package created: deploy.tar.gz"
         echo "Archive size: $(du -h deploy.tar.gz | cut -f1)"
-        
-        # Выводим содержимое архива для отладки
-        echo "Archive contents:"
-        tar -tzf deploy.tar.gz | head -20
     
     - name: Deploy to server
       run: |
@@ -277,7 +246,6 @@ jobs:
         
         echo "📦 Copying deployment package to $SERVER_USER@$SERVER_HOST..."
         
-        # Копируем архив на сервер
         scp -P $SERVER_PORT \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
@@ -293,7 +261,6 @@ jobs:
         echo "✅ Package copied successfully"
         echo "🚀 Executing deployment script on remote server..."
         
-        # Выполняем деплой
         ssh -p $SERVER_PORT \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
@@ -305,11 +272,23 @@ jobs:
           
           echo "[INFO] Preparing project directory: \$PROJECT_DIR"
           
-          # Очищаем директорию проекта
-          sudo rm -rf \$PROJECT_DIR/*
-          sudo mkdir -p \$PROJECT_DIR
-          sudo chown -R \$(whoami):\$(whoami) \$PROJECT_DIR
+          # Создаем директорию (без sudo)
+          mkdir -p \$PROJECT_DIR
           
+          # Проверяем права
+          if [ ! -w "\$PROJECT_DIR" ]; then
+            echo "[ERROR] Cannot write to \$PROJECT_DIR"
+            echo "Current user: \$(whoami)"
+            echo "Directory owner: \$(stat -c '%U' \$PROJECT_DIR 2>/dev/null || echo 'unknown')"
+            echo "Directory permissions: \$(stat -c '%a' \$PROJECT_DIR 2>/dev/null || echo 'unknown')"
+            exit 1
+          fi
+          
+          # Очищаем директорию
+          echo "[INFO] Cleaning project directory..."
+          rm -rf \$PROJECT_DIR/*
+          
+          # Распаковываем
           echo "[INFO] Extracting deployment package..."
           tar -xzf /tmp/deploy.tar.gz -C \$PROJECT_DIR
           
@@ -319,43 +298,9 @@ jobs:
           echo "[INFO] Directory structure:"
           ls -la
           
-          # Проверяем наличие deploy.sh
-          if [ ! -f "deploy.sh" ]; then
-            echo "[ERROR] deploy.sh not found!"
-            exit 1
-          fi
-          
-          # Делаем скрипт исполняемым
-          chmod +x deploy.sh
-          
-          # Проверяем наличие compose файла
-          if [ ! -f "docker-compose.dev.yml" ]; then
-            echo "[ERROR] docker-compose.dev.yml not found!"
-            echo "Available files:"
-            ls -la
-            exit 1
-          fi
-          
-          # Проверяем наличие папки frontend
-          if [ ! -d "frontend" ]; then
-            echo "[ERROR] frontend directory not found!"
-            exit 1
-          fi
-          
-          # Проверяем наличие Dockerfile
-          if [ ! -f "frontend/Dockerfile" ]; then
-            echo "[ERROR] Dockerfile not found in frontend directory!"
-            echo "Files in frontend:"
-            ls -la frontend/
-            exit 1
-          fi
-          
-          echo "[INFO] All required files found, starting deployment..."
-          
           # Запускаем деплой
+          chmod +x deploy.sh
           ./deploy.sh
-          
-          echo "[INFO] Deployment completed successfully"
           
           # Очистка
           rm -f /tmp/deploy.tar.gz
@@ -375,48 +320,20 @@ jobs:
         sleep 20
         
         SERVER_HOST="${{ steps.vars.outputs.server_host }}"
-        SERVER_PORT="${{ steps.vars.outputs.server_port }}"
-        SERVER_USER="${{ steps.vars.outputs.server_user }}"
-        PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
         
-        # Проверка через HTTP
-        echo "Checking HTTP endpoint..."
         if curl -f -s -o /dev/null -w "%{http_code}" http://$SERVER_HOST | grep -q "200\|301\|302"; then
-          echo "✅ Health check passed - HTTP OK"
+          echo "✅ Health check passed"
         else
-          echo "⚠️ HTTP health check failed, checking containers..."
-          
-          # Проверяем статус контейнеров
-          ssh -p $SERVER_PORT \
-            -o StrictHostKeyChecking=no \
-            $SERVER_USER@$SERVER_HOST \
-            "cd $PROJECT_DIR && docker-compose ps" || echo "Failed to get container status"
+          echo "⚠️ Health check failed"
         fi
-        
-        # Проверка Docker контейнеров
-        echo "📊 Checking Docker containers..."
-        ssh -p $SERVER_PORT \
-          -o StrictHostKeyChecking=no \
-          $SERVER_USER@$SERVER_HOST \
-          "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
     
     - name: Send notification
       if: always()
       run: |
         if [ "${{ job.status }}" == "success" ]; then
-          STATUS="✅ SUCCESS"
-          EMOJI="🎉"
+          echo "✅ Deployment SUCCESS"
         else
-          STATUS="❌ FAILED"
-          EMOJI="💥"
+          echo "❌ Deployment FAILED"
         fi
-        
-        echo "$EMOJI ========================================="
-        echo "Deployment Status: $STATUS"
         echo "Environment: ${{ steps.vars.outputs.environment }}"
         echo "Project: ${{ env.PROJECT_NAME }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref_name }}"
-        echo "Commit: ${{ github.sha }}"
-        echo "Triggered by: ${{ github.actor }}"
-        echo "=========================================="
