@@ -34,10 +34,10 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
         return () => mediaQuery.removeEventListener('change', handler);
     }, []);
 
-    const logoSrc = theme === 'dark' ? '/mpu_logo_d.png' : '/mpu_logo_l.png';
+    const logoSrc = theme === 'dark' ? '/csh/mpu_logo_d.png' : '/csh/mpu_logo_l.png';
     return (
         <div className="navbar-container">
-            <Image className="theme-aware-logo" src="/mpu_logo.png" alt="Logo" width={250} height={66.21} style={{
+            <img className="theme-aware-logo" src="/csh/mpu_logo.png" alt="Logo" width={250} height={66.21} style={{
                 marginBottom: "14px",
             }}/>
             <div className='line'></div>
@@ -45,7 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
                 <p>{title}</p>
             </div>
             <div className='navbar-avatar'>
-                <Image src={avatarUrl || "/default_avatar.png"} alt="Avatar" width={100} height={100} />
+                <img src={avatarUrl || "/csh/default_avatar.png"} alt="Avatar" width={100} height={100} />
             </div>
             <div className='navbar-text-container'>
                 <p>{surname}</p>

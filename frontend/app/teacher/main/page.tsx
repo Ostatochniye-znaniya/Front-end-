@@ -123,8 +123,8 @@ export default function Home() {
             <Navbar 
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Согласование дат", href: "/teacher/main" },
-                    { label: "Отчеты", href: "/teacher/report" }
+                    { label: "Согласование дат", href: "/csh/teacher/main" },
+                    { label: "Отчеты", href: "/csh/teacher/report" }
                 ]}
                 name="Иван"
                 surname="Иванов"

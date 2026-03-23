@@ -708,12 +708,12 @@
   }
 
   .theme-aware-logo {
-    content: url('/mpu_logo_l.png');
+    content: url('/csh/mpu_logo_l.png');
   }
 
   @media (prefers-color-scheme: dark) {
     .theme-aware-logo {
-      content: url('/mpu_logo_d.png');
+      content: url('/csh/mpu_logo_d.png');
     }
   }
 

@@ -1,7 +1,16 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    // Добавляем базовый путь
+  basePath: '/csh',
+  
+  // Если нужно, чтобы статика тоже была с префиксом
+  assetPrefix: '/csh',
+  
+  reactStrictMode: true,
+  swcMinify: true,
+  
+  // Для продакшена
+  output: 'standalone',
+}
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
+module.exports = nextConfig
