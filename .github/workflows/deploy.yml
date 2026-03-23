@@ -73,93 +73,234 @@ jobs:
           echo "server_host=${{ secrets.PROD_SERVER_HOST }}" >> $GITHUB_OUTPUT
           echo "server_user=${{ secrets.PROD_SERVER_USER }}" >> $GITHUB_OUTPUT
           echo "server_port=${{ secrets.PROD_SERVER_PORT || 22 }}" >> $GITHUB_OUTPUT
-          echo "project_dir=${{ secrets.PROD_PROJECT_DIR || '/opt/app' }}" >> $GITHUB_OUTPUT
+          echo "project_dir=${{ secrets.PROD_PROJECT_DIR || '/opt/csh/frontend' }}" >> $GITHUB_OUTPUT
           echo "compose_files=${{ secrets.PROD_COMPOSE_FILES || '-f docker-compose.yml -f docker-compose.prod.yml' }}" >> $GITHUB_OUTPUT
         else
           echo "environment=dev" >> $GITHUB_OUTPUT
           echo "server_host=${{ secrets.DEV_SERVER_HOST }}" >> $GITHUB_OUTPUT
           echo "server_user=${{ secrets.DEV_SERVER_USER }}" >> $GITHUB_OUTPUT
           echo "server_port=${{ secrets.DEV_SERVER_PORT || 22 }}" >> $GITHUB_OUTPUT
-          echo "project_dir=${{ secrets.DEV_PROJECT_DIR || '/opt/app-dev' }}" >> $GITHUB_OUTPUT
-          echo "compose_files=${{ secrets.DEV_COMPOSE_FILES || '-f docker-compose.yml' }}" >> $GITHUB_OUTPUT
+          echo "project_dir=${{ secrets.DEV_PROJECT_DIR || '/opt/csh/frontend' }}" >> $GITHUB_OUTPUT
+          echo "compose_files=${{ secrets.DEV_COMPOSE_FILES || '-f docker-compose.dev.yml' }}" >> $GITHUB_OUTPUT
         fi
+        
+        # Debug info
+        echo "=== Deployment Configuration ==="
+        echo "Environment: ${{ steps.vars.outputs.environment }}"
+        echo "Server: ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }}:${{ steps.vars.outputs.server_port }}"
+        echo "Project directory: ${{ steps.vars.outputs.project_dir }}"
+        echo "Compose files: ${{ steps.vars.outputs.compose_files }}"
+        echo "================================"
     
     - name: Prepare deployment package
       run: |
         # Создаем архив с необходимыми файлами
         mkdir -p deploy-package
-        cp docker-compose*.yml deploy-package/ 2>/dev/null || true
+        
+        # Копируем docker-compose файлы
+        if [ -f "docker-compose.yml" ]; then
+          cp docker-compose.yml deploy-package/
+        fi
+        
+        if [ -f "docker-compose.${{ steps.vars.outputs.environment }}.yml" ]; then
+          cp docker-compose.${{ steps.vars.outputs.environment }}.yml deploy-package/
+        fi
+        
+        # Копируем другие важные файлы
         cp .env.example deploy-package/ 2>/dev/null || true
-        cp .github/scripts/deploy.sh deploy-package/
+        
+        # Создаем скрипт деплоя
+        cat > deploy-package/deploy.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        echo "Starting deployment..."
+        
+        # Остановка существующих контейнеров
+        docker-compose $COMPOSE_FILES down || true
+        
+        # Pull latest images
+        docker-compose $COMPOSE_FILES pull
+        
+        # Запуск контейнеров
+        docker-compose $COMPOSE_FILES up -d --build
+        
+        # Ожидание и проверка
+        sleep 10
+        docker-compose $COMPOSE_FILES ps
+        
+        # Очистка
+        docker image prune -f
+        
+        echo "Deployment completed successfully"
+        EOF
+        
         chmod +x deploy-package/deploy.sh
         
-        # Создаем .env из secrets
-        echo "# Environment variables" > deploy-package/.env
-        env | grep "^${{ steps.vars.outputs.environment }}_" | while read line; do
-          echo "$line" | sed "s/^${{ steps.vars.outputs.environment }}_//" >> deploy-package/.env
-        done
+        # Создаем .env из переменных окружения
+        cat > deploy-package/.env << EOF
+        # Generated on $(date)
+        PROJECT_NAME=${{ env.PROJECT_NAME }}
+        ENVIRONMENT=${{ steps.vars.outputs.environment }}
+        EOF
         
         # Архивируем
         tar -czf deploy.tar.gz -C deploy-package .
+        
+        echo "Deployment package created: deploy.tar.gz"
+        ls -la deploy.tar.gz
     
     - name: Deploy to server
       run: |
+        # Проверяем наличие переменных
+        if [ -z "${{ steps.vars.outputs.server_host }}" ]; then
+          echo "❌ Error: SERVER_HOST is empty"
+          exit 1
+        fi
+        
+        if [ -z "${{ steps.vars.outputs.server_user }}" ]; then
+          echo "❌ Error: SERVER_USER is empty"
+          exit 1
+        fi
+        
+        echo "📦 Copying deployment package to server..."
+        
         # Копируем архив на сервер
         scp -P ${{ steps.vars.outputs.server_port }} \
           -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          -o ConnectTimeout=30 \
           deploy.tar.gz \
           ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }}:/tmp/
+        
+        if [ $? -ne 0 ]; then
+          echo "❌ Failed to copy deployment package"
+          exit 1
+        fi
+        
+        echo "✅ Package copied successfully"
+        
+        echo "🚀 Executing deployment script on remote server..."
         
         # Выполняем деплой
         ssh -p ${{ steps.vars.outputs.server_port }} \
           -o StrictHostKeyChecking=no \
-          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} << EOF
+          -o UserKnownHostsFile=/dev/null \
+          -o ConnectTimeout=30 \
+          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} << 'EOF'
             set -e
             
-            # Создаем директорию проекта
+            echo "Creating project directory..."
             mkdir -p ${{ steps.vars.outputs.project_dir }}
             
-            # Распаковываем архив
+            echo "Extracting deployment package..."
             tar -xzf /tmp/deploy.tar.gz -C ${{ steps.vars.outputs.project_dir }}
             
             cd ${{ steps.vars.outputs.project_dir }}
             
             # Бэкап существующего .env
             if [ -f .env ] && [ ! -f .env.backup ]; then
-              cp .env .env.backup.\$(date +%Y%m%d_%H%M%S)
+              cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
+              echo "Created backup of existing .env"
             fi
             
             # Обновляем .env
             if [ -f .env.new ]; then
               mv .env.new .env
+              echo "Updated .env file"
             fi
             
-            # Деплой
-            docker-compose ${{ steps.vars.outputs.compose_files }} down || true
-            docker-compose ${{ steps.vars.outputs.compose_files }} pull
-            docker-compose ${{ steps.vars.outputs.compose_files }} up -d --build
+            # Устанавливаем переменные для docker-compose
+            export COMPOSE_FILES="${{ steps.vars.outputs.compose_files }}"
             
-            # Проверка
-            sleep 10
-            docker-compose ${{ steps.vars.outputs.compose_files }} ps
+            # Проверяем наличие docker-compose файлов
+            echo "Available docker-compose files:"
+            ls -la docker-compose*.yml 2>/dev/null || echo "No docker-compose files found"
+            
+            # Выполняем деплой
+            echo "Running deployment..."
+            ./deploy.sh
+            
+            echo "✅ Deployment completed successfully"
             
             # Очистка
-            docker image prune -f
             rm -f /tmp/deploy.tar.gz
             
-            echo "✅ Deployment completed"
         EOF
+        
+        if [ $? -ne 0 ]; then
+          echo "❌ Deployment failed"
+          exit 1
+        fi
+        
+        echo "✅ Deployment script executed successfully"
     
     - name: Health check
       run: |
+        echo "🔍 Running health check..."
         sleep 15
-        curl -f http://${{ steps.vars.outputs.server_host }} || echo "⚠️ Health check failed"
+        
+        # Проверка доступности сервера
+        if curl -f -s -o /dev/null -w "%{http_code}" http://${{ steps.vars.outputs.server_host }} | grep -q "200\|301\|302"; then
+          echo "✅ Health check passed"
+        else
+          echo "⚠️ Health check failed - server not responding"
+          echo "Checking container status..."
+          
+          # Получаем статус контейнеров
+          ssh -p ${{ steps.vars.outputs.server_port }} \
+            -o StrictHostKeyChecking=no \
+            ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} \
+            "cd ${{ steps.vars.outputs.project_dir }} && docker-compose ${{ steps.vars.outputs.compose_files }} ps"
+          
+          # Не проваливаем workflow, только предупреждаем
+          echo "⚠️ Health check failed, but deployment completed"
+        fi
     
     - name: Send notification
       if: always()
       run: |
-        echo "Deployment status: ${{ job.status }}"
+        if [ "${{ job.status }}" == "success" ]; then
+          STATUS="✅ SUCCESS"
+        else
+          STATUS="❌ FAILED"
+        fi
+        
+        echo "========================================="
+        echo "Deployment Status: $STATUS"
         echo "Environment: ${{ steps.vars.outputs.environment }}"
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Deployed by: ${{ github.actor }}"
+        echo "========================================="
+        
         # Здесь можно добавить отправку в Slack/Telegram
+        # Пример для Slack:
+        # curl -X POST -H 'Content-type: application/json' \
+        #   --data '{"text":"$STATUS: Deployment to ${{ steps.vars.outputs.environment }} completed"}' \
+        #   ${{ secrets.SLACK_WEBHOOK_URL }}
+    
+    - name: Rollback
+      if: github.event.inputs.action == 'rollback' && always()
+      run: |
+        echo "🔄 Performing rollback..."
+        
+        ssh -p ${{ steps.vars.outputs.server_port }} \
+          -o StrictHostKeyChecking=no \
+          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} << EOF
+            cd ${{ steps.vars.outputs.project_dir }}
+            
+            # Находим последний бэкап .env
+            BACKUP_FILE=\$(ls -t .env.backup.* 2>/dev/null | head -n1)
+            if [ -n "\$BACKUP_FILE" ]; then
+              cp "\$BACKUP_FILE" .env
+              echo "Restored .env from \$BACKUP_FILE"
+            fi
+            
+            # Откат до предыдущей версии
+            docker-compose ${{ steps.vars.outputs.compose_files }} down
+            docker-compose ${{ steps.vars.outputs.compose_files }} up -d
+            
+            echo "✅ Rollback completed"
+        EOF
