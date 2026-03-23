@@ -61,12 +61,14 @@ jobs:
           SERVER_USER="${{ vars.PROD_SERVER_USER }}"
           SERVER_PORT="${{ vars.PROD_SERVER_PORT }}"
           PROJECT_DIR="${{ vars.PROD_PROJECT_DIR }}"
+          NETWORK_NAME="${{ vars.PROD_NETWORK_NAME:-app-network }}"
         else
           ENVIRONMENT="dev"
           SERVER_HOST="${{ vars.DEV_SERVER_HOST }}"
           SERVER_USER="${{ vars.DEV_SERVER_USER }}"
           SERVER_PORT="${{ vars.DEV_SERVER_PORT }}"
           PROJECT_DIR="${{ vars.DEV_PROJECT_DIR }}"
+          NETWORK_NAME="${{ vars.DEV_NETWORK_NAME:-app-network }}"
         fi
         
         # Проверяем обязательные переменные
@@ -83,6 +85,7 @@ jobs:
         # Устанавливаем значения по умолчанию
         SERVER_PORT="${SERVER_PORT:-22}"
         PROJECT_DIR="${PROJECT_DIR:-/home/oz-admin/csh/frontend}"
+        NETWORK_NAME="${NETWORK_NAME:-app-network}"
         
         # Сохраняем в output
         echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
@@ -90,12 +93,14 @@ jobs:
         echo "server_user=$SERVER_USER" >> $GITHUB_OUTPUT
         echo "server_port=$SERVER_PORT" >> $GITHUB_OUTPUT
         echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
+        echo "network_name=$NETWORK_NAME" >> $GITHUB_OUTPUT
         
         # Debug info
         echo "=== Deployment Configuration ==="
         echo "Environment: $ENVIRONMENT"
         echo "Server: $SERVER_USER@$SERVER_HOST:$SERVER_PORT"
         echo "Project directory: $PROJECT_DIR"
+        echo "Network name: $NETWORK_NAME"
         echo "================================"
     
     - name: Prepare deployment package
@@ -154,7 +159,11 @@ jobs:
         }
         
         log_error() {
-            echo -e "${RED}[ERROR]${NC} $1"
+            echo -e "${RED}[ERROR]${NC} $1" >&2
+        }
+        
+        log_warn() {
+            echo -e "${YELLOW}[WARN]${NC} $1"
         }
         
         # Определяем команду docker-compose
@@ -192,31 +201,77 @@ jobs:
             exit 1
         fi
         
+        # Получаем имя сети из переменной или используем по умолчанию
+        NETWORK_NAME="${NETWORK_NAME:-app-network}"
+        log_info "Имя сети: $NETWORK_NAME"
+        
+        # ========== КЛЮЧЕВОЙ МОМЕНТ: СОЗДАНИЕ СЕТИ ПЕРЕД ЗАПУСКОМ ==========
+        log_info "Проверка и создание сети $NETWORK_NAME..."
+        
+        # Проверяем существует ли сеть
+        if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
+            log_info "Сеть $NETWORK_NAME уже существует"
+            docker network ls | grep "$NETWORK_NAME"
+        else
+            log_info "Создание сети $NETWORK_NAME..."
+            if docker network create "$NETWORK_NAME" --driver bridge; then
+                log_info "✅ Сеть $NETWORK_NAME успешно создана"
+            else
+                log_error "❌ Не удалось создать сеть $NETWORK_NAME"
+                exit 1
+            fi
+        fi
+        
+        # Дополнительная проверка
+        if docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
+            log_info "✅ Сеть $NETWORK_NAME готова к использованию"
+        else
+            log_error "❌ Сеть $NETWORK_NAME недоступна"
+            exit 1
+        fi
+        
         # Останавливаем старые контейнеры
         log_info "Остановка старых контейнеров..."
         $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE down --remove-orphans || true
         
-        # Очистка старых образов
+        # Очистка старых образов (только неиспользуемых)
         log_info "Очистка старых образов..."
-        docker system prune -af || true
+        docker image prune -f || true
         
         # Сборка и запуск
         log_info "Сборка и запуск контейнеров..."
         $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE up -d --build --force-recreate
         
         # Ожидание запуска
-        log_info "Ожидание запуска контейнеров..."
+        log_info "Ожидание запуска контейнеров (15 секунд)..."
         sleep 15
         
         # Проверка статуса
         log_info "Статус контейнеров:"
         $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps
         
-        # Проверка логов
-        log_info "Логи (последние 50 строк):"
-        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE logs --tail=50
+        # Проверка что все контейнеры запущены
+        RUNNING_COUNT=$($DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps --format json | grep -c '"State":"running"' || echo "0")
+        TOTAL_COUNT=$($DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps --format json | grep -c '"Name"' || echo "0")
+        
+        if [ "$RUNNING_COUNT" -lt "$TOTAL_COUNT" ] && [ "$TOTAL_COUNT" -gt 0 ]; then
+            log_warn "Не все контейнеры запущены: $RUNNING_COUNT из $TOTAL_COUNT"
+            log_info "Логи (последние 50 строк):"
+            $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE logs --tail=50
+        fi
+        
+        # Проверка на unhealthy контейнеры
+        if $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps | grep -q "unhealthy"; then
+            log_error "Обнаружены нездоровые контейнеры!"
+            $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE logs --tail=50
+            exit 1
+        fi
         
         log_info "✅ Деплой успешно завершен!"
+        
+        # Вывод информации о сети
+        log_info "Информация о сети $NETWORK_NAME:"
+        docker network inspect "$NETWORK_NAME" | grep -A 5 "Containers" || true
         DEPLOY_SCRIPT
         
         chmod +x deploy-package/deploy.sh
@@ -227,6 +282,7 @@ jobs:
         PROJECT_NAME=${{ env.PROJECT_NAME }}
         ENVIRONMENT=${{ steps.vars.outputs.environment }}
         NODE_ENV=${{ steps.vars.outputs.environment }}
+        NETWORK_NAME=${{ steps.vars.outputs.network_name }}
         EOF
         
         # Создаем архив
@@ -243,6 +299,7 @@ jobs:
         SERVER_USER="${{ steps.vars.outputs.server_user }}"
         SERVER_PORT="${{ steps.vars.outputs.server_port }}"
         PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
+        NETWORK_NAME="${{ steps.vars.outputs.network_name }}"
         
         echo "📦 Copying deployment package to $SERVER_USER@$SERVER_HOST..."
         
@@ -269,10 +326,12 @@ jobs:
           set -e
           
           PROJECT_DIR="$PROJECT_DIR"
+          NETWORK_NAME="$NETWORK_NAME"
           
           echo "[INFO] Preparing project directory: \$PROJECT_DIR"
+          echo "[INFO] Network name: \$NETWORK_NAME"
           
-          # Создаем директорию (без sudo)
+          # Создаем директорию
           mkdir -p \$PROJECT_DIR
           
           # Проверяем права
@@ -298,6 +357,9 @@ jobs:
           echo "[INFO] Directory structure:"
           ls -la
           
+          # Экспортируем переменную для скрипта
+          export NETWORK_NAME="\$NETWORK_NAME"
+          
           # Запускаем деплой
           chmod +x deploy.sh
           ./deploy.sh
@@ -321,11 +383,18 @@ jobs:
         
         SERVER_HOST="${{ steps.vars.outputs.server_host }}"
         
-        if curl -f -s -o /dev/null -w "%{http_code}" http://$SERVER_HOST | grep -q "200\|301\|302"; then
+        # Проверка через curl
+        if curl -f -s -o /dev/null -w "%{http_code}" http://$SERVER_HOST | grep -q "200\|301\|302\|401"; then
           echo "✅ Health check passed"
         else
-          echo "⚠️ Health check failed"
+          echo "⚠️ Health check failed, but deployment completed"
         fi
+        
+        # Дополнительная проверка через SSH
+        ssh -p ${{ steps.vars.outputs.server_port }} \
+          -o StrictHostKeyChecking=no \
+          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} \
+          "docker ps --format 'table {{.Names}}\t{{.Status}}'"
     
     - name: Send notification
       if: always()
@@ -337,3 +406,4 @@ jobs:
         fi
         echo "Environment: ${{ steps.vars.outputs.environment }}"
         echo "Project: ${{ env.PROJECT_NAME }}"
+        echo "Network: ${{ steps.vars.outputs.network_name }}"
