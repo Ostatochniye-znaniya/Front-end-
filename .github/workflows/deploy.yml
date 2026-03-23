@@ -51,15 +51,6 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
     
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - name: Install Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        docker-compose --version
-    
     - name: Set deployment variables
       id: vars
       run: |
@@ -124,110 +115,134 @@ jobs:
         
         echo "📦 Copying project files..."
         
-        # Копируем файлы проекта, исключая ненужные
-        # Используем rsync если доступен, иначе find + cp
-        if command -v rsync &> /dev/null; then
-          rsync -av \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='.env' \
-            --exclude='deploy-package' \
-            --exclude='deploy.tar.gz' \
-            --exclude='.github' \
-            --exclude='*.log' \
-            --exclude='coverage' \
-            --exclude='.next' \
-            --exclude='dist' \
-            --exclude='build' \
-            ./ deploy-package/
-        else
-          # Используем tar для копирования
-          find . -type f \
-            -not -path "./.git/*" \
-            -not -path "./node_modules/*" \
-            -not -path "./deploy-package/*" \
-            -not -path "./.github/*" \
-            -not -name "*.log" \
-            -print0 | tar -czf temp.tar.gz --null -T -
-          tar -xzf temp.tar.gz -C deploy-package/
-          rm temp.tar.gz
-        fi
-        
-        echo "✅ Project files copied"
-        
-        # Создаем скрипт деплоя
-        cat > deploy-package/deploy.sh << 'DEPLOY_SCRIPT'
-        #!/bin/bash
-        set -e
-        
-        echo "========================================="
-        echo "🚀 Starting deployment..."
-        echo "========================================="
-        
-        # Проверка Docker
-        if ! command -v docker &> /dev/null; then
-            echo "❌ Docker is not installed"
-            exit 1
-        fi
-        
-        if ! command -v docker-compose &> /dev/null; then
-            echo "❌ Docker Compose is not installed"
-            exit 1
-        fi
-        
-        # Остановка и удаление старых контейнеров
-        echo "📦 Stopping and removing existing containers..."
+        # Копируем все необходимые файлы
+        # Копируем docker-compose файлы
         if [ -f "docker-compose.dev.yml" ]; then
-            docker-compose -f docker-compose.dev.yml down --remove-orphans || true
+          cp docker-compose.dev.yml deploy-package/
+          echo "✅ Copied docker-compose.dev.yml"
         fi
         
         if [ -f "docker-compose.yml" ]; then
-            docker-compose -f docker-compose.yml down --remove-orphans || true
+          cp docker-compose.yml deploy-package/
+          echo "✅ Copied docker-compose.yml"
         fi
         
-        # Очистка старых образов
-        echo "🧹 Cleaning up old images..."
-        docker system prune -af --volumes || true
+        # Копируем nginx.conf если есть
+        if [ -f "nginx.conf" ]; then
+          cp nginx.conf deploy-package/
+          echo "✅ Copied nginx.conf"
+        fi
         
-        # Проверяем наличие Dockerfile
-        if [ ! -f "Dockerfile" ]; then
-            echo "❌ No Dockerfile found in current directory"
-            echo "Current directory contents:"
-            ls -la
+        # Копируем Makefile если есть
+        if [ -f "Makefile" ]; then
+          cp Makefile deploy-package/
+          echo "✅ Copied Makefile"
+        fi
+        
+        # Копируем README.md если есть
+        if [ -f "README.md" ]; then
+          cp README.md deploy-package/
+          echo "✅ Copied README.md"
+        fi
+        
+        # Копируем .env.example если есть
+        if [ -f ".env.example" ]; then
+          cp .env.example deploy-package/
+          echo "✅ Copied .env.example"
+        fi
+        
+        # Копируем папку frontend
+        if [ -d "frontend" ]; then
+          cp -r frontend deploy-package/
+          echo "✅ Copied frontend directory"
+        fi
+        
+        # Создаем улучшенный скрипт деплоя
+        cat > deploy-package/deploy.sh << 'DEPLOY_SCRIPT'
+        #!/bin/bash
+        
+        set -e
+        
+        # Цвета для вывода
+        RED='\033[0;31m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        NC='\033[0m'
+        
+        log_info() {
+            echo -e "${GREEN}[INFO]${NC} $1"
+        }
+        
+        log_warn() {
+            echo -e "${YELLOW}[WARN]${NC} $1"
+        }
+        
+        log_error() {
+            echo -e "${RED}[ERROR]${NC} $1"
+        }
+        
+        # Определяем команду docker-compose
+        if command -v docker-compose &> /dev/null; then
+            DOCKER_COMPOSE_CMD="docker-compose"
+        elif docker compose version &> /dev/null; then
+            DOCKER_COMPOSE_CMD="docker compose"
+        else
+            log_error "Docker Compose не установлен"
             exit 1
         fi
         
-        # Определяем какой compose файл использовать
+        log_info "Используется команда: $DOCKER_COMPOSE_CMD"
+        
+        # Проверяем наличие compose файла
         if [ -f "docker-compose.dev.yml" ]; then
             COMPOSE_FILE="docker-compose.dev.yml"
         elif [ -f "docker-compose.yml" ]; then
             COMPOSE_FILE="docker-compose.yml"
         else
-            echo "❌ No docker-compose file found"
+            log_error "docker-compose файл не найден"
             exit 1
         fi
         
-        echo "📋 Using compose file: $COMPOSE_FILE"
+        log_info "Используется compose файл: $COMPOSE_FILE"
         
-        # Сборка и запуск контейнеров
-        echo "🔨 Building and starting containers..."
-        docker-compose -f $COMPOSE_FILE up -d --build --force-recreate
+        # Проверяем наличие папки frontend
+        if [ ! -d "frontend" ]; then
+            log_error "Папка frontend не найдена"
+            exit 1
+        fi
+        
+        # Проверяем наличие Dockerfile
+        if [ ! -f "frontend/Dockerfile" ]; then
+            log_error "Dockerfile не найден в папке frontend"
+            ls -la frontend/
+            exit 1
+        fi
+        
+        # Останавливаем старые контейнеры
+        log_info "Остановка старых контейнеров..."
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE down --remove-orphans || true
+        
+        # Очистка старых образов
+        log_info "Очистка старых образов..."
+        docker system prune -af || true
+        
+        # Сборка и запуск
+        log_info "Сборка и запуск контейнеров..."
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE up -d --build --force-recreate
         
         # Ожидание запуска
-        echo "⏳ Waiting for containers to start..."
+        log_info "Ожидание запуска контейнеров..."
         sleep 15
         
         # Проверка статуса
-        echo "📊 Container status:"
-        docker-compose -f $COMPOSE_FILE ps
+        log_info "Статус контейнеров:"
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE ps
         
-        # Проверка логов на ошибки
-        echo "📋 Checking logs for errors..."
-        docker-compose -f $COMPOSE_FILE logs --tail=50
+        # Проверка логов
+        log_info "Логи (последние 50 строк):"
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE logs --tail=50
         
-        echo "========================================="
-        echo "✅ Deployment completed successfully"
-        echo "========================================="
+        log_info "✅ Деплой успешно завершен!"
         DEPLOY_SCRIPT
         
         chmod +x deploy-package/deploy.sh
@@ -246,41 +261,12 @@ jobs:
         tar -czf ../deploy.tar.gz .
         cd ..
         
-        echo "✅ Deployment package created: deploy.tar.gz"
+        echo "✅ Deployment package created"
         echo "Archive size: $(du -h deploy.tar.gz | cut -f1)"
         
-        # Выводим список файлов в архиве для отладки
-        echo "Archive contents (first 20 files):"
+        # Выводим содержимое архива для отладки
+        echo "Archive contents:"
         tar -tzf deploy.tar.gz | head -20
-    
-    - name: Stop old containers on server
-      run: |
-        SERVER_HOST="${{ steps.vars.outputs.server_host }}"
-        SERVER_USER="${{ steps.vars.outputs.server_user }}"
-        SERVER_PORT="${{ steps.vars.outputs.server_port }}"
-        PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
-        
-        echo "🛑 Stopping old containers on server..."
-        
-        ssh -p $SERVER_PORT \
-          -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null \
-          $SERVER_USER@$SERVER_HOST << 'STOP_SCRIPT'
-          PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
-          
-          cd $PROJECT_DIR 2>/dev/null || true
-          
-          echo "Stopping existing containers..."
-          docker-compose -f docker-compose.dev.yml down --remove-orphans 2>/dev/null || true
-          docker-compose -f docker-compose.yml down --remove-orphans 2>/dev/null || true
-          
-          echo "Cleaning up..."
-          docker system prune -af 2>/dev/null || true
-          
-          echo "✅ Old containers stopped"
-        STOP_SCRIPT
-        
-        echo "✅ Old containers stopped successfully"
     
     - name: Deploy to server
       run: |
@@ -312,116 +298,64 @@ jobs:
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o ConnectTimeout=30 \
-          $SERVER_USER@$SERVER_HOST << 'REMOTE_SCRIPT'
+          $SERVER_USER@$SERVER_HOST << REMOTE_SCRIPT
           set -e
           
-          PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
+          PROJECT_DIR="$PROJECT_DIR"
           
-          echo "📁 Preparing project directory: $PROJECT_DIR"
+          echo "[INFO] Preparing project directory: \$PROJECT_DIR"
           
           # Очищаем директорию проекта
-          rm -rf $PROJECT_DIR/*
-          mkdir -p $PROJECT_DIR
+          sudo rm -rf \$PROJECT_DIR/*
+          sudo mkdir -p \$PROJECT_DIR
+          sudo chown -R \$(whoami):\$(whoami) \$PROJECT_DIR
           
-          echo "📦 Extracting deployment package..."
-          tar -xzf /tmp/deploy.tar.gz -C $PROJECT_DIR
+          echo "[INFO] Extracting deployment package..."
+          tar -xzf /tmp/deploy.tar.gz -C \$PROJECT_DIR
           
-          cd $PROJECT_DIR
+          cd \$PROJECT_DIR
           
-          echo "Current directory: $(pwd)"
-          echo "Directory structure:"
+          echo "[INFO] Current directory: \$(pwd)"
+          echo "[INFO] Directory structure:"
           ls -la
           
-          # Ищем Dockerfile в текущей директории или поддиректориях
-          if [ ! -f "Dockerfile" ]; then
-            echo "🔍 Looking for Dockerfile in subdirectories..."
-            DOCKERFILE_PATH=$(find . -name "Dockerfile" -type f | head -1)
-            if [ -n "$DOCKERFILE_PATH" ]; then
-              DOCKERFILE_DIR=$(dirname "$DOCKERFILE_PATH")
-              echo "✅ Found Dockerfile in: $DOCKERFILE_DIR"
-              cd "$DOCKERFILE_DIR"
-              echo "Changed to directory: $(pwd)"
-            else
-              echo "❌ No Dockerfile found in current directory or subdirectories"
-              echo "Current directory contents:"
-              find . -maxdepth 3 -type f -name "Dockerfile" || echo "No Dockerfile found"
-              exit 1
-            fi
+          # Проверяем наличие deploy.sh
+          if [ ! -f "deploy.sh" ]; then
+            echo "[ERROR] deploy.sh not found!"
+            exit 1
           fi
           
-          # Проверяем наличие docker-compose файла
-          if [ ! -f "docker-compose.dev.yml" ] && [ ! -f "docker-compose.yml" ]; then
-            echo "🔍 Looking for docker-compose files..."
-            COMPOSE_FILE=$(find . -name "docker-compose*.yml" -type f | head -1)
-            if [ -n "$COMPOSE_FILE" ]; then
-              COMPOSE_DIR=$(dirname "$COMPOSE_FILE")
-              cd "$COMPOSE_DIR"
-              echo "Changed to directory with compose file: $(pwd)"
-            else
-              echo "❌ No docker-compose file found"
-              exit 1
-            fi
+          # Делаем скрипт исполняемым
+          chmod +x deploy.sh
+          
+          # Проверяем наличие compose файла
+          if [ ! -f "docker-compose.dev.yml" ]; then
+            echo "[ERROR] docker-compose.dev.yml not found!"
+            echo "Available files:"
+            ls -la
+            exit 1
           fi
           
-          echo "Final working directory: $(pwd)"
-          echo "Files in working directory:"
-          ls -la
-          
-          # Создаем .env если его нет
-          if [ ! -f .env ]; then
-            echo "Creating .env file..."
-            cat > .env << 'ENV_EOF'
-            PROJECT_NAME=${{ env.PROJECT_NAME }}
-            ENVIRONMENT=${{ steps.vars.outputs.environment }}
-            NODE_ENV=${{ steps.vars.outputs.environment }}
-            ENV_EOF
+          # Проверяем наличие папки frontend
+          if [ ! -d "frontend" ]; then
+            echo "[ERROR] frontend directory not found!"
+            exit 1
           fi
           
-          # Даем права на выполнение скрипта
-          if [ -f "deploy.sh" ]; then
-            chmod +x deploy.sh
+          # Проверяем наличие Dockerfile
+          if [ ! -f "frontend/Dockerfile" ]; then
+            echo "[ERROR] Dockerfile not found in frontend directory!"
+            echo "Files in frontend:"
+            ls -la frontend/
+            exit 1
           fi
           
-          # Останавливаем старые контейнеры
-          echo "🛑 Stopping old containers..."
-          if [ -f "docker-compose.dev.yml" ]; then
-            docker-compose -f docker-compose.dev.yml down --remove-orphans || true
-          fi
-          if [ -f "docker-compose.yml" ]; then
-            docker-compose -f docker-compose.yml down --remove-orphans || true
-          fi
-          
-          # Очистка старых образов
-          echo "🧹 Cleaning up old images..."
-          docker system prune -af || true
+          echo "[INFO] All required files found, starting deployment..."
           
           # Запускаем деплой
-          if [ -f "deploy.sh" ]; then
-            echo "🏃 Running deploy.sh..."
-            ./deploy.sh
-          else
-            echo "🏃 Running manual deployment..."
-            
-            # Определяем какой compose файл использовать
-            if [ -f "docker-compose.dev.yml" ]; then
-              COMPOSE_FILE="docker-compose.dev.yml"
-            else
-              COMPOSE_FILE="docker-compose.yml"
-            fi
-            
-            echo "Using compose file: $COMPOSE_FILE"
-            
-            # Сборка и запуск
-            docker-compose -f $COMPOSE_FILE up -d --build --force-recreate
-            
-            # Ожидание запуска
-            sleep 10
-            
-            # Проверка статуса
-            docker-compose -f $COMPOSE_FILE ps
-          fi
+          ./deploy.sh
           
-          echo "✅ Deployment completed successfully"
+          echo "[INFO] Deployment completed successfully"
           
           # Очистка
           rm -f /tmp/deploy.tar.gz
