@@ -1,0 +1,165 @@
+name: Universal Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - rollback
+
+# Переменные окружения для всего workflow
+env:
+  PROJECT_NAME: ${{ github.event.repository.name }}
+  DOCKER_COMPOSE_VERSION: '2.23.0'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Устанавливаем окружение для прод
+    environment: ${{ github.event.inputs.environment == 'prod' && 'production' || (github.ref == 'refs/heads/main' && 'production') || 'development' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Setup SSH agent
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: |
+          ${{ secrets.DEV_SSH_KEY }}
+          ${{ secrets.PROD_SSH_KEY }}
+    
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Install Docker Compose
+      run: |
+        sudo curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
+    
+    - name: Run tests
+      run: |
+        echo "Running tests for ${{ github.ref_name }}"
+        # Здесь ваши тесты
+        # docker-compose -f docker-compose.test.yml run tests
+    
+    - name: Set deployment variables
+      id: vars
+      run: |
+        # Определяем окружение на основе ветки или input
+        if [[ "${{ github.event.inputs.environment }}" == "prod" ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "environment=prod" >> $GITHUB_OUTPUT
+          echo "server_host=${{ secrets.PROD_SERVER_HOST }}" >> $GITHUB_OUTPUT
+          echo "server_user=${{ secrets.PROD_SERVER_USER }}" >> $GITHUB_OUTPUT
+          echo "server_port=${{ secrets.PROD_SERVER_PORT || 22 }}" >> $GITHUB_OUTPUT
+          echo "project_dir=${{ secrets.PROD_PROJECT_DIR || '/opt/app' }}" >> $GITHUB_OUTPUT
+          echo "compose_files=${{ secrets.PROD_COMPOSE_FILES || '-f docker-compose.yml -f docker-compose.prod.yml' }}" >> $GITHUB_OUTPUT
+        else
+          echo "environment=dev" >> $GITHUB_OUTPUT
+          echo "server_host=${{ secrets.DEV_SERVER_HOST }}" >> $GITHUB_OUTPUT
+          echo "server_user=${{ secrets.DEV_SERVER_USER }}" >> $GITHUB_OUTPUT
+          echo "server_port=${{ secrets.DEV_SERVER_PORT || 22 }}" >> $GITHUB_OUTPUT
+          echo "project_dir=${{ secrets.DEV_PROJECT_DIR || '/opt/app-dev' }}" >> $GITHUB_OUTPUT
+          echo "compose_files=${{ secrets.DEV_COMPOSE_FILES || '-f docker-compose.yml' }}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Prepare deployment package
+      run: |
+        # Создаем архив с необходимыми файлами
+        mkdir -p deploy-package
+        cp docker-compose*.yml deploy-package/ 2>/dev/null || true
+        cp .env.example deploy-package/ 2>/dev/null || true
+        cp .github/scripts/deploy.sh deploy-package/
+        chmod +x deploy-package/deploy.sh
+        
+        # Создаем .env из secrets
+        echo "# Environment variables" > deploy-package/.env
+        env | grep "^${{ steps.vars.outputs.environment }}_" | while read line; do
+          echo "$line" | sed "s/^${{ steps.vars.outputs.environment }}_//" >> deploy-package/.env
+        done
+        
+        # Архивируем
+        tar -czf deploy.tar.gz -C deploy-package .
+    
+    - name: Deploy to server
+      run: |
+        # Копируем архив на сервер
+        scp -P ${{ steps.vars.outputs.server_port }} \
+          -o StrictHostKeyChecking=no \
+          deploy.tar.gz \
+          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }}:/tmp/
+        
+        # Выполняем деплой
+        ssh -p ${{ steps.vars.outputs.server_port }} \
+          -o StrictHostKeyChecking=no \
+          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} << EOF
+            set -e
+            
+            # Создаем директорию проекта
+            mkdir -p ${{ steps.vars.outputs.project_dir }}
+            
+            # Распаковываем архив
+            tar -xzf /tmp/deploy.tar.gz -C ${{ steps.vars.outputs.project_dir }}
+            
+            cd ${{ steps.vars.outputs.project_dir }}
+            
+            # Бэкап существующего .env
+            if [ -f .env ] && [ ! -f .env.backup ]; then
+              cp .env .env.backup.\$(date +%Y%m%d_%H%M%S)
+            fi
+            
+            # Обновляем .env
+            if [ -f .env.new ]; then
+              mv .env.new .env
+            fi
+            
+            # Деплой
+            docker-compose ${{ steps.vars.outputs.compose_files }} down || true
+            docker-compose ${{ steps.vars.outputs.compose_files }} pull
+            docker-compose ${{ steps.vars.outputs.compose_files }} up -d --build
+            
+            # Проверка
+            sleep 10
+            docker-compose ${{ steps.vars.outputs.compose_files }} ps
+            
+            # Очистка
+            docker image prune -f
+            rm -f /tmp/deploy.tar.gz
+            
+            echo "✅ Deployment completed"
+        EOF
+    
+    - name: Health check
+      run: |
+        sleep 15
+        curl -f http://${{ steps.vars.outputs.server_host }} || echo "⚠️ Health check failed"
+    
+    - name: Send notification
+      if: always()
+      run: |
+        echo "Deployment status: ${{ job.status }}"
+        echo "Environment: ${{ steps.vars.outputs.environment }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        # Здесь можно добавить отправку в Slack/Telegram
