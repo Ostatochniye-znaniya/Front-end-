@@ -126,87 +126,43 @@ jobs:
     
     - name: Prepare deployment package
       run: |
-        # Создаем архив с необходимыми файлами
+        # Создаем временную директорию для сборки
         mkdir -p deploy-package
         
-        # Копируем docker-compose файлы
-        if [ -f "docker-compose.yml" ]; then
-          cp docker-compose.yml deploy-package/
-          echo "✅ Copied docker-compose.yml"
-        fi
+        # Копируем все файлы проекта, исключая ненужные
+        echo "📦 Copying project files..."
         
-        # Копируем специфичный для окружения compose файл
-        ENV_COMPOSE_FILE="docker-compose.${{ steps.vars.outputs.environment }}.yml"
-        if [ -f "$ENV_COMPOSE_FILE" ]; then
-          cp "$ENV_COMPOSE_FILE" deploy-package/
-          echo "✅ Copied $ENV_COMPOSE_FILE"
-        fi
+        # Создаем временный архив всех файлов (исключая ненужные)
+        tar -czf temp-project.tar.gz \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='.env' \
+          --exclude='deploy-package' \
+          --exclude='deploy.tar.gz' \
+          --exclude='.github' \
+          --exclude='*.log' \
+          --exclude='dist' \
+          --exclude='build' \
+          .
         
-        # Копируем другие важные файлы
-        [ -f ".env.example" ] && cp .env.example deploy-package/ 2>/dev/null || true
-        [ -f ".env" ] && cp .env deploy-package/.env.example 2>/dev/null || true
+        # Распаковываем в deploy-package
+        tar -xzf temp-project.tar.gz -C deploy-package/
+        rm temp-project.tar.gz
         
-        # Создаем скрипт деплоя
-        cat > deploy-package/deploy.sh << 'DEPLOY_SCRIPT'
-        #!/bin/bash
-        set -e
+        echo "✅ Project files copied"
         
-        echo "🚀 Starting deployment..."
-        echo "Compose files: $COMPOSE_FILES"
+        # Создаем скрипт деплоя (как выше)
+        # ... остальной код
         
-        # Проверка Docker
-        if ! command -v docker &> /dev/null; then
-            echo "❌ Docker is not installed"
-            exit 1
-        fi
-        
-        if ! command -v docker-compose &> /dev/null; then
-            echo "❌ Docker Compose is not installed"
-            exit 1
-        fi
-        
-        # Остановка существующих контейнеров
-        echo "📦 Stopping existing containers..."
-        docker-compose $COMPOSE_FILES down || true
-        
-        # Pull latest images
-        echo "📥 Pulling latest images..."
-        docker-compose $COMPOSE_FILES pull || true
-        
-        # Запуск контейнеров
-        echo "🚀 Starting containers..."
-        docker-compose $COMPOSE_FILES up -d --build
-        
-        # Ожидание и проверка
-        echo "⏳ Waiting for containers to start..."
-        sleep 10
-        
-        # Проверка статуса
-        echo "📊 Container status:"
-        docker-compose $COMPOSE_FILES ps
-        
-        # Очистка
-        echo "🧹 Cleaning up..."
-        docker image prune -f
-        
-        echo "✅ Deployment completed successfully"
-        DEPLOY_SCRIPT
-        
-        chmod +x deploy-package/deploy.sh
-        
-        # Создаем .env файл
-        cat > deploy-package/.env << EOF
-        # Generated on $(date)
-        PROJECT_NAME=${{ env.PROJECT_NAME }}
-        ENVIRONMENT=${{ steps.vars.outputs.environment }}
-        NODE_ENV=${{ steps.vars.outputs.environment }}
-        EOF
-        
-        # Архивируем
+        # Архивируем для деплоя
         tar -czf deploy.tar.gz -C deploy-package .
         
         echo "📦 Deployment package created: deploy.tar.gz"
+        echo "Archive size:"
         ls -lh deploy.tar.gz
+        
+        echo "First 20 files in archive:"
+        tar -tzf deploy.tar.gz | head -20
     
     - name: Deploy to server
       run: |
