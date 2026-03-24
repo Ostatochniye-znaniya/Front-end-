@@ -6,6 +6,9 @@ import Search from "@/components/search/Search";
 import Button from "@/components/button/Button";
 
 import { useState } from "react";
+import { redirect } from "next/dist/server/api-utils";
+import { RedirectType } from "next/navigation";
+import { useRouter } from 'next/navigation'
 
 
 
@@ -41,6 +44,7 @@ const table_2 = [
 
 
 export default function Home() {
+    const router = useRouter()
     const [searchBigValue, setSearchBigValue] = useState('');
 
     const [isFirstVisible, setIsFirstVisible] = useState(true);
@@ -76,7 +80,7 @@ export default function Home() {
                     <div style={{ marginLeft: '10px' }}></div>
                     <Button title=".-" color="btn-blue" onClick={() => {toggleTableDisplay(false)}} />
                     <div style={{ marginLeft: '10px' }}></div>
-                    <Button title="Сформировать новый приказ" color="btn-blue" onClick={() => alert("Тут пока ещё некуда перенаправлять ☻")} />
+                    <Button title="Сформировать новый приказ" color="btn-blue" onClick={() => router.push('/lpr/create_order')} />
                     <div style={{ marginLeft: '10px' }}></div>
                     <Button title="Черновики" color="btn-purple" onClick={toggleDisplay} />
                 </div>
