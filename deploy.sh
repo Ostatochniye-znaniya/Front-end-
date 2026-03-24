@@ -84,33 +84,47 @@ check_files() {
     log_info "Dockerfile в frontend найден"
 }
 
-# Создание Docker сети
+# Создание Docker сети (СИНХРОНИЗИРОВАННАЯ ВЕРСИЯ)
 create_network() {
     local network_name="$1"
     
     log_step "Проверка Docker сети: $network_name"
     
-    # Проверяем существование сети
+    # Сначала проверяем существование сети
     if docker network inspect "$network_name" >/dev/null 2>&1; then
-        log_info "Сеть $network_name уже существует"
+        log_info "✅ Сеть $network_name уже существует"
         docker network ls --filter "name=^${network_name}$" --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}"
-    else
-        log_info "Создание сети $network_name..."
-        if docker network create "$network_name" --driver bridge 2>/dev/null; then
-            log_info "✅ Сеть $network_name успешно создана"
-        else
-            log_error "❌ Не удалось создать сеть $network_name"
-            docker network ls
-            exit 1
+        
+        # Дополнительная проверка, что сеть действительно работает
+        if ! docker network inspect "$network_name" >/dev/null 2>&1; then
+            log_error "Сеть $network_name существует, но недоступна"
+            return 1
         fi
+        return 0
     fi
     
-    # Дополнительная проверка
-    if docker network inspect "$network_name" >/dev/null 2>&1; then
-        log_info "✅ Сеть $network_name готова к использованию"
-        return 0
+    # Создаем сеть, если её нет
+    log_info "Создание сети $network_name..."
+    
+    # Пробуем создать сеть
+    if docker network create "$network_name" --driver bridge 2>/dev/null; then
+        log_info "✅ Сеть $network_name успешно создана"
+        
+        # Проверяем, что сеть создалась и готова к использованию
+        sleep 2
+        if docker network inspect "$network_name" >/dev/null 2>&1; then
+            log_info "✅ Сеть $network_name готова к использованию"
+            return 0
+        else
+            log_error "❌ Сеть $network_name создана, но недоступна"
+            return 1
+        fi
     else
-        log_error "❌ Сеть $network_name недоступна"
+        log_error "❌ Не удалось создать сеть $network_name"
+        
+        # Показываем существующие сети для диагностики
+        log_info "Существующие сети:"
+        docker network ls
         return 1
     fi
 }
@@ -119,17 +133,27 @@ create_network() {
 cleanup_containers() {
     log_step "Очистка старых контейнеров..."
     
-    # Останавливаем контейнеры
-    if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" down --remove-orphans 2>/dev/null; then
-        log_info "Контейнеры остановлены"
+    # Проверяем, есть ли контейнеры для остановки
+    if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --quiet 2>/dev/null | grep -q .; then
+        log_info "Остановка существующих контейнеров..."
+        $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" down --remove-orphans --volumes 2>/dev/null || {
+            log_warn "Не удалось полностью остановить контейнеры"
+            # Принудительная остановка
+            $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" kill 2>/dev/null || true
+            $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" rm -f 2>/dev/null || true
+        }
+        log_info "Контейнеры остановлены и удалены"
     else
-        log_warn "Не удалось остановить контейнеры (возможно их нет)"
+        log_info "Нет запущенных контейнеров"
     fi
     
-    # Очистка неиспользуемых образов (опционально)
+    # Очистка неиспользуемых ресурсов (опционально)
     if [ "${CLEAN_IMAGES:-false}" = "true" ]; then
         log_info "Очистка неиспользуемых образов..."
         docker image prune -f 2>/dev/null || true
+        
+        log_info "Очистка неиспользуемых томов..."
+        docker volume prune -f 2>/dev/null || true
     fi
 }
 
@@ -137,20 +161,36 @@ cleanup_containers() {
 start_containers() {
     log_step "Запуск контейнеров..."
     
-    # Сборка и запуск
-    if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up -d --build --force-recreate; then
-        log_info "Контейнеры запущены"
-    else
-        log_error "Не удалось запустить контейнеры"
+    # Проверяем существование сети перед запуском
+    if ! docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
+        log_error "Сеть $NETWORK_NAME не существует! Запуск невозможен."
         return 1
     fi
     
-    # Ожидание запуска
+    # Пробуем собрать и запустить
+    if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up -d --build --force-recreate --remove-orphans; then
+        log_info "Контейнеры успешно запущены"
+    else
+        log_error "Не удалось запустить контейнеры"
+        
+        # Выводим логи для диагностики
+        log_info "Логи ошибок:"
+        $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs --tail=50
+        return 1
+    fi
+    
+    # Ожидание запуска с проверкой
     local wait_time="${WAIT_TIME:-15}"
     log_info "Ожидание запуска контейнеров (${wait_time} секунд)..."
     
     local i=0
     while [ $i -lt $wait_time ]; do
+        # Проверяем, что контейнеры не упали
+        if ! $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --quiet 2>/dev/null | grep -q .; then
+            log_error "Контейнеры не запустились или упали сразу после запуска"
+            $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs --tail=50
+            return 1
+        fi
         printf "."
         sleep 1
         i=$((i + 1))
@@ -169,37 +209,45 @@ check_status() {
     $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps
     echo ""
     
-    # Подсчет запущенных контейнеров
-    local running_count=0
-    local total_count=0
+    # Получаем список контейнеров
+    local containers=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps -q 2>/dev/null | wc -l)
     
-    # Получаем список контейнеров (разные форматы для разных версий docker-compose)
-    if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --format json 2>/dev/null | grep -q "State"; then
-        # Docker Compose v2 формат
-        running_count=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --format json | grep -c '"State":"running"' || echo "0")
-        total_count=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --format json | grep -c '"Name"' || echo "0")
-    else
-        # Fallback для старых версий
-        running_count=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --format "table" | grep -c "Up" || echo "0")
-        total_count=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps --format "table" | grep -c "^[a-zA-Z]" | awk '{print $1-1}' || echo "0")
-        [ "$total_count" -lt 0 ] && total_count=0
-    fi
-    
-    if [ "$total_count" -gt 0 ] && [ "$running_count" -lt "$total_count" ]; then
-        log_warn "Не все контейнеры запущены: $running_count из $total_count"
-        log_info "Последние логи:"
-        $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs --tail=50
+    if [ "$containers" -eq 0 ]; then
+        log_error "Нет запущенных контейнеров"
         return 1
     fi
     
-    # Проверка на unhealthy контейнеры
-    if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps | grep -q "unhealthy"; then
-        log_error "Обнаружены нездоровые контейнеры!"
-        $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs --tail=50
+    # Проверяем статус каждого контейнера
+    local unhealthy=0
+    local running=0
+    
+    for container in $($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" ps -q 2>/dev/null); do
+        local status=$(docker inspect --format='{{.State.Status}}' "$container" 2>/dev/null)
+        local health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null)
+        
+        if [ "$status" = "running" ]; then
+            running=$((running + 1))
+            if [ "$health" = "unhealthy" ]; then
+                unhealthy=$((unhealthy + 1))
+                log_error "Контейнер $container нездоров (unhealthy)"
+                docker logs --tail=20 "$container" 2>/dev/null || true
+            fi
+        else
+            log_warn "Контейнер $container не запущен (статус: $status)"
+        fi
+    done
+    
+    if [ "$unhealthy" -gt 0 ]; then
+        log_error "Обнаружено $unhealthy нездоровых контейнеров"
         return 1
     fi
     
-    log_info "✅ Все контейнеры работают ($running_count из $total_count)"
+    if [ "$running" -eq 0 ]; then
+        log_error "Нет запущенных контейнеров"
+        return 1
+    fi
+    
+    log_info "✅ $running контейнеров успешно запущено"
     return 0
 }
 
@@ -209,12 +257,23 @@ show_network_info() {
     
     log_step "Информация о сети $network_name:"
     
-    if docker network inspect "$network_name" 2>/dev/null | grep -A 10 "Containers" | grep -v "\[\]" | head -20; then
+    if docker network inspect "$network_name" 2>/dev/null | grep -A 20 "Containers" | grep -v "\[\]" | head -20; then
         log_info "Контейнеры в сети:"
-        docker network inspect "$network_name" | grep -E "Name|IPv4Address" | grep -v "\[\]" | sed 's/^[[:space:]]*//'
+        docker network inspect "$network_name" | grep -E "Name|IPv4Address" | grep -v "\[\]" | sed 's/^[[:space:]]*//' | head -10
     else
-        log_warn "Нет контейнеров в сети $network_name"
+        log_warn "Нет контейнеров в сети $network_name или сеть пуста"
     fi
+}
+
+# Проверка Docker демона
+check_docker_daemon() {
+    log_step "Проверка Docker демона..."
+    
+    if ! docker info &>/dev/null; then
+        log_error "Docker демон не запущен"
+        exit 1
+    fi
+    log_info "Docker демон работает"
 }
 
 # Основная функция
@@ -222,6 +281,10 @@ main() {
     log_step "=== Начало деплоя ==="
     log_info "Время запуска: $(date)"
     log_info "Текущая директория: $(pwd)"
+    log_info "Пользователь: $(whoami)"
+    
+    # Проверка Docker демона
+    check_docker_daemon
     
     # Проверка зависимостей
     check_dependencies
@@ -233,9 +296,25 @@ main() {
     NETWORK_NAME="${NETWORK_NAME:-app-network}"
     log_info "Имя сети: $NETWORK_NAME"
     
-    # Создание сети
+    # КРИТИЧЕСКИ ВАЖНО: Создаем сеть ДО вызова Docker Compose
     if ! create_network "$NETWORK_NAME"; then
+        log_error "Не удалось создать/проверить сеть $NETWORK_NAME"
         exit 1
+    fi
+    
+    # Экспортируем переменную для Docker Compose
+    export NETWORK_NAME="$NETWORK_NAME"
+    
+    # Проверяем, что compose файл использует внешнюю сеть
+    if grep -q "external:" "$COMPOSE_FILE" && ! grep -q "external: false" "$COMPOSE_FILE"; then
+        log_info "Compose файл использует внешнюю сеть: $NETWORK_NAME"
+        log_info "Убеждаемся, что сеть существует..."
+        
+        # Дополнительная проверка перед запуском
+        if ! docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
+            log_error "Сеть $NETWORK_NAME не найдена, хотя compose файл ожидает её"
+            exit 1
+        fi
     fi
     
     # Очистка старых контейнеров
@@ -243,12 +322,13 @@ main() {
     
     # Запуск контейнеров
     if ! start_containers; then
+        log_error "❌ Деплой завершился с ошибками при запуске контейнеров"
         exit 1
     fi
     
     # Проверка статуса
     if ! check_status; then
-        log_error "❌ Деплой завершился с ошибками"
+        log_error "❌ Деплой завершился с ошибками при проверке статуса"
         exit 1
     fi
     
@@ -257,6 +337,12 @@ main() {
     
     log_info "✅ Деплой успешно завершен!"
     log_info "Время завершения: $(date)"
+    
+    # Вывод полезной информации
+    log_info "Полезные команды:"
+    echo "  docker-compose -f $COMPOSE_FILE logs -f    # Просмотр логов"
+    echo "  docker-compose -f $COMPOSE_FILE ps         # Статус контейнеров"
+    echo "  docker network inspect $NETWORK_NAME       # Информация о сети"
 }
 
 # Запуск основной функции
