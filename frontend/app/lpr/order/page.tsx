@@ -63,11 +63,11 @@ export default function Home() {
             <Navbar 
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная", href: "/lpr/main" },
-                    { label: "Приказы", href: "/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/lpr/list" },
-                    { label: "Отчеты", href: "/lpr/report" },
-                    { label: "Настройки доступа", href: "/lpr/settings" }
+                    { label: "Главная", href: "/csh/lpr/main" },
+                    { label: "Приказы", href: "/csh/lpr/order" },
+                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
+                    { label: "Отчеты", href: "/csh/lpr/report" },
+                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
                 ]}
                 name="Иван"
                 surname="Иванов"
