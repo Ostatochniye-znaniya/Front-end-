@@ -61,14 +61,23 @@ jobs:
           SERVER_USER="${{ vars.PROD_SERVER_USER }}"
           SERVER_PORT="${{ vars.PROD_SERVER_PORT }}"
           PROJECT_DIR="${{ vars.PROD_PROJECT_DIR }}"
-          NETWORK_NAME="${{ vars.PROD_NETWORK_NAME:-app-network }}"
+          # Используем переменную, если она есть, иначе значение по умолчанию
+          if [ -n "${{ vars.PROD_NETWORK_NAME }}" ]; then
+            NETWORK_NAME="${{ vars.PROD_NETWORK_NAME }}"
+          else
+            NETWORK_NAME="app-network"
+          fi
         else
           ENVIRONMENT="dev"
           SERVER_HOST="${{ vars.DEV_SERVER_HOST }}"
           SERVER_USER="${{ vars.DEV_SERVER_USER }}"
           SERVER_PORT="${{ vars.DEV_SERVER_PORT }}"
           PROJECT_DIR="${{ vars.DEV_PROJECT_DIR }}"
-          NETWORK_NAME="${{ vars.DEV_NETWORK_NAME:-app-network }}"
+          if [ -n "${{ vars.DEV_NETWORK_NAME }}" ]; then
+            NETWORK_NAME="${{ vars.DEV_NETWORK_NAME }}"
+          else
+            NETWORK_NAME="app-network"
+          fi
         fi
         
         # Проверяем обязательные переменные
@@ -83,9 +92,17 @@ jobs:
         fi
         
         # Устанавливаем значения по умолчанию
-        SERVER_PORT="${SERVER_PORT:-22}"
-        PROJECT_DIR="${PROJECT_DIR:-/home/oz-admin/csh/frontend}"
-        NETWORK_NAME="${NETWORK_NAME:-app-network}"
+        if [ -z "$SERVER_PORT" ]; then
+          SERVER_PORT="22"
+        fi
+        
+        if [ -z "$PROJECT_DIR" ]; then
+          if [ "$ENVIRONMENT" == "prod" ]; then
+            PROJECT_DIR="/home/oz-admin/csh/frontend"
+          else
+            PROJECT_DIR="/home/oz-admin/csh/frontend"
+          fi
+        fi
         
         # Сохраняем в output
         echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
@@ -116,6 +133,11 @@ jobs:
           echo "✅ Copied docker-compose.dev.yml"
         fi
         
+        if [ -f "docker-compose.yml" ]; then
+          cp docker-compose.yml deploy-package/
+          echo "✅ Copied docker-compose.yml"
+        fi
+        
         if [ -f "nginx.conf" ]; then
           cp nginx.conf deploy-package/
           echo "✅ Copied nginx.conf"
@@ -136,7 +158,30 @@ jobs:
           cp -r frontend deploy-package/
           echo "✅ Copied frontend directory"
         fi
-
+        
+        # Создаем .env файл с переменными
+        cat > deploy-package/.env << EOF
+          # Generated on $(date)
+          PROJECT_NAME=${{ env.PROJECT_NAME }}
+          ENVIRONMENT=${{ steps.vars.outputs.environment }}
+          NODE_ENV=${{ steps.vars.outputs.environment }}
+          NETWORK_NAME=${{ steps.vars.outputs.network_name }}
+        EOF
+        
+        echo "✅ Created .env file"
+        
+        # Создаем архив
+        cd deploy-package
+        tar -czf ../deploy.tar.gz .
+        cd ..
+        
+        echo "✅ Deployment package created: deploy.tar.gz"
+        echo "Archive size: $(du -h deploy.tar.gz | cut -f1)"
+        
+        # Показываем содержимое пакета
+        echo "📦 Package contents:"
+        tar -tzf deploy.tar.gz | head -20
+    
     - name: Deploy to server
       run: |
         SERVER_HOST="${{ steps.vars.outputs.server_host }}"
@@ -147,12 +192,13 @@ jobs:
         
         echo "📦 Copying deployment package to $SERVER_USER@$SERVER_HOST..."
         
+        # Создаем временный файл для проверки
         scp -P $SERVER_PORT \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o ConnectTimeout=30 \
           deploy.tar.gz \
-          $SERVER_USER@$SERVER_HOST:/tmp/
+          $SERVER_USER@$SERVER_HOST:/tmp/deploy.tar.gz
         
         if [ $? -ne 0 ]; then
           echo "❌ Failed to copy deployment package"
@@ -166,43 +212,65 @@ jobs:
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
           -o ConnectTimeout=30 \
-          $SERVER_USER@$SERVER_HOST << REMOTE_SCRIPT
+          $SERVER_USER@$SERVER_HOST << 'REMOTE_SCRIPT'
           set -e
           
-          PROJECT_DIR="$PROJECT_DIR"
-          NETWORK_NAME="$NETWORK_NAME"
+          PROJECT_DIR="${{ steps.vars.outputs.project_dir }}"
+          NETWORK_NAME="${{ steps.vars.outputs.network_name }}"
           
-          echo "[INFO] Preparing project directory: \$PROJECT_DIR"
-          echo "[INFO] Network name: \$NETWORK_NAME"
+          echo "[INFO] Preparing project directory: $PROJECT_DIR"
+          echo "[INFO] Network name: $NETWORK_NAME"
           
           # Создаем директорию
-          mkdir -p \$PROJECT_DIR
+          mkdir -p $PROJECT_DIR
           
           # Проверяем права
-          if [ ! -w "\$PROJECT_DIR" ]; then
-            echo "[ERROR] Cannot write to \$PROJECT_DIR"
-            echo "Current user: \$(whoami)"
-            echo "Directory owner: \$(stat -c '%U' \$PROJECT_DIR 2>/dev/null || echo 'unknown')"
-            echo "Directory permissions: \$(stat -c '%a' \$PROJECT_DIR 2>/dev/null || echo 'unknown')"
+          if [ ! -w "$PROJECT_DIR" ]; then
+            echo "[ERROR] Cannot write to $PROJECT_DIR"
+            echo "Current user: $(whoami)"
+            echo "Directory owner: $(stat -c '%U' $PROJECT_DIR 2>/dev/null || echo 'unknown')"
+            echo "Directory permissions: $(stat -c '%a' $PROJECT_DIR 2>/dev/null || echo 'unknown')"
             exit 1
           fi
           
-          # Очищаем директорию
+          # Очищаем директорию (сохраняем .env если он есть)
           echo "[INFO] Cleaning project directory..."
-          rm -rf \$PROJECT_DIR/*
+          if [ -f "$PROJECT_DIR/.env" ]; then
+            cp $PROJECT_DIR/.env /tmp/.env.backup
+            echo "[INFO] Backed up .env file"
+          fi
+          
+          rm -rf $PROJECT_DIR/*
           
           # Распаковываем
           echo "[INFO] Extracting deployment package..."
-          tar -xzf /tmp/deploy.tar.gz -C \$PROJECT_DIR
+          tar -xzf /tmp/deploy.tar.gz -C $PROJECT_DIR
           
-          cd \$PROJECT_DIR
+          # Восстанавливаем .env если был
+          if [ -f "/tmp/.env.backup" ]; then
+            cp /tmp/.env.backup $PROJECT_DIR/.env
+            echo "[INFO] Restored .env file"
+            rm -f /tmp/.env.backup
+          fi
           
-          echo "[INFO] Current directory: \$(pwd)"
+          cd $PROJECT_DIR
+          
+          echo "[INFO] Current directory: $(pwd)"
           echo "[INFO] Directory structure:"
           ls -la
           
+          # Убеждаемся, что deploy.sh существует и исполняемый
+          if [ ! -f "deploy.sh" ]; then
+            echo "[ERROR] deploy.sh not found in deployment package!"
+            echo "Available files:"
+            ls -la
+            exit 1
+          fi
+          
           # Экспортируем переменную для скрипта
-          export NETWORK_NAME="\$NETWORK_NAME"
+          export NETWORK_NAME="$NETWORK_NAME"
+          export CLEAN_IMAGES="false"
+          export WAIT_TIME="15"
           
           # Запускаем деплой
           chmod +x deploy.sh
@@ -226,28 +294,41 @@ jobs:
         sleep 20
         
         SERVER_HOST="${{ steps.vars.outputs.server_host }}"
+        SERVER_PORT="${{ steps.vars.outputs.server_port }}"
+        SERVER_USER="${{ steps.vars.outputs.server_user }}"
         
         # Проверка через curl
         if curl -f -s -o /dev/null -w "%{http_code}" http://$SERVER_HOST | grep -q "200\|301\|302\|401"; then
-          echo "✅ Health check passed"
+          echo "✅ Health check passed (HTTP)"
         else
           echo "⚠️ Health check failed, but deployment completed"
         fi
         
         # Дополнительная проверка через SSH
-        ssh -p ${{ steps.vars.outputs.server_port }} \
+        echo "📊 Container status:"
+        ssh -p $SERVER_PORT \
           -o StrictHostKeyChecking=no \
-          ${{ steps.vars.outputs.server_user }}@${{ steps.vars.outputs.server_host }} \
-          "docker ps --format 'table {{.Names}}\t{{.Status}}'"
+          $SERVER_USER@$SERVER_HOST \
+          "cd ${{ steps.vars.outputs.project_dir }} && docker-compose -f docker-compose.dev.yml ps 2>/dev/null || echo 'No containers running'"
+        
+        echo "🌐 Network status:"
+        ssh -p $SERVER_PORT \
+          -o StrictHostKeyChecking=no \
+          $SERVER_USER@$SERVER_HOST \
+          "docker network inspect ${{ steps.vars.outputs.network_name }} 2>/dev/null | grep -A 5 'Containers' | head -10 || echo 'Network not found'"
     
     - name: Send notification
       if: always()
       run: |
         if [ "${{ job.status }}" == "success" ]; then
           echo "✅ Deployment SUCCESS"
+          echo "🎉 Application deployed successfully to ${{ steps.vars.outputs.environment }} environment"
         else
           echo "❌ Deployment FAILED"
+          echo "💥 Failed to deploy to ${{ steps.vars.outputs.environment }} environment"
         fi
         echo "Environment: ${{ steps.vars.outputs.environment }}"
         echo "Project: ${{ env.PROJECT_NAME }}"
         echo "Network: ${{ steps.vars.outputs.network_name }}"
+        echo "Server: ${{ steps.vars.outputs.server_host }}"
+        echo "Time: $(date)"
