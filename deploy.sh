@@ -89,7 +89,8 @@ create_network() {
     local network_name="$1"
     
     log_step "Проверка Docker сети: $network_name"
-    
+
+
     # Сначала проверяем существование сети
     if docker network inspect "$network_name" >/dev/null 2>&1; then
         log_info "✅ Сеть $network_name уже существует"
