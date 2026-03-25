@@ -132,7 +132,7 @@ export default function Home() {
                     <div style={{ marginLeft: '10px' }}></div>
                     <Button title=".-" color="btn-blue" onClick={() => {toggleTableDisplay(false)}} />
                     <div style={{ marginLeft: '10px' }}></div>
-                    <Button title="Сформировать новый приказ" color="btn-blue" onClick={() => alert("Тут пока ещё некуда перенаправлять ☻")} />
+                    <Button title="Сформировать новый приказ" color="btn-blue" onClick={() => router.push('/lpr/create_order')} />
                     <div style={{ marginLeft: '10px' }}></div>
                     <Button title="Приказы" color="btn-purple" onClick={toggleDisplay} />
                 </div>

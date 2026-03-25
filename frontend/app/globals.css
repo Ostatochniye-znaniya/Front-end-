@@ -876,6 +876,12 @@
   padding-bottom: 4px;
 }
 
+.p-report-dropdown-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px
+}
+
 /* Базовые стили body */
 body {
   background: var(--background-c);
