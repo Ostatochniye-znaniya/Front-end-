@@ -64,7 +64,9 @@ const Pagination: React.FC<PaginationProps> = ({
   const pages = getPageNumbers();
 
   return (
-    <nav className="pagination-container">
+    <nav className="pagination-container" style={{
+      margin: "0px",
+    }}>
       <ul className="pagination-list">
 
         <li className="pagination-item">

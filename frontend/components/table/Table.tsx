@@ -46,7 +46,10 @@ const Table = <T,>({ columns, data }: TableProps<T>) => {
   const sortedData = getSortedData();
 
   return (
-    <table className="table-container">
+    <table className="table-container"
+            style={{
+              width: "100%",
+      }}>
       <thead>
         <tr>
           {columns.map((col, i) => (
