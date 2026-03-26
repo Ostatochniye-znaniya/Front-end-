@@ -3,18 +3,27 @@
 import Navbar from "@/components/navbar/Navbar";
 import Table from "@/components/table/Table";
 import Pagination from "@/components/pagination/Pagination";
+import Tag from "@/components/tag/Tag";
 
 import { useState } from "react";
 
+const tag_1 = (
+    <Tag color="default" title="Соглосовать"></Tag>
+);
+
+const tag_2 = (
+    <Tag color="green" title="Согласовано"></Tag>
+);
+
 const table_1 = [
     {
-        stage: "Контроль знаний", date: "30.05.2025 - 28.06.2025"
+        stage: "Контроль знаний", date: <Tag color="red" title="30.05.2025 - 28.06.2025"></Tag>
     },
     {
-        stage: "Сдача электронных отчетов", date: "до 05.07.2025"
+        stage: "Сдача электронных отчетов", date: <Tag color="green" title="до 05.07.2025"></Tag>
     },
     {
-        stage: "Сдача бумажных отчетов", date: "до 15.07.2025"
+        stage: "Сдача бумажных отчетов", date: <Tag color="green" title="до 15.07.2025"></Tag>
     },
 ]
 
@@ -24,98 +33,98 @@ const table_2 = [
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_2
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_2
     },
     {
         groupe: "221-111",
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_2
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Сети и телекоммуникации",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     },
     {
         groupe: "221-111",
         subject: "Back-end разработка",
         date: "15.06.2024",
         time: "12:20",
-        stage: "Согласованно"
+        stage: tag_1
     }
 ]
 

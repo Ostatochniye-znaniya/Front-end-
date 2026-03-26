@@ -68,7 +68,12 @@
   --pagination-bg-select-c: var(--background-inner-main-element-c);
   --pagination-disable-button-c: var(--secondary-border-c);
 
-
+  --tag-bg-default-c: color-mix(in srgb, #8D97F0 10%, transparent);
+  --tag-font-default-c: #272727;
+  --tag-bg-green-c: color-mix(in srgb, #3DCF88 10%, transparent);
+  --tag-font-green-c: #146B40;
+  --tag-bg-red-c: color-mix(in srgb, #ED5F6B 10%, transparent);
+  --tag-font-red-c: #90454C;
 
   /* Размеры шрифтов */
   --font-size-heading: 20px;
@@ -496,7 +501,8 @@
     border-right-width: 1px;
     border-right-style: solid;
     border-right-color: var(--secondary-border-c);
-
+    text-align: center;
+    vertical-align: middle;
   }
 
   .table-container tr:last-child td {
@@ -820,6 +826,30 @@
 
   .pagination-arrow{
     color: var(--secondary-any-icons-c);
+  }
+
+  .tag{
+    padding: 6px 12px;
+    border-radius: 5px;
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    align-self: flex-start;
+  }
+
+  .tag-default{
+    background-color: var(--tag-bg-default-c);
+    color: var(--tag-font-default-c);
+  }
+
+  .tag-green{
+    background-color: var(--tag-bg-green-c);
+    color: var(--tag-font-green-c);
+  }
+
+  .tag-red{
+    background-color: var(--tag-bg-red-c);
+    color: var(--tag-font-red-c);
   }
 }
 
