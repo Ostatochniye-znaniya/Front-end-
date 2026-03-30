@@ -12,7 +12,6 @@ services:
       - "3000"
     networks:
       - app-network
-    # Добавьте healthcheck
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 10s
