@@ -870,6 +870,9 @@
   flex-grow: 1;
   margin: 0;
 }
+.p-two-column > div > div > p {
+  margin: 0;
+}
 .p-list-item {
   border-bottom: 2px solid;
   padding-top: 16px;
