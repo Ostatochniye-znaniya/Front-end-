@@ -1,0 +1,255 @@
+/* styles.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #3D4695 0%, #3A3A3A 100%);
+}
+
+.sidebar {
+    background: #2e2e2e;
+    width: 310px;
+    padding: 30px 20px;
+    border-radius: 0 20px 20px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+
+
+.sidebar img{
+    position: absolute;
+    width: 251.56px;
+    height: 66.21px;
+    left: 24px;
+    top: 28px;
+}
+
+.line{
+    position: absolute;
+    width: 250px;
+    height: 0px;
+    left: 30px;
+    top: 108px;
+
+    border: 1px solid #757575;
+
+}
+
+.sidebar h1{
+    /* Проверка остаточных знаний */
+
+    position: absolute;
+    left: 3%;
+    right: 18.21%;
+    top: 13%;
+    bottom: 84.91%;
+
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 24px;
+
+    color: #B2BAF9;
+}
+
+.sidebar h2{
+    /* Иванов Иван Иванович */
+
+    position: absolute;
+    width: 194px;
+    left: 3%;
+    top: 32.5%;
+    bottom: 66.76%;
+
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 24px;
+    text-align: center;
+
+    color: #F0F0F0;
+
+
+}
+
+.sidebar a{
+    position: absolute;
+    left: 4.1%;
+    right: 36.41%;
+    top: 42%;
+    bottom: 58.8%;
+
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 29px;
+    text-decoration: none;
+
+    color: #f0f0f0;
+}
+
+.purple_circle{
+    width: 13px; 
+    height: 13px; 
+    background: #b2baf9; 
+    border-radius: 50%;
+    margin-top: 139%;
+    margin-left: 9%;
+}
+.sidebar h4{
+    position: absolute;
+    left: 4.1%;
+    right: 36.41%;
+    top: 47%;
+    bottom: 54.17%;
+
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 29px;
+
+    color: #F0F0F0;
+}
+
+.content {
+    flex: 1;
+    padding: 30px;
+    background: #2e2e2e;
+    border-radius: 20px 20px 20px 20px;
+    margin: 140px 40px 40px 40px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+}
+
+.content h1 {
+    font-family: "Montserrat";
+    font-style: bold;
+    color: #fff;
+    /*margin-bottom: 20px;*/
+    font-size: 34px;
+}
+.content h2 {
+    font-family: "Montserrat";
+    font-style: bold;
+    color: #fff;
+    margin-bottom: 20px;
+    margin-left: 30%;
+    font-size: 25px;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    padding: 14px;
+    text-align: center;
+    color: #fff;
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-size: 14px;
+    
+}
+
+th {
+    background-color: #252525;
+    font-style: bold;
+    font-weight: 600;
+}
+
+/* Стили для строк с факультетами */
+tr:nth-child(1) td:first-child { /* ИГРИК */
+    background-color: #333339;
+}
+
+tr:nth-child(2) td:first-child { /* ИИдИЖ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(3) td:first-child { /* ПИ */
+    background-color: #333339;
+}
+
+tr:nth-child(4) td:first-child { /* ТФ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(5) td:first-child { /* ФИТ */
+    background-color: #333339;
+}
+
+tr:nth-child(6) td:first-child { /* ФМ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(7) td:first-child { /* ФУиГХ */
+    background-color: #333339;
+}
+
+tr:nth-child(8) td:first-child { /* ФХТиБ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(9) td:first-child { /* ФЭмУ */
+    background-color: #333339;
+}
+
+
+/* Стили для ячеек с данными */
+tr:nth-child(1) td:not(:first-child) { /* ИГРИК */
+    background-color: #333339;
+}
+
+tr:nth-child(2) td:not(:first-child) { /* ИИДиЖ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(3) td:not(:first-child) { /* ПИ */
+    background-color: #333339;
+}
+
+tr:nth-child(4) td:not(:first-child) { /* Тф */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(5) td:not(:first-child) { /* ФИТ */
+    background-color: #333339;
+}
+
+tr:nth-child(6) td:not(:first-child) { /* ФМ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(7) td:not(:first-child) { /* ФУиГХ */
+    background-color: #333339;
+}
+
+tr:nth-child(8) td:not(:first-child) { /* ФХТиБ */
+    background-color: #3a3a3a;
+}
+
+tr:nth-child(9) td:not(:first-child) { /* ФЭмУ */
+    background-color: #333339;
+}

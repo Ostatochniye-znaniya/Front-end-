@@ -1,353 +1,496 @@
 "use client";
 
-import Navbar from "@/components/navbar/Navbar";
-import Button from "@/components/button/Button";
-import Dropdown from "@/components/dropdown/Dropdown";
-import CheckBox from "@/components/checkbox/CheckBox";
-
 import { useState } from "react";
+import { useEffect } from "react";
 
-const semestrs = [
-    { value: '1', label: 'Осень 2024' },
-    { value: '2', label: 'Весна 2025' },
-    { value: '3', label: 'Осень 2025' },
-    { value: '4', label: 'Весна 2026' },
-    { value: '5', label: 'Осень 2026' },
-    { value: '6', label: 'Весна 2027' },
-    { value: '7', label: 'Осень 2027' },
-    { value: '8', label: 'Весна 2028' }
-];
+import Script from "next/script";
 
-const faculties = [
-    { value: 'fit', label: 'ФИТ' },
-    { value: 'fm', label: 'ФМ' },
-    { value: 'tf', label: 'ТФ' },
-    { value: 'faiu', label: 'ФЭИУ' },
-    { value: 'fuigh', label: 'ФУИГХ' },
-    { value: 'fbk', label: 'ФБК' },
-    { value: 'fhtib', label: 'ФХТИБ' },
-    { value: 'pi', label: 'ПИ' }
-];
+import Navbar from "@/components/navbar/Navbar";
 
-const courses = [
-    { value: 'isit', label: 'ИСИТ' },
-    { value: 'sipi', label: 'СИПИ' },
-    { value: 'web', label: 'ВЕБ' },
-    { value: 'ib', label: 'ИБ' }
-];
-
-const classes = [
-    { value: 'linal', label: 'Линейная алгебра' },
-    { value: 'database', label: 'Базы данных' },
-    { value: 'programming', label: 'Основы программирования' },
-    { value: 'cybersecurity', label: 'Аналитика информационной безопасности' }
-];
-
-const style:React.CSSProperties = {
-  display:"flex",
-  justifyContent: "center"
-};
-const style2:React.CSSProperties = {
-  display:"flex",
-  alignItems: "center",
-  flexDirection: "column",
-};
-
+//import "../../legacy_styles/style.css";
+//import "../../legacy_styles/recommendation_styles.css";
+//import "../../legacy_styles/groups_page_style.css";
 
 export default function Home() {
-    const [selectedSemestr, setSelectedSemestr] = useState('');
-    const [selectedCourse, setSelectedCourse] = useState('');
-    const [selectedFaculty, setSelectedFaculty] = useState('');
-    var [selectedClass1, setSelectedClass1] = useState('linal');
-    var [selectedClass2, setSelectedClass2] = useState('');
+    useEffect(() => {
+        const API_BASE_URL = 'http://localhost:5134';
+        const tableBody = document.getElementById('tableBody');
+        const addBtn = document.getElementById('addBtn') as HTMLButtonElement;
+        
+        const createModal = document.getElementById('createGroupModal');
+        const closeCreateModalBtn = document.getElementById('closeModalBtn') as HTMLButtonElement;
+        const cancelCreateBtn = document.getElementById('cancelBtn') as HTMLButtonElement;
+        const createGroupForm = document.getElementById('createGroupForm') as HTMLFormElement;
+        const studyProgramSelect = document.getElementById('studyProgram') as HTMLSelectElement;
+        const groupNumberInput = document.getElementById('groupNumber') as HTMLInputElement;
+        const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
+        
+        const updateModal = document.getElementById('updateGroupModal');
+        const closeUpdateModalBtn = document.getElementById('closeUpdateModalBtn') as HTMLButtonElement;
+        const cancelUpdateBtn = document.getElementById('cancelUpdateBtn') as HTMLButtonElement;
+        const updateGroupForm = document.getElementById('updateGroupForm') as HTMLFormElement;
+        const updateStudyProgramSelect = document.getElementById('updateStudyProgram') as HTMLSelectElement;
+        const updateGroupNumberInput = document.getElementById('updateGroupNumber') as HTMLInputElement;
+        const updateGroupIdInput = document.getElementById('updateGroupId') as HTMLInputElement;
+        const updateBtn = document.getElementById('updateBtn') as HTMLButtonElement;
+        
+        let studyPrograms:{ id: number, name: string }[] = [];
+        let currentGroups = [];
+        
+        async function loadGroups() {
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE_URL}/StudyGroup/GetAll`);
+                
+                if (response.ok) {
+                    const groups = await response.json();
+                    currentGroups = groups;
+                    updateTable(groups);
+                } else {
+                    showNoData();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки групп:', error);
+                showNoData();
+            }
+        }
 
-    const [isModalVisible, setIsModalVisible] = useState(true);
-    const toggleDisplay = () => {
-        setIsModalVisible(!isModalVisible);
-    };
+        async function loadStudyPrograms() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/StudyProgram/GetAll`);
+                
+                if (response.ok) {
+                    studyPrograms = await response.json() as { id: number, name: string }[];
+                    
+                    studyProgramSelect!.innerHTML = '<option value="">Выберите направление</option>';
+                    updateStudyProgramSelect!.innerHTML = '<option value="">Выберите направление</option>';
+                    
+                    studyPrograms.forEach(program => {
+                        const option1 = document.createElement('option');
+                        option1.value = program.id.toString();
+                        option1.textContent = program.name;
+                        studyProgramSelect!.appendChild(option1);
+                        
+                        const option2 = document.createElement('option');
+                        option2.value = program.id.toString();
+                        option2.textContent = program.name;
+                        updateStudyProgramSelect!.appendChild(option2);
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки программ обучения:', error);
+                alert('Не удалось загрузить список направлений');
+            }
+        }
+        
+        function updateTable(groups) {
+            tableBody!.innerHTML = '';
+            
+            if (!groups || groups.length === 0) {
+                showNoData();
+                return;
+            }
+            
+            groups.forEach(group => {
+                const row = document.createElement('tr');
+                
+                const groupNumber = group.groupNumber || group.name || '-';
+                const programName = group.studyProgram ? group.studyProgram.name : '-';
+                const course = calculateCourse(groupNumber);
+                const programCypher = group.studyProgram ? group.studyProgram.cypherOfTheDirection : '-';
+                const studyProgramId = group.studyProgram ? group.studyProgram.id : (group.studyProgramId || 0);
+                
+                row.innerHTML = `
+                    <td>${groupNumber}</td>
+                    <td>${programName}</td>
+                    <td>${course}</td>
+                    <td>${programCypher}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="update-btn" data-id="${group.id}" 
+                                    data-number="${groupNumber}" 
+                                    data-program="${studyProgramId}">Обновить</button>
+                            <button class="delete-btn" data-id="${group.id}">Удалить</button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody!.appendChild(row);
+            });
+            
+            updateRecordsCount(groups.length);
+            
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (event) => {
+                    const target = event.target as HTMLButtonElement;
+                    const groupId = target.getAttribute('data-id');
+                    const groupName = target.closest('tr')!.cells[0].textContent;
+                    
+                    if (confirm(`Вы уверены, что хотите удалить группу "${groupName}"?`)) {
+                        await deleteGroup(groupId);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.update-btn').forEach(button => {
+                button.addEventListener('click', async (event) => {
+                    const target = event.target as HTMLButtonElement;
+                    const groupId = target.getAttribute('data-id');
+                    const groupNumber = target.getAttribute('data-number');
+                    const studyProgramId = target.getAttribute('data-program');
+                    
+                    openUpdateModal(groupId, groupNumber, studyProgramId);
+                });
+            });
+        }
+        
+        async function deleteGroup(groupId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/StudyGroup/Delete/${groupId}`, {
+                    method: 'DELETE',
+                });
+                
+                if (response.ok) {
+                    alert('Группа успешно удалена');
+                    loadGroups();
+                } else {
+                    const errorText = await response.text();
+                    alert(`Ошибка при удалении группы: ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка удаления группы:', error);
+                alert('Ошибка при удалении группы');
+            }
+        }
+        
+        async function createGroup(groupData) {
+            try {
+                saveBtn!.disabled = true;
+                saveBtn!.textContent = 'Создание...';
+                
+                const response = await fetch(`${API_BASE_URL}/StudyGroup/Create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(groupData)
+                });
+                
+                if (response.ok) {
+                    alert('Группа успешно создана');
+                    closeCreateModal();
+                    loadGroups();
+                } else {
+                    const errorText = await response.text();
+                    alert(`Ошибка при создании группы: ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка создания группы:', error);
+                alert('Ошибка при создании группы');
+            } finally {
+                saveBtn!.disabled = false;
+                saveBtn!.textContent = 'Создать';
+            }
+        }
+        
+        async function updateGroup(groupId, groupData) {
+            try {
+                updateBtn!.disabled = true;
+                updateBtn!.textContent = 'Обновление...';
+                
+                const response = await fetch(`${API_BASE_URL}/StudyGroup/Update/${groupId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(groupData)
+                });
+                
+                if (response.ok) {
+                    alert('Группа успешно обновлена');
+                    closeUpdateModal();
+                    loadGroups();
+                } else {
+                    const errorText = await response.text();
+                    alert(`Ошибка при обновлении группы: ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Ошибка обновления группы:', error);
+                alert('Ошибка при обновлении группы');
+            } finally {
+                updateBtn!.disabled = false;
+                updateBtn!.textContent = 'Обновить';
+            }
+        }
+        
+        function calculateCourse(groupNumber) {
+            if (!groupNumber) return '-';
+            
+            const parts = groupNumber.split('-');
+            if (parts.length < 2) return '-';
+            
+            const beforeDash = parts[0];
+            if (beforeDash.length < 2) return '-';
+            
+            const lastTwo = beforeDash.slice(-2);
+            if (!/^\d{2}$/.test(lastTwo)) return '-';
+            
+            const admissionYear = 2000 + parseInt(lastTwo);
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const month = now.getMonth();
+            
+            const academicYear = month >= 8 ? currentYear : currentYear - 1;
+            let course = academicYear - admissionYear;
+            
+            if (course < 1) return 1;
+            if (course > 5) return 5;
+            
+            return course;
+        }
+        
+        function updateRecordsCount(count) {
+            const recordsCountElement = document.getElementById('recordsCount');
+            if (recordsCountElement) {
+                recordsCountElement.textContent = `Найдено записей: ${count}`;
+            }
+        }
+        
+        function openCreateModal() {
+            createModal!.style.display = 'block';
+            loadStudyPrograms();
+            createGroupForm!.reset();
+        }
+        
+        function closeCreateModal() {
+            createModal!.style.display = 'none';
+            createGroupForm!.reset();
+        }
+        
+        function openUpdateModal(groupId, groupNumber, studyProgramId) {
+            updateModal!.style.display = 'block';
+            
+            loadStudyPrograms().then(() => {
+                updateGroupIdInput!.value = groupId;
+                updateGroupNumberInput!.value = groupNumber;
+                const programIdNumber = parseInt(studyProgramId);
+                if (programIdNumber > 0) {
+                    updateStudyProgramSelect!.value = programIdNumber.toString();
+                } else {
+                    updateStudyProgramSelect!.value = "";
+                }
+            });
+        }
+        
+        function closeUpdateModal() {
+            updateModal!.style.display = 'none';
+            updateGroupForm!.reset();
+        }
+        
+        function showLoading() {
+            tableBody!.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #aaa;">
+                        Загрузка данных...
+                    </td>
+                </tr>
+            `;
+        }
+        
+        function showNoData() {
+            tableBody!.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #aaa;">
+                        Нет данных для отображения
+                    </td>
+                </tr>
+            `;
+            updateRecordsCount(0);
+        }
 
-    const clearDisplay = () => {
-        [selectedClass1, setSelectedClass1] = useState('');
-        [selectedClass2, setSelectedClass2] = useState('');
-    };
-
-
+        function runOnStart() {
+            console.debug("aboba");
+            loadGroups();
+            
+            addBtn!.addEventListener('click', openCreateModal);
+            
+            closeCreateModalBtn!.addEventListener('click', closeCreateModal);
+            cancelCreateBtn!.addEventListener('click', closeCreateModal);
+            
+            closeUpdateModalBtn!.addEventListener('click', closeUpdateModal);
+            cancelUpdateBtn!.addEventListener('click', closeUpdateModal);
+            
+            window.addEventListener('click', (event) => {
+                if (event.target === createModal) {
+                    closeCreateModal();
+                }
+                if (event.target === updateModal) {
+                    closeUpdateModal();
+                }
+            });
+            
+            createGroupForm!.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const groupNumber = groupNumberInput!.value.trim();
+                const studyProgramId = parseInt(studyProgramSelect!.value);
+                
+                if (!groupNumber) {
+                    alert('Пожалуйста, введите номер группы');
+                    return;
+                }
+                
+                if (!studyProgramId) {
+                    alert('Пожалуйста, выберите направление');
+                    return;
+                }
+                
+                const groupData = {
+                    groupNumber: groupNumber,
+                    studyProgramId: studyProgramId
+                };
+                
+                await createGroup(groupData);
+            });
+            
+            updateGroupForm!.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const groupId = updateGroupIdInput!.value;
+                const groupNumber = updateGroupNumberInput!.value.trim();
+                const studyProgramId = parseInt(updateStudyProgramSelect!.value);
+                
+                if (!groupNumber) {
+                    alert('Пожалуйста, введите номер группы');
+                    return;
+                }
+                
+                if (!studyProgramId) {
+                    alert('Пожалуйста, выберите направление');
+                    return;
+                }
+                
+                const groupData = {
+                    groupNumber: groupNumber,
+                    studyProgramId: studyProgramId
+                };
+                
+                await updateGroup(groupId, groupData);
+            });
+        }
+        
+        if (document.readyState !== 'loading') {
+            runOnStart();
+        } else {
+            document.addEventListener('DOMContentLoaded', runOnStart);
+        }
+    }, []);
+    
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar 
-                title="Проверка остаточных знаний"
-                linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
-                ]}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-            />
-            <div className="p-modal-container" style={{ visibility: isModalVisible ? 'hidden' : 'visible' }}>
-                <h2 className="text-bold">Выбор дисциплин для группы 221-111</h2>
-                <div className="p-two-column">
-                    <div>
-                        <Dropdown 
-                            options={classes}
-                            value={selectedClass1}
-                            onChange={setSelectedClass1}
-                            placeholder="Не выбрано"
-                            label="Дисциплина 1"
-                        />
+        <>
+            <div className="bg-container">
+                <div className="bg-gradient"></div>
+                <Navbar 
+                    title="Проверка остаточных знаний"
+                    linkOptions={[
+                        { label: "Главная", href: "/csh/lpr/main" },
+                        { label: "Приказы", href: "/csh/lpr/order" },
+                        { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
+                        { label: "Отчеты", href: "/csh/lpr/report" },
+                        { label: "Настройки доступа", href: "/csh/lpr/settings" }
+                    ]}
+                    name="Иван"
+                    surname="Иванов"
+                    lastname="Иванович"
+                />
+
+                <div className="main-container">
+                    <h1>Список групп</h1>
+                    <div className="records-count" id="recordsCount">
+                        Найдено записей: 0
                     </div>
-                    <div>
-                        <Dropdown 
-                            options={classes}
-                            value={selectedClass2}
-                            onChange={setSelectedClass2}
-                            placeholder="Не выбрано"
-                            label="Дисциплина 2"
-                        />
+
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Номер группы</th>
+                                    <th>Название направления</th>
+                                    <th>Курс</th>
+                                    <th>Шифр направления</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                <div className="p-block-with-padding" style={{display: "flex", justifyContent: "space-around"}}>
-                    <Button title="Вернуться" color="btn-red" onClick={() => {toggleDisplay()}} />
-                    <Button title="Очистить выбор" color="btn-orange" onClick={() => {clearDisplay()}} />
-                    <Button title="Подтвердить выбор" color="btn-blue" onClick={() => alert("Тут пока ещё некуда перенаправлять ☻")} />
-                </div>
-            </div>
-            <div className="main-container">
-                <div className="p-block-header">
-                    <h1 className="text-bold">Формирование списка рекомендательных групп</h1>
-                </div>
-                <div className="p-block-with-padding">
-                    <div className="p-report-dropdown-block">
-                        <Dropdown 
-                            options={faculties}
-                            value={selectedFaculty}
-                            onChange={setSelectedFaculty}
-                            placeholder="Не выбрано"
-                            label="Факультет/институт"
-                        />
-                        <Dropdown 
-                            options={courses}
-                            value={selectedCourse}
-                            onChange={setSelectedCourse}
-                            placeholder="Не выбрано"
-                            label="Направление"
-                        />
-                        <Dropdown 
-                            options={semestrs}
-                            value={selectedSemestr}
-                            onChange={setSelectedSemestr}
-                            placeholder="Не выбрано"
-                            label="Роль"
-                        />
+
+                    <div className="generate-btn-container">
+                        <button className="filter-btn apply-btn" id="addBtn">Добавить</button>
                     </div>
                 </div>
-                <div className="p-block-with-padding">
-                    <table className="table-container">
-                        <thead>
-                            <tr>
-                                <th>Группа</th>
-                                <th>Курс</th>
-                                <th>Предыдущие тестирования</th>
-                                <th>Текущее тестирование</th>
-                                <th>Запланировать тестирование</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>221-111</td>
-                                <td>3</td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <span>весна 2023</span>
-                                            <div>
-                                                <CheckBox text="" type="red" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <span>осень 2023</span>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <span>весна 2024</span>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={style2}>
-                                        <span>весна 2025</span>
-                                        <div>
-                                            <CheckBox text="" type="red" state={true}/>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <span>осень 2025</span>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <span>осень 2026</span>
-                                            <div>
-                                                <CheckBox text="" type="blue" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>221-112</td>
-                                <td>3</td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="red" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={style2}>
-                                        <div>
-                                            <CheckBox text="" type="blue" state={true}/>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" />
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>221-113</td>
-                                <td>3</td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="red" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={style2}>
-                                        <div>
-                                            <CheckBox text="" type="blue" state={true}/>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" />
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>221-114</td>
-                                <td>3</td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="red" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={style2}>
-                                        <div>
-                                            <CheckBox text="" type="red" state={true}/>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{display: "flex", flexDirection: "row", gap: "8px", justifyContent: "space-around"}}>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" state={true}/>
-                                            </div>
-                                        </div>
-                                        <div style={style2}>
-                                            <div>
-                                                <CheckBox text="" type="blue" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div id="createGroupModal" className="modal">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <div className="modal-title">Создание новой группы</div>
+                            <button className="close-btn" id="closeModalBtn">&times;</button>
+                        </div>
+
+                        <form id="createGroupForm">
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="groupNumber">Номер группы:</label>
+                                <input type="text" id="groupNumber" className="form-input" required 
+                                       placeholder="Например: 123-456" />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="studyProgram">Направление:</label>
+                                <select id="studyProgram" className="form-select" required>
+                                    <option value="">Выберите направление</option>
+                                </select>
+                            </div>
+
+                            <div className="modal-buttons">
+                                <button type="button" className="modal-btn cancel-btn" id="cancelBtn">Отмена</button>
+                                <button type="submit" className="modal-btn save-btn" id="saveBtn">Создать</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div className="p-block-with-padding">
-                    <div style={style}>
-                        <Button title="Сформировать приказ" color="btn-blue" onClick={() => {toggleDisplay()}} />
+
+                <div id="updateGroupModal" className="modal">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <div className="modal-title">Редактирование группы</div>
+                            <button className="close-btn" id="closeUpdateModalBtn">&times;</button>
+                        </div>
+
+                        <form id="updateGroupForm">
+                            <input type="hidden" id="updateGroupId" />
+
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="updateGroupNumber">Номер группы:</label>
+                                <input type="text" id="updateGroupNumber" className="form-input" required 
+                                       placeholder="Например: 123-456" />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="updateStudyProgram">Направление:</label>
+                                <select id="updateStudyProgram" className="form-select" required>
+                                    <option value="">Выберите направление</option>
+                                </select>
+                            </div>
+
+                            <div className="modal-buttons">
+                                <button type="button" className="modal-btn cancel-btn" id="cancelUpdateBtn">Отмена</button>
+                                <button type="submit" className="modal-btn save-btn" id="updateBtn">Обновить</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
