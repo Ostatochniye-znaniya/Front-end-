@@ -824,6 +824,22 @@
 }
 
 /* стили, добавленные Podorvan-Anton */
+.p-modal-container {
+  position: fixed;
+  visibility: hidden;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  max-width: 50%;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  background-color: var(--background-c);
+  padding: 24px 24px;
+}
+
 .p-block-with-padding {
   padding: 16px 0;
 }
@@ -869,6 +885,10 @@
 .p-two-column > div > div > h2 {
   flex-grow: 1;
   margin: 0;
+}
+.p-two-column > div > div > p {
+  margin: 0;
+  padding: 8px 0;
 }
 .p-list-item {
   border-bottom: 2px solid;

@@ -144,9 +144,9 @@ export default function Home() {
                         />
                     </div>
                 </div>
-                <h3>Статистика по Факультету/институту:</h3>
-                <p>Всего сдано электронных отчётов: 50 из 60</p>
-                <p>Всего сдано бумажных отчётов: 20 из 60</p>
+                <h3 className="text-bold">Статистика по Факультету/институту:</h3>
+                <p className="text">Всего сдано электронных отчётов: 50 из 60</p>
+                <p className="text">Всего сдано бумажных отчётов: 20 из 60</p>
                 <Table 
                         columns={[
                         { 
@@ -192,34 +192,34 @@ export default function Home() {
                     <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
                 </div>
                 <div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
                 </div>

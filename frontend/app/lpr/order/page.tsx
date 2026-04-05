@@ -111,16 +111,16 @@ export default function Home() {
                     />
                 </div>
                 <div style={{ display: isTableVisible ? 'none' : 'block' }}>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
                 </div>
@@ -163,16 +163,16 @@ export default function Home() {
                     />
                 </div>
                 <div style={{ display: isTableVisible ? 'none' : 'block' }}>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
                 </div>
