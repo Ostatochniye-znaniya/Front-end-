@@ -159,10 +159,10 @@ export default function Home() {
                 <div className="p-block-with-padding2 p-two-column">
                     <div>
                         <div style={style}>
-                            <h3>Списки, графики и анкетирование</h3>
+                            <h3 className="text-bold">Списки, графики и анкетирование</h3>
                         </div>
                         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "8px 0"}}>
-                            <p>Формирование списков студентов</p>
+                            <p className="text">Формирование списков студентов</p>
                             <div>
                                 <Input hint="дд.мм.гг" value={inputValue} onChange={(value) => setInputValue(value)} />
                             </div>
@@ -172,7 +172,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "8px 0"}}>
-                            <p>Формирование графиков тестирования</p>
+                            <p className="text">Формирование графиков тестирования</p>
                             <div>
                                 <Input hint="дд.мм.гг" value={inputValue3} onChange={(value) => setInputValue3(value)} />
                             </div>
@@ -182,7 +182,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "8px 0"}}>
-                            <p>Сроки проведения анкетирования</p>
+                            <p className="text">Сроки проведения анкетирования</p>
                             <div>
                                 <Input hint="дд.мм.гг" value={inputValue5} onChange={(value) => setInputValue5(value)} />
                             </div>
@@ -194,22 +194,22 @@ export default function Home() {
                     </div>
                     <div>
                         <div style={style}>
-                            <h3>Отчёты</h3>
+                            <h3 className="text-bold">Отчёты</h3>
                         </div>
                         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "8px 0"}}>
-                            <p>Сдача электронных отчётов до</p>
+                            <p className="text">Сдача электронных отчётов до</p>
                             <div>
                                 <Input hint="дд.мм.гг" value={inputValue7} onChange={(value) => setInputValue7(value)} />
                             </div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "8px 0"}}>
-                            <p>Сдача бумажных отчётов до</p>
+                            <p className="text">Сдача бумажных отчётов до</p>
                             <div>
                                 <Input hint="дд.мм.гг" value={inputValue8} onChange={(value) => setInputValue8(value)} />
                             </div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", padding: "8px 0"}}>
-                            <p>Подготовка сводного отчёта до</p>
+                            <p className="text">Подготовка сводного отчёта до</p>
                             <div>
                                 <Input hint="дд.мм.гг" value={inputValue9} onChange={(value) => setInputValue9(value)} />
                             </div>

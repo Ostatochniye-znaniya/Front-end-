@@ -61,20 +61,22 @@ export default function Home() {
                 if (response.ok) {
                     studyPrograms = await response.json() as { id: number, name: string }[];
                     
-                    studyProgramSelect!.innerHTML = '<option class="dropdown-item" value="">Выберите направление</option>';
-                    updateStudyProgramSelect!.innerHTML = '<option class="dropdown-item" value="">Выберите направление</option>';
+                    studyProgramSelect!.innerHTML = '<option class="dropdown-item text" value="">Выберите направление</option>';
+                    updateStudyProgramSelect!.innerHTML = '<option class="dropdown-item text" value="">Выберите направление</option>';
                     
                     studyPrograms.forEach(program => {
                         const option1 = document.createElement('option');
                         option1.value = program.id.toString();
                         option1.textContent = program.name;
                         option1.className = "dropdown-item";
+                        option1.className += "text";
                         studyProgramSelect!.appendChild(option1);
                         
                         const option2 = document.createElement('option');
                         option2.value = program.id.toString();
                         option2.textContent = program.name;
                         option2.className = "dropdown-item";
+                        option2.className += "text";
                         updateStudyProgramSelect!.appendChild(option2);
                     });
                 }
@@ -404,8 +406,8 @@ export default function Home() {
                 />
 
                 <div className="main-container">
-                    <h1>Список групп</h1>
-                    <div className="p-block-with-padding" id="recordsCount">
+                    <h1 className="text-bold">Список групп</h1>
+                    <div className="p-block-with-padding text" id="recordsCount">
                         Найдено записей: 0
                     </div>
 
@@ -435,16 +437,16 @@ export default function Home() {
 
                         <form id="createGroupForm">
                             <div>
-                                <p style={{margin: "8px 0"}}>Номер группы:</p>
+                                <p style={{margin: "8px 0"}} className="text">Номер группы:</p>
                                 <input type="text" id="groupNumber" className="input-field" required 
                                        placeholder="Например: 123-456" />
                             </div>
 
                             <div className="p-block-with-padding">
-                                <p style={{margin: "8px 0"}}>Направление:</p>
+                                <p style={{margin: "8px 0"}} className="text">Направление:</p>
                                 <div className="dropdown-container">
                                     <select id="studyProgram" className="dropdown-header" required>
-                                        <option className="dropdown-item" value="">Выберите направление</option>
+                                        <option className="dropdown-item text" value="">Выберите направление</option>
                                     </select>
                                 </div>
                             </div>
@@ -465,16 +467,16 @@ export default function Home() {
                             <input type="hidden" id="updateGroupId" />
 
                             <div>
-                                <p style={{margin: "8px 0"}}>Номер группы:</p>
+                                <p style={{margin: "8px 0"}} className="text">Номер группы:</p>
                                 <input type="text" id="updateGroupNumber" className="input-field" required 
                                        placeholder="Например: 123-456" />
                             </div>
 
                             <div className="p-block-with-padding">
-                                <p style={{margin: "8px 0"}}>Направление:</p>
+                                <p style={{margin: "8px 0"}} className="text">Направление:</p>
                                 <div className="dropdown-container">
                                     <select id="updateStudyProgram" className="dropdown-header" required>
-                                        <option className="dropdown-item" value="">Выберите направление</option>
+                                        <option className="dropdown-item text" value="">Выберите направление</option>
                                     </select>
                                 </div>
                             </div>

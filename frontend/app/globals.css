@@ -888,6 +888,7 @@
 }
 .p-two-column > div > div > p {
   margin: 0;
+  padding: 8px 0;
 }
 .p-list-item {
   border-bottom: 2px solid;

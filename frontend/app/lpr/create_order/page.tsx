@@ -56,11 +56,11 @@ export default function Home() {
                 <div className="p-block-with-padding2 p-two-column">
                     <div>
                         <div>
-                            <h3>Дата приказа</h3>
+                            <h3 className="text-bold">Дата приказа</h3>
                             <Input hint="дд.мм.гг" value={inputValue} onChange={(value) => setInputValue(value)} />
                         </div>
                         <div>
-                            <h3>Учебный год</h3>
+                            <h3 className="text-bold">Учебный год</h3>
                             <Dropdown 
                                 options={semestrs}
                                 value={selectedSemestr}
@@ -69,27 +69,27 @@ export default function Home() {
                             />
                         </div>
                         <div>
-                            <h2>Должностные лица</h2>
-                            <p>Начальник отдела контроля образовательного процесса</p>
+                            <h2 className="text-bold">Должностные лица</h2>
+                            <p className="text">Начальник отдела контроля образовательного процесса</p>
                             <Input hint="ФИО" value={inputValue2} onChange={(value) => setInputValue2(value)} />
                         </div>
                         <div>
-                            <h2>Сроки проведения</h2>
-                            <h3>Сводный отчёт по результатам Проверки до</h3>
+                            <h2 className="text-bold">Сроки проведения</h2>
+                            <h3 className="text-bold">Сводный отчёт по результатам Проверки до</h3>
                             <Input hint="дд.мм.гг" value={inputValue3} onChange={(value) => setInputValue3(value)} />
                         </div>
                         <div>
-                            <h3>Сдача бумажных отчётов до</h3>
+                            <h3 className="text-bold">Сдача бумажных отчётов до</h3>
                             <Input hint="дд.мм.гг" value={inputValue4} onChange={(value) => setInputValue4(value)} />
                         </div>
                     </div>
                     <div>
                         <div>
-                            <h3>Номер</h3>
+                            <h3 className="text-bold">Номер</h3>
                             <Input hint="дд.мм.гг" value={inputValue5} onChange={(value) => setInputValue5(value)} />
                         </div>
                         <div>
-                            <h3>Проверяемый семестр</h3>
+                            <h3 className="text-bold">Проверяемый семестр</h3>
                             <Dropdown 
                                 options={semestrs}
                                 value={selectedSemestr}
@@ -98,15 +98,15 @@ export default function Home() {
                             />
                         </div>
                         <div style={{ flexGrow: '1' }}>
-                            <p>Начальник центра по учебно-методической работе</p>
+                            <p className="text">Начальник центра по учебно-методической работе</p>
                             <Input hint="ФИО" value={inputValue6} onChange={(value) => setInputValue6(value)} />
                         </div>
                         <div style={{ flexGrow: '1' }}>
-                            <h3>Сводный отчёт по результатам Анкетирования до</h3>
+                            <h3 className="text-bold">Сводный отчёт по результатам Анкетирования до</h3>
                             <Input hint="дд.мм.гг" value={inputValue7} onChange={(value) => setInputValue7(value)} />
                         </div>
                         <div>
-                            <h3>Сдача электронных отчётов до</h3>
+                            <h3 className="text-bold">Сдача электронных отчётов до</h3>
                             <Input hint="дд.мм.гг" value={inputValue8} onChange={(value) => setInputValue8(value)} />
                         </div>
                     </div>
