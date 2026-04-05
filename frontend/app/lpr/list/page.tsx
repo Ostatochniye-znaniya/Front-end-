@@ -13,7 +13,7 @@ import Navbar from "@/components/navbar/Navbar";
 
 export default function Home() {
     useEffect(() => {
-        const API_BASE_URL = 'http://localhost:5134';
+        const API_BASE_URL = '/csh/api/';
         const tableBody = document.getElementById('tableBody');
         const addBtn = document.getElementById('addBtn') as HTMLButtonElement;
         
@@ -108,10 +108,10 @@ export default function Home() {
                     <td>${programCypher}</td>
                     <td>
                         <div class="btn-group">
-                            <button class="update-btn" data-id="${group.id}" 
+                            <button class="update-btn btn btn-blue" data-id="${group.id}" 
                                     data-number="${groupNumber}" 
                                     data-program="${studyProgramId}">Обновить</button>
-                            <button class="delete-btn" data-id="${group.id}">Удалить</button>
+                            <button class="delete-btn btn btn-red" data-id="${group.id}">Удалить</button>
                         </div>
                     </td>
                 `;
