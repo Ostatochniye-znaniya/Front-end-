@@ -18,7 +18,6 @@ export default function Home() {
         const addBtn = document.getElementById('addBtn') as HTMLButtonElement;
         
         const createModal = document.getElementById('createGroupModal');
-        const closeCreateModalBtn = document.getElementById('closeModalBtn') as HTMLButtonElement;
         const cancelCreateBtn = document.getElementById('cancelBtn') as HTMLButtonElement;
         const createGroupForm = document.getElementById('createGroupForm') as HTMLFormElement;
         const studyProgramSelect = document.getElementById('studyProgram') as HTMLSelectElement;
@@ -26,7 +25,6 @@ export default function Home() {
         const saveBtn = document.getElementById('saveBtn') as HTMLButtonElement;
         
         const updateModal = document.getElementById('updateGroupModal');
-        const closeUpdateModalBtn = document.getElementById('closeUpdateModalBtn') as HTMLButtonElement;
         const cancelUpdateBtn = document.getElementById('cancelUpdateBtn') as HTMLButtonElement;
         const updateGroupForm = document.getElementById('updateGroupForm') as HTMLFormElement;
         const updateStudyProgramSelect = document.getElementById('updateStudyProgram') as HTMLSelectElement;
@@ -63,18 +61,20 @@ export default function Home() {
                 if (response.ok) {
                     studyPrograms = await response.json() as { id: number, name: string }[];
                     
-                    studyProgramSelect!.innerHTML = '<option value="">Выберите направление</option>';
-                    updateStudyProgramSelect!.innerHTML = '<option value="">Выберите направление</option>';
+                    studyProgramSelect!.innerHTML = '<option class="dropdown-item" value="">Выберите направление</option>';
+                    updateStudyProgramSelect!.innerHTML = '<option class="dropdown-item" value="">Выберите направление</option>';
                     
                     studyPrograms.forEach(program => {
                         const option1 = document.createElement('option');
                         option1.value = program.id.toString();
                         option1.textContent = program.name;
+                        option1.className = "dropdown-item";
                         studyProgramSelect!.appendChild(option1);
                         
                         const option2 = document.createElement('option');
                         option2.value = program.id.toString();
                         option2.textContent = program.name;
+                        option2.className = "dropdown-item";
                         updateStudyProgramSelect!.appendChild(option2);
                     });
                 }
@@ -258,18 +258,18 @@ export default function Home() {
         }
         
         function openCreateModal() {
-            createModal!.style.display = 'block';
+            createModal!.style.visibility = 'visible';
             loadStudyPrograms();
             createGroupForm!.reset();
         }
         
         function closeCreateModal() {
-            createModal!.style.display = 'none';
+            createModal!.style.visibility = 'hidden';
             createGroupForm!.reset();
         }
         
         function openUpdateModal(groupId, groupNumber, studyProgramId) {
-            updateModal!.style.display = 'block';
+            updateModal!.style.visibility = 'visible';
             
             loadStudyPrograms().then(() => {
                 updateGroupIdInput!.value = groupId;
@@ -284,14 +284,14 @@ export default function Home() {
         }
         
         function closeUpdateModal() {
-            updateModal!.style.display = 'none';
+            updateModal!.style.visibility = 'hidden';
             updateGroupForm!.reset();
         }
         
         function showLoading() {
             tableBody!.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: #aaa;">
+                    <td colspan="5" style="text-align: center;">
                         Загрузка данных...
                     </td>
                 </tr>
@@ -301,7 +301,7 @@ export default function Home() {
         function showNoData() {
             tableBody!.innerHTML = `
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px; color: #aaa;">
+                    <td colspan="5" style="text-align: center;">
                         Нет данных для отображения
                     </td>
                 </tr>
@@ -315,10 +315,8 @@ export default function Home() {
             
             addBtn!.addEventListener('click', openCreateModal);
             
-            closeCreateModalBtn!.addEventListener('click', closeCreateModal);
             cancelCreateBtn!.addEventListener('click', closeCreateModal);
             
-            closeUpdateModalBtn!.addEventListener('click', closeUpdateModal);
             cancelUpdateBtn!.addEventListener('click', closeUpdateModal);
             
             window.addEventListener('click', (event) => {
@@ -407,12 +405,12 @@ export default function Home() {
 
                 <div className="main-container">
                     <h1>Список групп</h1>
-                    <div className="records-count" id="recordsCount">
+                    <div className="p-block-with-padding" id="recordsCount">
                         Найдено записей: 0
                     </div>
 
-                    <div className="table-container">
-                        <table>
+                    <div>
+                        <table className="table-container">
                             <thead>
                                 <tr>
                                     <th>Номер группы</th>
@@ -427,65 +425,63 @@ export default function Home() {
                         </table>
                     </div>
 
-                    <div className="generate-btn-container">
-                        <button className="filter-btn apply-btn" id="addBtn">Добавить</button>
+                    <div className="p-block-with-padding">
+                        <button className="btn btn-blue" id="addBtn">Добавить</button>
                     </div>
                 </div>
-                <div id="createGroupModal" className="modal">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <div className="modal-title">Создание новой группы</div>
-                            <button className="close-btn" id="closeModalBtn">&times;</button>
-                        </div>
+                <div id="createGroupModal" className="p-modal-container">
+                    <div>
+                        <h2 className="text-bold">Создание новой группы</h2>
 
                         <form id="createGroupForm">
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="groupNumber">Номер группы:</label>
-                                <input type="text" id="groupNumber" className="form-input" required 
+                            <div>
+                                <p style={{margin: "8px 0"}}>Номер группы:</p>
+                                <input type="text" id="groupNumber" className="input-field" required 
                                        placeholder="Например: 123-456" />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="studyProgram">Направление:</label>
-                                <select id="studyProgram" className="form-select" required>
-                                    <option value="">Выберите направление</option>
-                                </select>
+                            <div className="p-block-with-padding">
+                                <p style={{margin: "8px 0"}}>Направление:</p>
+                                <div className="dropdown-container">
+                                    <select id="studyProgram" className="dropdown-header" required>
+                                        <option className="dropdown-item" value="">Выберите направление</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="modal-buttons">
-                                <button type="button" className="modal-btn cancel-btn" id="cancelBtn">Отмена</button>
-                                <button type="submit" className="modal-btn save-btn" id="saveBtn">Создать</button>
+                            <div style={{display:"flex", flexDirection:"row", justifyContent:"space-between", gap: "8px"}}>
+                                <button type="button" className="btn btn-red" id="cancelBtn">Отмена</button>
+                                <button type="submit" className="btn btn-blue" id="saveBtn">Создать</button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <div id="updateGroupModal" className="modal">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <div className="modal-title">Редактирование группы</div>
-                            <button className="close-btn" id="closeUpdateModalBtn">&times;</button>
-                        </div>
+                <div id="updateGroupModal" className="p-modal-container">
+                    <div>
+                        <h2 className="text-bold">Редактирование группыы</h2>
 
                         <form id="updateGroupForm">
                             <input type="hidden" id="updateGroupId" />
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="updateGroupNumber">Номер группы:</label>
-                                <input type="text" id="updateGroupNumber" className="form-input" required 
+                            <div>
+                                <p style={{margin: "8px 0"}}>Номер группы:</p>
+                                <input type="text" id="updateGroupNumber" className="input-field" required 
                                        placeholder="Например: 123-456" />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="updateStudyProgram">Направление:</label>
-                                <select id="updateStudyProgram" className="form-select" required>
-                                    <option value="">Выберите направление</option>
-                                </select>
+                            <div className="p-block-with-padding">
+                                <p style={{margin: "8px 0"}}>Направление:</p>
+                                <div className="dropdown-container">
+                                    <select id="updateStudyProgram" className="dropdown-header" required>
+                                        <option className="dropdown-item" value="">Выберите направление</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <div className="modal-buttons">
-                                <button type="button" className="modal-btn cancel-btn" id="cancelUpdateBtn">Отмена</button>
-                                <button type="submit" className="modal-btn save-btn" id="updateBtn">Обновить</button>
+                            <div style={{display:"flex", flexDirection:"row", justifyContent:"space-between", gap: "8px"}}>
+                                <button type="button" className="btn btn-red" id="cancelUpdateBtn">Отмена</button>
+                                <button type="submit" className="btn btn-blue" id="updateBtn">Создать</button>
                             </div>
                         </form>
                     </div>
