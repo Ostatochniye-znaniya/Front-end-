@@ -5,7 +5,7 @@ import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 
-const API_BASE_URL = "http://localhost:5134/csh/api/";
+const API_BASE_URL = `${typeof window !== "undefined" ? window.location.origin : ""}/csh/api/`;
 
 const navLinks = [
     { label: "Главная", href: "/csh/hod/main" },
