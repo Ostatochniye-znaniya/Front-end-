@@ -160,6 +160,7 @@ export default function LprList() {
       }}></div>
       <Alert type="info" title="Информация" text="Текст" />
       <p className="title">Таблица</p>
+      <div className="table-wrapper">
       <Table 
         columns={[
           { 
@@ -201,6 +202,7 @@ export default function LprList() {
         siblingCount={2}
         showFirstLast={true}
       />
+      </div>
     </div>
   );
 }

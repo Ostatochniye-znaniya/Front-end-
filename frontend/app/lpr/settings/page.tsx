@@ -122,6 +122,7 @@ export default function LprSettings() {
                         />
                     </div>
                 </div>
+                <div className="table-wrapper">
                 <Table 
                     columns={[
                     { 
@@ -143,6 +144,7 @@ export default function LprSettings() {
                     ]}
                     data={table}
                 />
+                </div>
             </div>
             <div className="main-container" style={{ display: isFirstVisible ? 'none' : 'block' }}>
                 <div className="p-block-header">

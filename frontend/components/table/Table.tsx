@@ -46,6 +46,7 @@ const Table = <T,>({ columns, data }: TableProps<T>) => {
   const sortedData = getSortedData();
 
   return (
+    <div className="table-wrapper">
     <table className="table-container">
       <thead>
         <tr>
@@ -77,6 +78,7 @@ const Table = <T,>({ columns, data }: TableProps<T>) => {
         ))}
       </tbody>
     </table>
+    </div>
   );
 };
 

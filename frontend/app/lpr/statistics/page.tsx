@@ -64,6 +64,7 @@ export default function LprMain() {
                         label="Семестр"
                     />
                 </div>
+                <div className="table-wrapper">
                 <Table
                     columns={[
                         { header: 'Факультеты',                          accessor: 'faculty' },
@@ -79,6 +80,7 @@ export default function LprMain() {
                     ]}
                     data={table}
                 />
+                </div>
             </div>
         </div>
     );

@@ -132,6 +132,7 @@ export default function GroupSelection() {
                     />
                 </div>
 
+                <div className="table-wrapper">
                 <table className="table-container">
                     <thead>
                         <tr>
@@ -177,7 +178,8 @@ export default function GroupSelection() {
                         ))}
                     </tbody>
                 </table>
-
+                </div>
+                
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
                     <button
                         style={directionIndex === 0 ? navBtnDisabledStyle : navBtnStyle}
