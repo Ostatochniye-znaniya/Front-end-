@@ -20,20 +20,34 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, surname, lastname, role }) => {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setTheme(mediaQuery.matches ? 'dark' : 'light');
-    const handler = (e: MediaQueryListEvent) => setTheme(e.matches ? 'dark' : 'light');
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
+    const saved = localStorage.getItem('theme');
+    const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDark(dark);
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark, mounted]);
+
+  const toggleTheme = () => {
+    const newDark = !isDark;
+    setIsDark(newDark);
+    localStorage.setItem('theme', newDark ? 'dark' : 'light');
+  };
 
   return (
     <div className="navbar-container">
-
       <img
         className="theme-aware-logo"
         src="/csh/mpu_logo.png"
@@ -42,11 +56,11 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
         height={55}
         style={{ marginBottom: '12px' }}
       />
-      
+
       <div className="navbar-title-text-block">
         <p>{title}</p>
       </div>
-      
+
       <div className="navbar-divider"></div>
 
       <div className="navbar-avatar">
@@ -68,10 +82,9 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
 
       <div className="navbar-link-container">
         {linkOptions && linkOptions.map((option, index) => {
-          const isActive = pathname === option.href || 
-              pathname === option.href.replace('/csh', '');
+          const isActive = pathname === option.href ||
+            pathname === option.href.replace('/csh', '');
           const Icon = option.icon;
-          console.log('pathname:', pathname, 'href:', option.href, 'isActive:', isActive);
           return (
             <a
               key={index}
@@ -80,9 +93,9 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
             >
               {isActive && <span className="navbar-active-dot"></span>}
               {Icon && (
-              <span className="navbar-icon-wrap">
+                <span className="navbar-icon-wrap">
                   <Icon size={18} />
-              </span>
+                </span>
               )}
               <span className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}>
                 {option.label}
@@ -90,6 +103,17 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
             </a>
           );
         })}
+      </div>
+
+      <div className="navbar-theme-toggle" onClick={toggleTheme}>
+        <span className="navbar-path navbar-deactive-path">
+          Тёмная тема
+        </span>
+        {mounted && (
+          <div className={`navbar-theme-switch ${isDark ? 'navbar-theme-switch-on' : ''}`}>
+            <div className="navbar-theme-switch-thumb"></div>
+          </div>
+        )}
       </div>
 
     </div>

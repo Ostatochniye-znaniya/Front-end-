@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-// remove next/font imports to avoid turbopack issues
 import "./globals.css";
 
-// fonts will be loaded via css @import in globals.css
-
-// keep variables for font families if needed
 const geistSans = {
   variable: "--font-geist-sans",
 };
-
 const geistMono = {
   variable: "--font-geist-mono",
 };
@@ -24,10 +19,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              var theme = localStorage.getItem('theme');
+              if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+              } else if (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+              }
+            })();
+          `
+        }} />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>
