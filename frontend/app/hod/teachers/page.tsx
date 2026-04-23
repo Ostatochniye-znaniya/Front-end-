@@ -1,17 +1,17 @@
 "use client";
-
 import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
+import { PieChart, Users, BookOpen, GraduationCap } from 'lucide-react';
 
 const API_BASE_URL = `${typeof window !== "undefined" ? window.location.origin : ""}/csh/api/`;
 
 const navLinks = [
-    { label: "Главная", href: "/csh/hod/main" },
-    { label: "Выбор групп", href: "/csh/hod/groups" },
-    { label: "Выбор дисциплин", href: "/csh/hod/disciplines" },
-    { label: "Выбор преподавателей", href: "/csh/hod/teachers" },
+    { label: "Статистика",           href: "/csh/hod/statistics",        icon: PieChart },
+    { label: "Выбор групп",          href: "/csh/hod/groups",      icon: Users },
+    { label: "Выбор дисциплин",      href: "/csh/hod/disciplines", icon: BookOpen },
+    { label: "Выбор преподавателей", href: "/csh/hod/teachers",    icon: GraduationCap },
 ];
 
 type TestingDto = {
@@ -251,6 +251,7 @@ export default function TeacherSelection() {
                 name="Иван"
                 surname="Иванов"
                 lastname="Иванович"
+                role="Заведующий кафедрой"
             />
             <div className="main-container">
                 <h1 className="text-bold" style={{ marginBottom: "16px" }}>

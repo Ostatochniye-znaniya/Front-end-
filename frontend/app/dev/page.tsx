@@ -82,8 +82,7 @@ const cities = [
     { value: 'moder', label: 'Модератор' },
     { value: 'guest', label: 'Гость' }
   ];
-
-export default function Home() {
+export default function LprList() {
   const [inputValue, setInputValue] = useState('');
   const [inputBigValue, setInputBigValue] = useState('');
   const [searchValue, setSearchValue] = useState('');

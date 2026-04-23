@@ -8,7 +8,7 @@ import Pagination from "@/components/pagination/Pagination";
 import Dropdown from "@/components/dropdown/Dropdown";
 
 import { useState } from "react";
-
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 const table = [
     {
@@ -63,7 +63,7 @@ const reports = [
     { value: '2', label: 'Не сдан' }
 ];
 
-export default function Home() {
+export default function LprReport() {
     const [selectedSemestr, setSelectedSemestr] = useState('');
     const [selectedFaculty, setSelectedFaculty] = useState('');
     const [e_reportStatus, setE_reportStatus] = useState('');
@@ -90,15 +90,16 @@ export default function Home() {
             <Navbar 
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
+                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
+                    { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
+                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
+                    { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
+                    { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
                 ]}
                 name="Иван"
                 surname="Иванов"
                 lastname="Иванович"
+                role="Лицо, принимающее решения"
             />
             <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
                 <div className="p-block-header">
