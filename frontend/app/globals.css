@@ -731,6 +731,14 @@
   color: var(--accent-blue-c);
 }
 
+.navbar-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-blue-c);
+  flex-shrink: 0;
+}
+
 .navbar-path {
   font-size: 13px;
   font-weight: 600;

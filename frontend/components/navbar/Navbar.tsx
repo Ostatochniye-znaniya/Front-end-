@@ -68,18 +68,21 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
 
       <div className="navbar-link-container">
         {linkOptions && linkOptions.map((option, index) => {
-          const isActive = pathname === option.href;
+          const isActive = pathname === option.href || 
+              pathname === option.href.replace('/csh', '');
           const Icon = option.icon;
+          console.log('pathname:', pathname, 'href:', option.href, 'isActive:', isActive);
           return (
             <a
               key={index}
               href={option.href}
               className={`navbar-inner-container ${isActive ? 'navbar-inner-active' : ''}`}
             >
+              {isActive && <span className="navbar-active-dot"></span>}
               {Icon && (
-                <span className="navbar-icon-wrap">
+              <span className="navbar-icon-wrap">
                   <Icon size={18} />
-                </span>
+              </span>
               )}
               <span className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}>
                 {option.label}
