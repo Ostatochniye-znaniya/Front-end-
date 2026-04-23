@@ -109,7 +109,7 @@ export default function DisciplineSelection() {
                         label="Кафедра"
                     />
                 </div>
-
+                <div className="table-wrapper">
                 <table className="table-container">
                     <thead>
                         <tr>
@@ -159,7 +159,8 @@ export default function DisciplineSelection() {
                         ))}
                     </tbody>
                 </table>
-
+                </div>
+                
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}

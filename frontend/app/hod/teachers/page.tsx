@@ -291,6 +291,7 @@ export default function TeacherSelection() {
                     </p>
                 )}
 
+                <div className="table-wrapper">
                 <table className="table-container">
                     <thead>
                         <tr>
@@ -339,6 +340,7 @@ export default function TeacherSelection() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     );

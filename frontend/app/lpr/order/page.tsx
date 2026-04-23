@@ -90,6 +90,7 @@ export default function LprOrder() {
                     <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
                 </div>
                 <div style={{ display: isTableVisible ? 'block' : 'none' }}>
+                    <div className="table-wrapper">
                     <Table 
                         columns={[
                         { 
@@ -111,6 +112,7 @@ export default function LprOrder() {
                         ]}
                         data={table_1}
                     />
+                    </div>
                 </div>
                 <div style={{ display: isTableVisible ? 'none' : 'block' }}>
                     <div className="p-list-item text">
@@ -142,6 +144,7 @@ export default function LprOrder() {
                     <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
                 </div>
                 <div style={{ display: isTableVisible ? 'block' : 'none' }}>
+                    <div className="table-wrapper">
                     <Table 
                         columns={[
                         { 
@@ -163,6 +166,7 @@ export default function LprOrder() {
                         ]}
                         data={table_2}
                     />
+                    </div>
                 </div>
                 <div style={{ display: isTableVisible ? 'none' : 'block' }}>
                     <div className="p-list-item text">

@@ -44,6 +44,7 @@ export default function LprList() {
             />
             <div className="main-container">
                 <p className="title text-bold">Сроки проведения тестирования</p>
+                <div className="table-wrapper">
                 <Table
                     columns={[
                         { header: 'Этап', accessor: 'stage' },
@@ -51,7 +52,9 @@ export default function LprList() {
                     ]}
                     data={table_1}
                 />
+                </div>
                 <p className="title text-bold">Согласование дат проведения проверки остаточных знаний</p>
+                <div className="table-wrapper">
                 <Table
                     columns={[
                         { header: 'Группа',            accessor: 'groupe' },
@@ -62,6 +65,7 @@ export default function LprList() {
                     ]}
                     data={table_2}
                 />
+                </div>
             </div>
         </div>
     );

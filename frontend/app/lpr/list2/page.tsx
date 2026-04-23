@@ -146,6 +146,7 @@ export default function LprList() {
                     </div>
                 </div>
                 <div className="p-block-with-padding">
+                    <div className="table-wrapper">
                     <table className="table-container">
                         <thead>
                             <tr>
@@ -341,6 +342,7 @@ export default function LprList() {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
                 <div className="p-block-with-padding">
                     <div style={style}>

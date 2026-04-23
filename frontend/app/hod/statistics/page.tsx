@@ -75,6 +75,7 @@ export default function KafedraMain() {
                         label="Факультет"
                     />
                 </div>
+                <div className="table-wrapper">
                 <Table
                     columns={[
                         { header: 'Факультеты',                          accessor: 'faculty' },
@@ -90,6 +91,7 @@ export default function KafedraMain() {
                     ]}
                     data={tableData}
                 />
+                </div>
             </div>
         </div>
     );

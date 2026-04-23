@@ -148,6 +148,7 @@ export default function LprReport() {
                 <h3 className="text-bold">Статистика по Факультету/институту:</h3>
                 <p className="text">Всего сдано электронных отчётов: 50 из 60</p>
                 <p className="text">Всего сдано бумажных отчётов: 20 из 60</p>
+                <div className="table-wrapper">
                 <Table 
                         columns={[
                         { 
@@ -180,6 +181,7 @@ export default function LprReport() {
                         siblingCount={2}
                         showFirstLast={true}
                     />
+                </div>    
             </div>
             <div className="main-container" style={{ display: isFirstVisible ? 'none' : 'block' }}>
                 <div className="p-block-header">

@@ -66,6 +66,7 @@ function EditDisciplinesContent() {
                     </span>
                 </h1>
 
+                <div className="table-wrapper">
                 <table className="table-container">
                     <thead>
                         <tr>
@@ -91,7 +92,8 @@ function EditDisciplinesContent() {
                         ))}
                     </tbody>
                 </table>
-
+                </div>
+                
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
                     <Button
                         title="+ Добавить дисциплину"
