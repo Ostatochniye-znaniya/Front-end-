@@ -58,7 +58,7 @@ export default function KafedraMain() {
                 role="Заведующий кафедрой"
             />
             <div className="main-container">
-                <h1 className="text-bold">Главная</h1>
+                <h1 className="text-bold">Статистика проведения проверки остаточных знаний по факультетам</h1>
                 <div className="search-container" style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
                     <Dropdown
                         options={semestrs}
