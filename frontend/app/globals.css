@@ -1118,3 +1118,57 @@ body {
     font-size: 11px;
   }
 }
+
+@media (max-width: 768px) {
+  /* Таблица — меньше padding */
+  .table-container th,
+  .table-container td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  /* Dropdown — на всю ширину */
+  .dropdown-container {
+    max-width: 100%;
+  }
+
+  /* Pagination — меньше кнопки */
+  .pagination-button {
+    min-width: 26px;
+    height: 26px;
+    font-size: 12px;
+    padding: 0 4px;
+  }
+
+  /* Button — на всю ширину если в колонке */
+  .p-block-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Два столбца в настройках — в один */
+  .p-two-column {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Main container padding */
+  .main-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --navbar-width: 180px;
+    --navbar-padding-x: 10px;
+  }
+
+  .navbar-path {
+    font-size: 11px;
+  }
+
+  .navbar-title-text-block {
+    font-size: 12px;
+  }
+}
