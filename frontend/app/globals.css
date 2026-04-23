@@ -967,3 +967,41 @@ body {
   margin: 0px;
 
 }
+
+/* Иконка покачивается при наведении */
+@keyframes navbar-icon-shake {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-12deg); }
+  75%  { transform: rotate(12deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.navbar-inner-container:hover .navbar-icon-wrap {
+  animation: navbar-icon-shake 300ms ease;
+}
+
+/* Приближение аватара при наведении */
+.navbar-avatar img {
+  transition: transform 200ms ease;
+}
+
+.navbar-avatar:hover img {
+  transform: scale(1.08);
+}
+
+/* Синий текст при наведении на пункт */
+.navbar-inner-container:hover .navbar-path {
+  color: var(--accent-blue-c);
+}
+
+.theme-aware-logo {
+  transition: filter 200ms ease;
+}
+
+.theme-aware-logo:hover {
+  filter: hue-rotate(230deg) saturate(3) brightness(1.2);
+}
+
+.navbar-inner-container:hover .navbar-icon-wrap {
+  color: var(--accent-blue-c);
+}
