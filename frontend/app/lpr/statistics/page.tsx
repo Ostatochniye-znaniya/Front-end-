@@ -42,7 +42,7 @@ export default function LprMain() {
             <Navbar
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Статистика",                href: "/csh/lpr/main", icon: PieChart },
+                    { label: "Статистика",                href: "/csh/lpr/statistics", icon: PieChart },
                     { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
                     { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
                     { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },

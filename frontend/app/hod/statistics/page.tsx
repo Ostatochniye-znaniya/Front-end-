@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar/Navbar";
 import Table from "@/components/table/Table";
 import Dropdown from "@/components/dropdown/Dropdown";
 import { useState } from "react";
-import { Home, Users, BookOpen, GraduationCap } from 'lucide-react';
+import { PieChart, Users, BookOpen, GraduationCap } from 'lucide-react';
 
 const semestrs = [
     { value: 'fall2024',   label: 'Осень 2024' },
@@ -47,7 +47,7 @@ export default function KafedraMain() {
             <Navbar
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная",              href: "/csh/hod/main",        icon: Home },
+                    { label: "Статистика",              href: "/csh/hod/statistics",        icon: PieChart },
                     { label: "Выбор групп",          href: "/csh/hod/groups",      icon: Users },
                     { label: "Выбор дисциплин",      href: "/csh/hod/disciplines", icon: BookOpen },
                     { label: "Выбор преподавателей", href: "/csh/hod/teachers",    icon: GraduationCap },

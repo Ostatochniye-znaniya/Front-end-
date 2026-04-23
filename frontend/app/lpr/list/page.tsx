@@ -7,7 +7,7 @@ import Script from "next/script";
 
 import Navbar from "@/components/navbar/Navbar";
 
-import { Home, FileText, Users, BookOpen, Settings } from 'lucide-react';
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 //import "../../legacy_styles/style.css";
 //import "../../legacy_styles/recommendation_styles.css";
@@ -396,7 +396,7 @@ export default function LprList() {
                 <Navbar
                     title="Проверка остаточных знаний"
                     linkOptions={[
-                        { label: "Главная",                   href: "/csh/lpr/main",     icon: Home },
+                        { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
                         { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
                         { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
                         { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },

@@ -6,10 +6,10 @@ import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Checkbox from "@/components/checkbox/CheckBox";
 
-import { Home, Users, BookOpen, GraduationCap } from 'lucide-react';
+import { PieChart, Users, BookOpen, GraduationCap } from 'lucide-react';
 
 const navLinks = [
-    { label: "Главная",              href: "/csh/hod/main",        icon: Home },
+    { label: "Статистика",              href: "/csh/hod/statistics",        icon: PieChart },
     { label: "Выбор групп",          href: "/csh/hod/groups",      icon: Users },
     { label: "Выбор дисциплин",      href: "/csh/hod/disciplines", icon: BookOpen },
     { label: "Выбор преподавателей", href: "/csh/hod/teachers",    icon: GraduationCap },

@@ -10,7 +10,7 @@ import { redirect } from "next/dist/server/api-utils";
 import { RedirectType } from "next/navigation";
 import { useRouter } from 'next/navigation'
 
-import { Home, FileText, Users, BookOpen, Settings } from 'lucide-react';
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 
 const table_1 = [
@@ -64,7 +64,7 @@ export default function LprOrder() {
             <Navbar
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная",                   href: "/csh/lpr/main",     icon: Home },
+                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
                     { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
                     { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
                     { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },

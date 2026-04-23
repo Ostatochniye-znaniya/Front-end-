@@ -9,8 +9,8 @@ export default function LprList() {
             title="Проверка остаточных знаний"
             linkOptions={[
                 { label: "Преподаватель", href: "/csh/teacher/main" },
-                { label: "ЛПР", href: "/csh/lpr/main" },
-                { label: "Заведующего кафедрой", href: "/csh/hod/main" }
+                { label: "ЛПР", href: "/csh/lpr/statistics" },
+                { label: "Заведующего кафедрой", href: "/csh/hod/statistics" }
             ]}
             name="Иван"
             surname="Иванов"

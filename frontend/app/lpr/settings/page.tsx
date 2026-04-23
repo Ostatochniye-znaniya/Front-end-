@@ -8,7 +8,7 @@ import Input from "@/components/input/Input";
 
 import { useState } from "react";
 
-import { Home, FileText, Users, BookOpen, Settings } from 'lucide-react';
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 const semestrs = [
     { value: '1', label: 'Осень 2024' },
@@ -88,7 +88,7 @@ export default function LprSettings() {
             <Navbar
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная",                   href: "/csh/lpr/main",     icon: Home },
+                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
                     { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
                     { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
                     { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },

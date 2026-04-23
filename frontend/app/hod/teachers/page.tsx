@@ -7,7 +7,7 @@ import { PieChart, Users, BookOpen, GraduationCap } from 'lucide-react';
 const API_BASE_URL = `${typeof window !== "undefined" ? window.location.origin : ""}/csh/api/`;
 
 const navLinks = [
-    { label: "Статистика",           href: "/csh/hod/main",        icon: PieChart },
+    { label: "Статистика",           href: "/csh/hod/statistics",        icon: PieChart },
     { label: "Выбор групп",          href: "/csh/hod/groups",      icon: Users },
     { label: "Выбор дисциплин",      href: "/csh/hod/disciplines", icon: BookOpen },
     { label: "Выбор преподавателей", href: "/csh/hod/teachers",    icon: GraduationCap },

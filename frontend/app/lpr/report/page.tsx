@@ -8,8 +8,7 @@ import Pagination from "@/components/pagination/Pagination";
 import Dropdown from "@/components/dropdown/Dropdown";
 
 import { useState } from "react";
-
-import { Home, FileText, Users, BookOpen, Settings } from 'lucide-react';
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 const table = [
     {
@@ -91,7 +90,7 @@ export default function LprReport() {
             <Navbar 
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная",                   href: "/csh/lpr/main",     icon: Home },
+                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
                     { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
                     { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
                     { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
