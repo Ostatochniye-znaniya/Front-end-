@@ -1,75 +1,96 @@
 "use client";
-
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { LucideIcon } from 'lucide-react';
 
 interface LinkOption {
   label: string;
   href: string;
+  icon?: LucideIcon;
 }
 
 interface NavbarProps {
-    title: string;
-    linkOptions?: LinkOption[];
-    avatarUrl?: string;
-    name: string;
-    surname: string;
-    lastname: string;
+  title: string;
+  linkOptions?: LinkOption[];
+  avatarUrl?: string;
+  name: string;
+  surname: string;
+  lastname: string;
+  role?: string;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, surname, lastname }) => {
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
-    const pathname = usePathname(); // получаем текущий путь
+const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, surname, lastname, role }) => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const pathname = usePathname();
 
-    useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        setTheme(mediaQuery.matches ? 'dark' : 'light');
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setTheme(mediaQuery.matches ? 'dark' : 'light');
+    const handler = (e: MediaQueryListEvent) => setTheme(e.matches ? 'dark' : 'light');
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
 
-        const handler = (e: MediaQueryListEvent) => {
-        setTheme(e.matches ? 'dark' : 'light');
-        };
+  return (
+    <div className="navbar-container">
 
-        mediaQuery.addEventListener('change', handler);
-        return () => mediaQuery.removeEventListener('change', handler);
-    }, []);
+      <img
+        className="theme-aware-logo"
+        src="/csh/mpu_logo.png"
+        alt="Logo"
+        width={210}
+        height={55}
+        style={{ marginBottom: '12px' }}
+      />
+      
+      <div className="navbar-title-text-block">
+        <p>{title}</p>
+      </div>
+      
+      <div className="navbar-divider"></div>
 
-    const logoSrc = theme === 'dark' ? '/csh/mpu_logo_d.png' : '/csh/mpu_logo_l.png';
-    return (
-        <div className="navbar-container">
-            <img className="theme-aware-logo" src="/csh/mpu_logo.png" alt="Logo" width={250} height={66.21} style={{
-                marginBottom: "14px",
-            }}/>
-            <div className='line'></div>
-            <div className='navbar-title-text-block'>
-                <p>{title}</p>
-            </div>
-            <div className='navbar-avatar'>
-                <img src={avatarUrl || "/csh/default_avatar.png"} alt="Avatar" width={100} height={100} />
-            </div>
-            <div className='navbar-text-container'>
-                <p>{surname}</p>
-                <p>{name} {lastname}</p>
-            </div>
-            <div className='navbar-link-container'>
-                {linkOptions && linkOptions.map((option, index) => {
-                    const isActive = pathname === option.href;
-                    
-                    return (
-                        <div key={index} className='navbar-inner-container'>
-                            <div className={isActive ? 'navbar-active' : 'navbar-deactive'}></div>
-                            <a 
-                                href={option.href}
-                                className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}
-                            >
-                                {option.label}
-                            </a>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-    }
+      <div className="navbar-avatar">
+        <img
+          src={avatarUrl || "/csh/default_avatar.png"}
+          alt="Avatar"
+          width={80}
+          height={80}
+          style={{ borderRadius: '50%', objectFit: 'cover' }}
+        />
+      </div>
+
+      <div className="navbar-text-container">
+        <p className="navbar-user-name">{surname} {name} {lastname}</p>
+        {role && <p className="navbar-user-role">{role}</p>}
+      </div>
+
+      <div className="navbar-divider"></div>
+
+      <div className="navbar-link-container">
+        {linkOptions && linkOptions.map((option, index) => {
+          const isActive = pathname === option.href;
+          const Icon = option.icon;
+          return (
+            <a
+              key={index}
+              href={option.href}
+              className={`navbar-inner-container ${isActive ? 'navbar-inner-active' : ''}`}
+            >
+              {Icon && (
+                <span className="navbar-icon-wrap">
+                  <Icon size={18} />
+                </span>
+              )}
+              <span className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}>
+                {option.label}
+              </span>
+            </a>
+          );
+        })}
+      </div>
+
+    </div>
+  );
+};
 
 export default Navbar;

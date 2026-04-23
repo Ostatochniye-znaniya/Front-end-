@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/navbar/Navbar";
 
-export default function Home() {
+export default function LprList() {
   return (
     <div>
         <Navbar 

@@ -7,11 +7,13 @@ import Script from "next/script";
 
 import Navbar from "@/components/navbar/Navbar";
 
+import { Home, FileText, Users, BookOpen, Settings } from 'lucide-react';
+
 //import "../../legacy_styles/style.css";
 //import "../../legacy_styles/recommendation_styles.css";
 //import "../../legacy_styles/groups_page_style.css";
 
-export default function Home() {
+export default function LprList() {
     useEffect(() => {
         const API_BASE_URL = '/csh/api/';
         const tableBody = document.getElementById('tableBody');
@@ -391,18 +393,19 @@ export default function Home() {
         <>
             <div className="bg-container">
                 <div className="bg-gradient"></div>
-                <Navbar 
+                <Navbar
                     title="Проверка остаточных знаний"
                     linkOptions={[
-                        { label: "Главная", href: "/csh/lpr/main" },
-                        { label: "Приказы", href: "/csh/lpr/order" },
-                        { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                        { label: "Отчеты", href: "/csh/lpr/report" },
-                        { label: "Настройки доступа", href: "/csh/lpr/settings" }
+                        { label: "Главная",                   href: "/csh/lpr/main",     icon: Home },
+                        { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
+                        { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
+                        { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
+                        { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
                     ]}
                     name="Иван"
                     surname="Иванов"
                     lastname="Иванович"
+                    role="Лицо, принимающее решения"
                 />
 
                 <div className="main-container">

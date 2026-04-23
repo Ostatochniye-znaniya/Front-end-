@@ -6,11 +6,13 @@ import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Pagination from "@/components/pagination/Pagination";
 
+import { Home, Users, BookOpen, GraduationCap } from 'lucide-react';
+
 const navLinks = [
-    { label: "Главная", href: "/csh/hod/main" },
-    { label: "Выбор групп", href: "/csh/hod/groups" },
-    { label: "Выбор дисциплин", href: "/csh/hod/disciplines" },
-    { label: "Выбор преподавателей", href: "/csh/hod/teachers" },
+    { label: "Главная",              href: "/csh/hod/main",        icon: Home },
+    { label: "Выбор групп",          href: "/csh/hod/groups",      icon: Users },
+    { label: "Выбор дисциплин",      href: "/csh/hod/disciplines", icon: BookOpen },
+    { label: "Выбор преподавателей", href: "/csh/hod/teachers",    icon: GraduationCap },
 ];
 
 const faculties = [
@@ -86,6 +88,7 @@ export default function DisciplineSelection() {
                 name="Иван"
                 surname="Иванов"
                 lastname="Иванович"
+                role="Заведующий кафедрой"
             />
             <div className="main-container">
                 <h1 className="text-bold" style={{ marginBottom: '16px' }}>Выбор дисциплин</h1>

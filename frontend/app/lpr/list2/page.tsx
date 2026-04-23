@@ -54,7 +54,7 @@ const style2:React.CSSProperties = {
 };
 
 
-export default function Home() {
+export default function LprList() {
     const [selectedSemestr, setSelectedSemestr] = useState('');
     const [selectedCourse, setSelectedCourse] = useState('');
     const [selectedFaculty, setSelectedFaculty] = useState('');

@@ -8,6 +8,8 @@ import Input from "@/components/input/Input";
 
 import { useState } from "react";
 
+import { Home, FileText, Users, BookOpen, Settings } from 'lucide-react';
+
 const semestrs = [
     { value: '1', label: 'Осень 2024' },
     { value: '2', label: 'Весна 2025' },
@@ -58,7 +60,7 @@ const style:React.CSSProperties = {
   justifyContent: "center"
 };
 
-export default function Home() {
+export default function LprSettings() {
     const [selectedSemestr, setSelectedSemestr] = useState('');
     const [selectedRole, setSelectedRole] = useState('');
     const [selectedFaculty, setSelectedFaculty] = useState('');
@@ -83,18 +85,19 @@ export default function Home() {
     return (
         <div className="bg-container">
             <div className="bg-gradient"></div>
-            <Navbar 
+            <Navbar
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
+                    { label: "Главная",                   href: "/csh/lpr/main",     icon: Home },
+                    { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
+                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
+                    { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
+                    { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
                 ]}
                 name="Иван"
                 surname="Иванов"
                 lastname="Иванович"
+                role="Лицо, принимающее решения"
             />
             <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
                 <div className="p-block-header">
