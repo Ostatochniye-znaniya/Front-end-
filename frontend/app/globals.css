@@ -160,10 +160,79 @@
 
     --navbar-padding-x: 24px;
     --navbar-width: 260px;
+
+    --pagination-disable-button-c: #757575;
+
+    --tag-bg-default-c: color-mix(in srgb, #8D97F0 15%, transparent);
+    --tag-font-default-c: #f0f0f0;
+    --tag-bg-green-c: color-mix(in srgb, #3DCF88 25%, transparent);
+    --tag-font-green-c: #a1fccc;
+    --tag-bg-red-c: color-mix(in srgb, #ED5F6B 25%, transparent);
+    --tag-font-red-c: #fab7bd;
+
 }
 
 /* ===== СТИЛИ КОМПОНЕНТОВ ===== */
 @layer components {
+  .capsule {
+    padding: 6px 12px;
+    border-radius: 6px;
+
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    width: fit-content;
+    max-width: 100%;
+    align-self: flex-start;
+
+    
+    font-size: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+  }
+
+  /* DEFAULT */
+  .capsule-default {
+    background-color: var(--tag-bg-default-c);
+    color: var(--tag-font-default-c);
+  }
+
+  .capsule-success {
+    background-color: color-mix(in srgb, var(--accent-green-c) 20%, transparent);
+    color: var(--accent-green-font-c);
+  }
+
+  .capsule-warning {
+
+    background-color: color-mix(in srgb, var(--accent-orange-c) 20%, transparent);
+    color: var(--accent-orange-font-c);
+  }
+
+  .capsule-danger {
+    background-color: color-mix(in srgb, var(--accent-red-c) 20%, transparent);
+    color: var(--accent-red-font-c);
+  }
+
+
+  /* INFO */
+  .capsule-info {
+    background-color: color-mix(in srgb, var(--accent-blue-c) 15%, transparent);
+    color: var(--accent-blue-font-c);
+  }
+
+  /* ICON */
+  .capsule-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ===== HOVER (optional) ===== */
+  .capsule:hover {
+    filter: brightness(0.98);
+  }
   .btn {
     color: var(--background-c);
     height: fit-content;

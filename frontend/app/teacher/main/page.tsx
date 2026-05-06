@@ -2,12 +2,13 @@
 
 import Navbar from "@/components/navbar/Navbar";
 import Table, { Column } from "@/components/table/Table";
-import { CalendarDays, FileText } from "lucide-react";
+import { CalendarDays, Download, FileText, Check } from "lucide-react";
 import Pagination from "@/components/pagination/Pagination";
+import Capsule from "@/components/capsule/Capsule";
 
 type Table1Row = {
   stage: string;
-  date: string;
+  date: Element;
 };
 
 type Table2Row = {
@@ -15,21 +16,33 @@ type Table2Row = {
   subject: string;
   date: string;
   time: string;
-  stage: string;
+  stage: Element;
 };
 
 const table_1: Table1Row[] = [
   {
     stage: "Контроль знаний",
-    date: "30.05.2025 - 28.06.2025",
+    date: <Capsule
+      variant="danger"
+    >
+      30.05.2025 - 28.06.2025
+    </Capsule>,
   },
   {
     stage: "Сдача электронных отчетов",
-    date: "до 05.07.2025",
+    date: <Capsule
+      variant="success"
+    >
+      до 05.07.2025
+    </Capsule>,
   },
   {
     stage: "Сдача бумажных отчетов",
-    date: "до 15.07.2025",
+    date: <Capsule
+      variant="success"
+    >
+      до 15.07.2025
+    </Capsule>,
   },
 ];
 
@@ -39,14 +52,164 @@ const table_2: Table2Row[] = [
     subject: "Сети и телекоммуникации",
     date: "15.06.2024",
     time: "12:20",
-    stage: "Согласованно",
+    stage: (
+      <Capsule
+        variant="success"
+        icon={<Check size={16} />}
+      >
+        Согласовано
+      </Capsule>
+    ),
   },
   {
     groupe: "221-111",
     subject: "Back-end разработка",
     date: "15.06.2024",
     time: "12:20",
-    stage: "Согласованно",
+    stage: (
+      <Capsule
+        variant="success"
+        icon={<Check size={16} />}
+      >
+        Согласовано
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule
+        variant="success"
+        icon={<Check size={16} />}
+      >
+        Согласовано
+      </Capsule>
+    ),
+  },
+  // Дальше идут строки со статусом "Согласовать"
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    date: "15.06.2024",
+    time: "12:20",
+    stage: (
+      <Capsule variant="default">
+        Согласовать
+      </Capsule>
+    ),
   },
 ];
 

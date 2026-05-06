@@ -1,28 +1,152 @@
 "use client";
 import Navbar from "@/components/navbar/Navbar";
-import { CalendarDays, FileText, Download } from 'lucide-react';
+import { CalendarDays, FileText, Download, Upload, Clock, AlertCircle, Check } from 'lucide-react';
 import Table, { Column } from "@/components/table/Table";
 import Pagination from "@/components/pagination/Pagination";
+import Capsule from "@/components/capsule/Capsule";
 
 type Table2Row = {
   groupe: string;
   subject: string;
-  e_report: string;
-  paper_report: string;
+  e_report: JSX.Element;
+  paper_report: JSX.Element;
+};
+
+// Хелпер для рендера статуса электронного отчета
+const renderEReportStatus = (status: string) => {
+  switch (status) {
+    case "Сдан":
+      return (
+        <Capsule variant="success" icon={<Check size={16} />}>
+          Сдан
+        </Capsule>
+      );
+    case "На проверке":
+      return (
+        <Capsule variant="warning" icon={<Clock size={16} />}>
+          На проверке
+        </Capsule>
+      );
+    case "На доработке":
+      return (
+        <Capsule variant="danger" icon={<AlertCircle size={16} />}>
+          На доработке
+        </Capsule>
+      );
+    case "Загрузить":
+      return (
+        <Capsule variant="default" icon={<Upload size={16} />} iconPosition="right">
+          Загрузить
+        </Capsule>
+      );
+    default:
+      return <Capsule variant="default">{status}</Capsule>;
+  }
+};
+
+// Хелпер для рендера статуса бумажного отчета
+const renderPReportStatus = (status: string) => {
+  if (status === "Сдан") {
+    return (
+      <Capsule variant="success" icon={<Check size={16} />}>
+        Сдан
+      </Capsule>
+    );
+  }
+  if (status === "Отсутствует") {
+    return (
+      <Capsule variant="default">
+        Отсутствует
+      </Capsule>
+    );
+  }
+  return <Capsule variant="default">{status}</Capsule>;
 };
 
 const table_2: Table2Row[] = [
   {
     groupe: "221-111",
     subject: "Сети и телекоммуникации",
-    e_report: "Загрузить",
-    paper_report: "Отсутствует",
+    e_report: renderEReportStatus("Загрузить"),
+    paper_report: renderPReportStatus("Отсутствует"),
   },
   {
     groupe: "221-111",
     subject: "Back-end разработка",
-    e_report: "На проверке",
-    paper_report: "Отсутствует",
+    e_report: renderEReportStatus("На проверке"),
+    paper_report: renderPReportStatus("Отсутствует"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    e_report: renderEReportStatus("На доработке"),
+    paper_report: renderPReportStatus("Отсутствует"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Отсутствует"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Отсутствует"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Отсутствует"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Сети и телекоммуникации",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
+  },
+  {
+    groupe: "221-222",
+    subject: "Back-end разработка",
+    e_report: renderEReportStatus("Сдан"),
+    paper_report: renderPReportStatus("Сдан"),
   },
 ];
 
