@@ -3,6 +3,7 @@
 import Navbar from "@/components/navbar/Navbar";
 import Table, { Column } from "@/components/table/Table";
 import { CalendarDays, FileText } from "lucide-react";
+import Pagination from "@/components/pagination/Pagination";
 
 type Table1Row = {
   stage: string;
@@ -110,12 +111,24 @@ export default function Home() {
 
       <div className="main-container">
         <p className="title text-bold">Сроки проведения тестирования</p>
-        <Table columns={columns1} data={table_1} />
-
+        <Table style={{width: "100%"}} columns={columns1} data={table_1} />
         <p className="title text-bold">
           Согласование дат проведения проверки остаточных знаний
         </p>
-        <Table columns={columns2} data={table_2} />
+        <Table style={{width: "100%"}} columns={columns2} data={table_2} />
+        <div style={{
+          display: "flex",
+          justifyContent: "right",
+          marginTop: "20px",
+        }}>
+          <Pagination
+            currentPage={1}
+            totalPages={5}
+            onPageChange={() => {}}
+            siblingCount={1}
+            showFirstLast={true}
+          ></Pagination>
+        </div>
       </div>
     </div>
   );
