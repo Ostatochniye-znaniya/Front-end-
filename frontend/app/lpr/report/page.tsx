@@ -8,7 +8,7 @@ import Pagination from "@/components/pagination/Pagination";
 import Dropdown from "@/components/dropdown/Dropdown";
 
 import { useState } from "react";
-
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 const table = [
     {
@@ -63,7 +63,7 @@ const reports = [
     { value: '2', label: 'Не сдан' }
 ];
 
-export default function Home() {
+export default function LprReport() {
     const [selectedSemestr, setSelectedSemestr] = useState('');
     const [selectedFaculty, setSelectedFaculty] = useState('');
     const [e_reportStatus, setE_reportStatus] = useState('');
@@ -90,15 +90,16 @@ export default function Home() {
             <Navbar 
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
+                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
+                    { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
+                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
+                    { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
+                    { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
                 ]}
                 name="Иван"
                 surname="Иванов"
                 lastname="Иванович"
+                role="Лицо, принимающее решения"
             />
             <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
                 <div className="p-block-header">
@@ -144,9 +145,10 @@ export default function Home() {
                         />
                     </div>
                 </div>
-                <h3>Статистика по Факультету/институту:</h3>
-                <p>Всего сдано электронных отчётов: 50 из 60</p>
-                <p>Всего сдано бумажных отчётов: 20 из 60</p>
+                <h3 className="text-bold">Статистика по Факультету/институту:</h3>
+                <p className="text">Всего сдано электронных отчётов: 50 из 60</p>
+                <p className="text">Всего сдано бумажных отчётов: 20 из 60</p>
+                <div className="table-wrapper">
                 <Table 
                         columns={[
                         { 
@@ -179,6 +181,7 @@ export default function Home() {
                         siblingCount={2}
                         showFirstLast={true}
                     />
+                </div>    
             </div>
             <div className="main-container" style={{ display: isFirstVisible ? 'none' : 'block' }}>
                 <div className="p-block-header">
@@ -192,34 +195,34 @@ export default function Home() {
                     <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
                 </div>
                 <div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Сводный отчёт №000 по результатам Проверки, весна 2024 от 05.05.2024
                     </div>
                 </div>

@@ -137,11 +137,6 @@ jobs:
           cp docker-compose.yml deploy-package/
           echo "✅ Copied docker-compose.yml"
         fi
-        
-        if [ -f "nginx.conf" ]; then
-          cp nginx.conf deploy-package/
-          echo "✅ Copied nginx.conf"
-        fi
 
         if [ -f "deploy.sh" ]; then
           cp deploy.sh deploy-package/
@@ -157,6 +152,12 @@ jobs:
         if [ -d "frontend" ]; then
           cp -r frontend deploy-package/
           echo "✅ Copied frontend directory"
+        fi
+
+        # Копируем папку nginx
+        if [ -d "nginx" ]; then
+          cp -r nginx deploy-package/
+          echo "✅ Copied nginx directory"
         fi
         
         # Создаем .env файл с переменными

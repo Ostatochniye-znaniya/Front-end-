@@ -82,8 +82,7 @@ const cities = [
     { value: 'moder', label: 'Модератор' },
     { value: 'guest', label: 'Гость' }
   ];
-
-export default function Home() {
+export default function LprList() {
   const [inputValue, setInputValue] = useState('');
   const [inputBigValue, setInputBigValue] = useState('');
   const [searchValue, setSearchValue] = useState('');
@@ -161,6 +160,7 @@ export default function Home() {
       }}></div>
       <Alert type="info" title="Информация" text="Текст" />
       <p className="title">Таблица</p>
+      <div className="table-wrapper">
       <Table 
         columns={[
           { 
@@ -202,6 +202,7 @@ export default function Home() {
         siblingCount={2}
         showFirstLast={true}
       />
+      </div>
     </div>
   );
 }

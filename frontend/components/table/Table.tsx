@@ -46,10 +46,8 @@ const Table = <T,>({ columns, data }: TableProps<T>) => {
   const sortedData = getSortedData();
 
   return (
-    <table className="table-container"
-            style={{
-              width: "100%",
-      }}>
+    <div className="table-wrapper">
+    <table className="table-container">
       <thead>
         <tr>
           {columns.map((col, i) => (
@@ -80,7 +78,9 @@ const Table = <T,>({ columns, data }: TableProps<T>) => {
         ))}
       </tbody>
     </table>
+    </div>
   );
 };
 
 export default Table;
+export type { Column };

@@ -158,6 +158,26 @@ cleanup_containers() {
     fi
 }
 
+cleanup_conflicting_containers() {
+    log_step "Проверка конфликтующих контейнеров..."
+
+    local containers=(
+        "nginx-proxy"
+        "nextjs-app"
+    )
+
+    for container in "${containers[@]}"; do
+        if docker ps -a --format '{{.Names}}' | grep -Fxq "$container"; then
+            log_warn "Найден конфликтующий контейнер: $container. Удаляем..."
+            docker rm -f "$container" >/dev/null 2>&1 || {
+                log_error "Не удалось удалить контейнер $container"
+                return 1
+            }
+            log_info "Контейнер $container удалён"
+        fi
+    done
+}
+
 # Запуск контейнеров
 start_containers() {
     log_step "Запуск контейнеров..."
@@ -320,6 +340,7 @@ main() {
     
     # Очистка старых контейнеров
     cleanup_containers
+    cleanup_conflicting_containers
     
     # Запуск контейнеров
     if ! start_containers; then

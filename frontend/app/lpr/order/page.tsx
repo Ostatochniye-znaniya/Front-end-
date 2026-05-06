@@ -10,6 +10,7 @@ import { redirect } from "next/dist/server/api-utils";
 import { RedirectType } from "next/navigation";
 import { useRouter } from 'next/navigation'
 
+import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 
 const table_1 = [
@@ -43,7 +44,7 @@ const table_2 = [
 ]
 
 
-export default function Home() {
+export default function LprOrder() {
     const router = useRouter()
     const [searchBigValue, setSearchBigValue] = useState('');
 
@@ -60,18 +61,19 @@ export default function Home() {
     return (
         <div className="bg-container">
             <div className="bg-gradient"></div>
-            <Navbar 
+            <Navbar
                 title="Проверка остаточных знаний"
                 linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
+                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
+                    { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
+                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
+                    { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
+                    { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
                 ]}
                 name="Иван"
                 surname="Иванов"
                 lastname="Иванович"
+                role="Лицо, принимающее решения"
             />
             <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
                 <div className="p-block-header">
@@ -88,6 +90,7 @@ export default function Home() {
                     <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
                 </div>
                 <div style={{ display: isTableVisible ? 'block' : 'none' }}>
+                    <div className="table-wrapper">
                     <Table 
                         columns={[
                         { 
@@ -109,18 +112,19 @@ export default function Home() {
                         ]}
                         data={table_1}
                     />
+                    </div>
                 </div>
                 <div style={{ display: isTableVisible ? 'none' : 'block' }}>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Приказ "О проведении анкетирования и проверки остаточных знаний"
                     </div>
                 </div>
@@ -140,6 +144,7 @@ export default function Home() {
                     <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
                 </div>
                 <div style={{ display: isTableVisible ? 'block' : 'none' }}>
+                    <div className="table-wrapper">
                     <Table 
                         columns={[
                         { 
@@ -161,18 +166,19 @@ export default function Home() {
                         ]}
                         data={table_2}
                     />
+                    </div>
                 </div>
                 <div style={{ display: isTableVisible ? 'none' : 'block' }}>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
-                    <div className="p-list-item">
+                    <div className="p-list-item text">
                         Черновик "О проведении анкетирования и проверки остаточных знаний"
                     </div>
                 </div>
