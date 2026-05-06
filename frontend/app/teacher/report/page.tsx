@@ -4,12 +4,13 @@ import { CalendarDays, FileText, Download, Upload, Clock, AlertCircle, Check } f
 import Table, { Column } from "@/components/table/Table";
 import Pagination from "@/components/pagination/Pagination";
 import Capsule from "@/components/capsule/Capsule";
+import { ReactNode } from "react";
 
 type Table2Row = {
   groupe: string;
   subject: string;
-  e_report: JSX.Element;
-  paper_report: JSX.Element;
+  e_report: ReactNode;
+  paper_report: ReactNode;
 };
 
 // Хелпер для рендера статуса электронного отчета

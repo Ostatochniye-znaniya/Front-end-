@@ -5,10 +5,11 @@ import Table, { Column } from "@/components/table/Table";
 import { CalendarDays, Download, FileText, Check } from "lucide-react";
 import Pagination from "@/components/pagination/Pagination";
 import Capsule from "@/components/capsule/Capsule";
+import { ReactNode } from "react";
 
 type Table1Row = {
   stage: string;
-  date: Element;
+  date: ReactNode;
 };
 
 type Table2Row = {
@@ -16,7 +17,7 @@ type Table2Row = {
   subject: string;
   date: string;
   time: string;
-  stage: Element;
+  stage: ReactNode;
 };
 
 const table_1: Table1Row[] = [
