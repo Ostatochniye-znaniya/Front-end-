@@ -15,3 +15,12 @@ prod-up:
 
 prod-down:
 	docker-compose -f docker-compose.prod.yml down
+
+create-net:
+	docker network create app-network
+
+front-up:
+	docker-compose -f docker-compose.front.yml up --build
+
+front-down:
+	docker-compose -f docker-compose.front.yml down
