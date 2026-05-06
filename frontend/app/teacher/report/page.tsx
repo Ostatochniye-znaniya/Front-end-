@@ -5,6 +5,7 @@ import Table, { Column } from "@/components/table/Table";
 import Pagination from "@/components/pagination/Pagination";
 import Capsule from "@/components/capsule/Capsule";
 import { ReactNode } from "react";
+import Button from "@/components/button/Button";
 
 type Table2Row = {
   groupe: string;
@@ -187,18 +188,27 @@ export default function TeacherReport() {
         />
         <div className="main-container">
             <p className="title text-bold">Отчеты о проверке остаточных знаний</p>
-            <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "20px",
-                marginBottom: "20px",
-                justifyContent: "left",
-            }}>
-                <Download size={50} style={{
-                    color: "var(--accent-blue-c)"
-                }}/>
-                <p className="text-bold">Скачать шаблон оформления отчета</p>
-            </div>
+            <Button
+                color="btn-blue"
+                onClick={() => {}}
+                style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "12px",
+                    width: "fit-content",
+                    padding: "10px 16px",
+                    color: "white",
+                    border: "none",
+                    cursor: "pointer",
+                    marginBottom: "20px",
+                }}
+                >
+                <Download size={24} color="white" />
+                <span>
+                    Скачать шаблон оформления отчета
+                </span>
+            </Button>
             <Table style={{width: "100%"}} columns={columns2} data={table_2} />
             <div style={{
             display: "flex",
