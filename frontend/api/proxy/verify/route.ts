@@ -1,0 +1,39 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const API_URL =  process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://admin.kd.mospolytech.ru/api/v1';
+const SERVICE_NAME = process.env.NEXT_PUBLIC_SERVICE_NAME || 'knwldg-rmbr-app';
+
+export async function POST(request: NextRequest) {
+    try {
+        const body = await request.json();
+        
+        console.log('Proxy verify request:', body);
+        
+        const response = await fetch(`${API_URL}/users/verification_auth_code`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                login: body.login,
+                code: body.code,
+                service_name: SERVICE_NAME,
+            }),
+        });
+
+        const data = await response.json();
+        
+        console.log('Proxy verify response:', data);
+        
+        return NextResponse.json(data, {
+            status: response.status,
+        });
+    } catch (error) {
+        console.error('Proxy error:', error);
+        return NextResponse.json(
+            { detail: 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}

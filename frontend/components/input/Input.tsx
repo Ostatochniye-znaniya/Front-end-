@@ -1,3 +1,4 @@
+// components/input/Input.tsx
 "use client";
 
 import React from 'react';
@@ -8,6 +9,8 @@ interface InputProps {
   onChange: (value: string) => void;
   multiline?: boolean;
   rows?: number;
+  type?: string;
+  autoComplete?: string;
 }
 
 const Input: React.FC<InputProps> = ({ 
@@ -15,7 +18,9 @@ const Input: React.FC<InputProps> = ({
   value, 
   onChange,
   multiline = false,
-  rows = 4
+  rows = 4,
+  type = "text",
+  autoComplete,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e.target.value);
@@ -36,10 +41,11 @@ const Input: React.FC<InputProps> = ({
   return (
     <input
       className="input-field"
-      type="text" 
+      type={type}
       placeholder={hint}
       value={value}
       onChange={handleChange}
+      autoComplete={autoComplete}
     />
   );
 }
