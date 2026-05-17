@@ -101,19 +101,14 @@ const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <div className="navbar-container">
-      <img
-        className="theme-aware-logo"
-        src="/csh/mpu_logo.png"
-        alt="Logo"
-        width={210}
-        height={55}
-        style={{ marginBottom: '12px' }}
-      />
+      <a href="https://mospolytech.ru/" target="_blank" rel="noopener noreferrer" className="navbar-logo-link">
+        <img className="theme-aware-logo" alt="МПУ Логотип" />
+      </a>
 
-      <div className="navbar-title-text-block">
-        <p>{title}</p>
-      </div>
-
+      <div className="navbar-divider"></div>
+      <a href="https://e.mospolytech.ru/" target="_blank" rel="noopener noreferrer" className="navbar-logo-link navbar-logo-link--left">
+        <img className="navbar-title-logo" alt="Проверка остаточных знаний" />
+      </a>
       <div className="navbar-divider"></div>
 
       <div className="navbar-avatar">
