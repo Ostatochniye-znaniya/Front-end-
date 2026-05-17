@@ -889,8 +889,8 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
   background-color: var(--background-c);
   margin-top: 16px;
-  margin-left: calc(var(--navbar-width) + 70px);
-  margin-right: 70px;
+  margin-left: calc(var(--navbar-width) + 16px);
+  margin-right: 16px;
   margin-bottom: 16px;
   padding: 40px 50px;
 }
@@ -1113,6 +1113,115 @@ body {
 .navbar-logo-link--left {
   justify-content: flex-start;
   padding-left: 5px;
+}
+
+/* ===== COLLAPSIBLE SIDEBAR ===== */
+
+:root.sidebar-collapsed {
+  --navbar-width: 68px;
+  --navbar-padding-x: 12px;
+}
+
+/* Плавные переходы */
+.navbar-container {
+  transition: width 250ms ease;
+}
+
+.main-container {
+  transition: margin-left 250ms ease;
+}
+
+/* Логотипы — обрезаем до иконки */
+:root.sidebar-collapsed .navbar-logo-link,
+:root.sidebar-collapsed .navbar-logo-link--left {
+  width: 44px;
+  overflow: hidden;
+  justify-content: flex-start;
+  padding-left: 0;
+}
+
+:root.sidebar-collapsed .theme-aware-logo,
+:root.sidebar-collapsed .navbar-title-logo {
+  height: 44px;
+  width: auto;
+  max-width: none;
+  flex-shrink: 0;
+  margin: 4px 0;
+}
+
+/* Аватар меньше */
+:root.sidebar-collapsed .navbar-avatar {
+  width: 44px;
+  height: 44px;
+}
+
+:root.sidebar-collapsed .navbar-avatar img {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+/* Имя/роль — скрыть */
+:root.sidebar-collapsed .navbar-text-container {
+  display: none;
+}
+
+/* Пункты меню — только иконка */
+:root.sidebar-collapsed .navbar-path {
+  display: none;
+}
+
+:root.sidebar-collapsed .navbar-active-dot {
+  display: none;
+}
+
+:root.sidebar-collapsed .navbar-inner-container {
+  justify-content: center;
+  padding: 10px;
+}
+
+/* Тема-тогл — только переключатель */
+:root.sidebar-collapsed .navbar-theme-toggle {
+  justify-content: center;
+}
+
+/* Кнопка свёртывания — FAB в правом нижнем углу основного окна */
+.sidebar-collapse-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 90px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: var(--background-main-element-c);
+  border: 1px solid var(--secondary-border-c);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--secondary-any-icons-c);
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  z-index: 200;
+}
+
+.sidebar-collapse-fab:hover {
+  background-color: var(--secondary-any-element-c);
+  color: var(--accent-blue-c);
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 1024px) {
+  .sidebar-collapse-fab {
+    right: 36px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-collapse-fab {
+    right: 20px;
+    bottom: 20px;
+  }
 }
 
 .navbar-logo-link img {
