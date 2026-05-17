@@ -124,7 +124,7 @@ const Navbar: React.FC<NavbarProps> = ({
       </a>
 
       <div className="navbar-divider"></div>
-      <a href="/" className="navbar-logo-link navbar-logo-link--left">
+      <a href="/csh/" className="navbar-logo-link navbar-logo-link--left">
         <img className="navbar-title-logo" alt="Проверка остаточных знаний" />
       </a>
       <div className="navbar-divider"></div>
