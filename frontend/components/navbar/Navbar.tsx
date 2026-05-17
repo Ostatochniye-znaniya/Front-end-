@@ -2,6 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { LucideIcon } from 'lucide-react';
+import { getUserData, clearUserDataCache } from '@/services/getUserData';
+import { UserMeResponse } from '@/api/types';
+import { getUserStatus, UserStatusResponse } from '@/services/getUserStatus';
 
 interface LinkOption {
   label: string;
@@ -13,17 +16,48 @@ interface NavbarProps {
   title: string;
   linkOptions?: LinkOption[];
   avatarUrl?: string;
-  name: string;
-  surname: string;
-  lastname: string;
+  name?: string;
+  surname?: string;
+  lastname?: string;
   role?: string;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, surname, lastname, role }) => {
+const Navbar: React.FC<NavbarProps> = ({ 
+  title, 
+  linkOptions, 
+  avatarUrl, 
+  name: propName, 
+  surname: propSurname, 
+  lastname: propLastname, 
+  role: propRole 
+}) => {
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [userData, setUserData] = useState<UserMeResponse | null>(null);
+  const [userStatus, setUserStatus] = useState<UserStatusResponse | null>(null);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
 
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        setLoading(true);
+        const data = await getUserData({ ttl: 60 });
+        setUserData(data);
+        const status = await getUserStatus();
+        setUserStatus(status);
+        console.log('✅ Navbar: User data loaded', data);
+      } catch (error) {
+        console.error('❌ Navbar: Failed to load user data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  // Тема
   useEffect(() => {
     const saved = localStorage.getItem('theme');
     const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -46,6 +80,25 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
     localStorage.setItem('theme', newDark ? 'dark' : 'light');
   };
 
+  const displayName = userData?.name || '';
+  const displaySurname = userData?.surname || '';
+  const displayLastname = userData?.patronymic || '';
+  const displayRole = userStatus?.verbose || '';
+  const displayAvatarUrl = avatarUrl ||'/csh/default_avatar.png';
+  const refreshUserData = async () => {
+    try {
+      setLoading(true);
+      clearUserDataCache();
+      const freshData = await getUserData({ forceRefresh: true });
+      setUserData(freshData);
+      console.log('🔄 Navbar: User data refreshed', freshData);
+    } catch (error) {
+      console.error('❌ Navbar: Failed to refresh user data', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="navbar-container">
       <img
@@ -65,7 +118,7 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
 
       <div className="navbar-avatar">
         <img
-          src={avatarUrl || "/csh/default_avatar.png"}
+          src={displayAvatarUrl}
           alt="Avatar"
           width={80}
           height={80}
@@ -74,8 +127,19 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
       </div>
 
       <div className="navbar-text-container">
-        <p className="navbar-user-name">{surname} {name} {lastname}</p>
-        {role && <p className="navbar-user-role">{role}</p>}
+        {loading ? (
+          <>
+            <p className="navbar-user-name">Загрузка...</p>
+            {displayRole && <p className="navbar-user-role">{displayRole}</p>}
+          </>
+        ) : (
+          <>
+            <p className="navbar-user-name">
+              {displaySurname} {displayName} {displayLastname}
+            </p>
+            {displayRole && <p className="navbar-user-role">{displayRole}</p>}
+          </>
+        )}
       </div>
 
       <div className="navbar-divider"></div>
@@ -116,6 +180,22 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
         )}
       </div>
 
+      {process.env.NODE_ENV === 'development' && (
+        <button 
+          onClick={refreshUserData}
+          style={{ 
+            marginTop: '10px', 
+            padding: '5px', 
+            fontSize: '10px',
+            background: 'transparent',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          ⟳ Обновить данные
+        </button>
+      )}
     </div>
   );
 };

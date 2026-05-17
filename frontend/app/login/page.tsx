@@ -11,10 +11,13 @@ import {
     verifyCredentials,
     verifyCode,
     sendVerificationCode,
-    clearTokens,
     setUserData,
-    getUserData
+    getUserData,
 } from "@/api/auth";
+
+import {
+    redirectAfterLogin
+} from "@/api/client";
 
 type AuthStep = "credentials" | "code";
 
@@ -33,7 +36,6 @@ export default function LoginPage() {
 
     useEffect(() => {
         setFadeIn(true);
-        clearTokens();
     }, []);
 
     const startCountdown = (seconds: number) => {
@@ -103,15 +105,17 @@ export default function LoginPage() {
 
                 setTimeout(() => {
                     const userData = getUserData();
-                    if (userData?.role === 'teacher') {
-                        router.push("/csh/teacher/main");
-                    } else if (userData?.role === 'student') {
-                        router.push("/csh/student/main");
-                    } else if (userData?.role === 'admin') {
-                        router.push("/csh/admin/main");
-                    } else {
-                        router.push("/");
-                    }
+                    const getDefaultPathByRole = () => {
+                        if (userData?.role === 'teacher') {
+                            return "/csh/teacher/main";
+                        } else if (userData?.role === 'student') {
+                            return "/csh/student/main";
+                        } else if (userData?.role === 'admin') {
+                            return "/csh/admin/main";
+                        }
+                        return "/";
+                    };
+                    redirectAfterLogin(router, getDefaultPathByRole());
                 }, 1000);
             }
         } catch (err) {
@@ -127,11 +131,9 @@ export default function LoginPage() {
 
     const handleResendCode = async () => {
         if (countdown > 0) return;
-
         setError(null);
         setSuccessMessage(null);
         setLoading(true);
-
         try {
             await sendVerificationCode(login);
             startCountdown(60);

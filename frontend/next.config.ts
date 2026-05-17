@@ -7,7 +7,6 @@ const nextConfig = {
   assetPrefix: '/csh',
   
   reactStrictMode: true,
-  swcMinify: true,
   
   // Для продакшена
   output: 'standalone',
