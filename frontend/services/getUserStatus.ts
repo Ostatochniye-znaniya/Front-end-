@@ -1,4 +1,6 @@
-const mode = process.env.NEXT_PUBLIC_MODE || 'development';
+import { NEXT_PUBLIC_MODE } from '@/config';
+
+const mode = NEXT_PUBLIC_MODE;
 
 export interface UserStatusResponse {
     status: string;

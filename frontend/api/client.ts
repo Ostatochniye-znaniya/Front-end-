@@ -1,5 +1,7 @@
 import { FetchOptions } from './types';
+import { NEXT_PUBLIC_ADMIN_API_URL } from '@/config';
 
+const API_URL =  NEXT_PUBLIC_ADMIN_API_URL
 const REDIRECT_KEY = 'auth_redirect_url';
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
@@ -10,7 +12,7 @@ const IS_DEV = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
 const getApiBaseUrl = (): string => {
   return IS_DEV
     ? '/api/auth'
-    : process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://admin.kd.mospolytech.ru/api/v1';
+    : API_URL
 };
 
 const getAccessToken = (): string | null => {

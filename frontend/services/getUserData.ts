@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { api } from "@/api/client";
 import { UserMeResponse } from "@/api/types";
+import { NEXT_PUBLIC_ADMIN_API_URL } from '@/config';
 
 interface CachedUserData {
     data: UserMeResponse;
@@ -26,35 +27,23 @@ export async function getUserData(options?: {
                 const cachedData: CachedUserData = JSON.parse(cached);
                 const now = Date.now();
                 const isExpired = now - cachedData.timestamp > ttlMs;
-                
                 if (!isExpired) {
-                    console.log('📦 [getUserData] Using cached data');
                     return cachedData.data;
-                } else {
-                    console.log('🕐 [getUserData] Cache expired, fetching fresh data');
-                }
-            } catch (e) {
-                console.warn('Failed to parse cached user data:', e);
-            }
+                } else { }
+            } catch (e) { }
         }
     }
-
     try {
-        console.log('🌐 [getUserData] Fetching fresh data from API');
         const userData = await api.get<UserMeResponse>('/users/me');
-        
         if (typeof window !== 'undefined' && userData) {
             const cacheData: CachedUserData = {
                 data: userData,
                 timestamp: Date.now(),
             };
             localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-            console.log('💾 [getUserData] Data cached');
         }
-        
         return userData;
     } catch (error) {
-        console.error('❌ [getUserData] Error fetching user data:', error);
         throw error;
     }
 }
@@ -62,7 +51,6 @@ export async function getUserData(options?: {
 export function clearUserDataCache(): void {
     if (typeof window !== 'undefined') {
         localStorage.removeItem(CACHE_KEY);
-        console.log('🗑️ [getUserData] Cache cleared');
     }
 }
 
@@ -94,7 +82,6 @@ export function useUserData(options?: {
     const [userData, setUserData] = useState<UserMeResponse | null>(null);
     const [loading, setLoading] = useState(autoFetch);
     const [error, setError] = useState<Error | null>(null);
-    
     const fetchData = async (forceRefresh = false) => {
         setLoading(true);
         setError(null);
@@ -128,7 +115,7 @@ export function useUserData(options?: {
 }
 
 export async function getServerUserData(accessToken: string): Promise<UserMeResponse> {
-    const API_URL = process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://admin.kd.mospolytech.ru/api/v1';
+    const API_URL = NEXT_PUBLIC_ADMIN_API_URL;
     try {
         const response = await fetch(`${API_URL}/users/me`, {
             method: 'GET',
@@ -140,10 +127,8 @@ export async function getServerUserData(accessToken: string): Promise<UserMeResp
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
-
         return await response.json();
     } catch (error) {
-        console.error('Failed to fetch user data on server:', error);
         throw error;
     }
 }

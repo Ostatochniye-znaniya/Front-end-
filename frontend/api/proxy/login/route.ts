@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { NEXT_PUBLIC_ADMIN_API_URL } from '@/config';
+import { NEXT_PUBLIC_SERVICE_NAME } from '@/config';
 
-const API_URL =  process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://admin.kd.mospolytech.ru/api/v1';
-const SERVICE_NAME = process.env.NEXT_PUBLIC_SERVICE_NAME || 'knwldg_rmbr_app';
+const API_URL =  NEXT_PUBLIC_ADMIN_API_URL
+const SERVICE_NAME = NEXT_PUBLIC_SERVICE_NAME
 
 export async function POST(request: NextRequest) {
     try {

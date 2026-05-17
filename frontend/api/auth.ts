@@ -1,7 +1,8 @@
 import { LoginCredentials, LoginResponse, VerifyCodeData, VerificationResponse } from './types';
 import { api, setTokens, clearTokens, isAuthenticated as clientIsAuthenticated } from './client';
+import { NEXT_PUBLIC_SERVICE_NAME } from '@/config';
 
-const SERVICE_NAME = process.env.NEXT_PUBLIC_SERVICE_NAME || 'knwldg_rmbr_app';
+const SERVICE_NAME = NEXT_PUBLIC_SERVICE_NAME
 
 export const verifyCredentials = async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
