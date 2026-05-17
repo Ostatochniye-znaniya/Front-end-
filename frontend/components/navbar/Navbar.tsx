@@ -124,12 +124,12 @@ const Navbar: React.FC<NavbarProps> = ({
       </a>
 
       <div className="navbar-divider"></div>
-      <a href="https://e.mospolytech.ru/" target="_blank" rel="noopener noreferrer" className="navbar-logo-link navbar-logo-link--left">
+      <a href="/" className="navbar-logo-link navbar-logo-link--left">
         <img className="navbar-title-logo" alt="Проверка остаточных знаний" />
       </a>
       <div className="navbar-divider"></div>
 
-      <div className="navbar-avatar">
+      <a href="https://e.mospolytech.ru/" target="_blank" rel="noopener noreferrer" className="navbar-avatar">
         <img
           src={displayAvatarUrl}
           alt="Avatar"
@@ -137,7 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({
           height={80}
           style={{ borderRadius: '50%', objectFit: 'cover' }}
         />
-      </div>
+      </a>
 
       <div className="navbar-text-container">
         {loading ? (

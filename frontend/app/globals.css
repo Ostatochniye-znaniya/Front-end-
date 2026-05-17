@@ -735,6 +735,7 @@
   margin-top: 10px;
   margin-bottom: 8px;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .navbar-text-container {
