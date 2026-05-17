@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Maximize2 } from 'lucide-react';
 import { getUserData, clearUserDataCache } from '@/services/getUserData';
 import { UserMeResponse } from '@/api/types';
 import { getUserStatus, UserStatusResponse } from '@/services/getUserStatus';
@@ -33,6 +33,7 @@ const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [userData, setUserData] = useState<UserMeResponse | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,11 +58,16 @@ const Navbar: React.FC<NavbarProps> = ({
     loadUserData();
   }, []);
 
-  // Тема
+  // Тема + collapsed
   useEffect(() => {
     const saved = localStorage.getItem('theme');
     const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDark(dark);
+
+    const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    setIsCollapsed(collapsed);
+    if (collapsed) document.documentElement.classList.add('sidebar-collapsed');
+
     setMounted(true);
   }, []);
 
@@ -78,6 +84,17 @@ const Navbar: React.FC<NavbarProps> = ({
     const newDark = !isDark;
     setIsDark(newDark);
     localStorage.setItem('theme', newDark ? 'dark' : 'light');
+  };
+
+  const toggleCollapse = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    localStorage.setItem('sidebarCollapsed', String(next));
+    if (next) {
+      document.documentElement.classList.add('sidebar-collapsed');
+    } else {
+      document.documentElement.classList.remove('sidebar-collapsed');
+    }
   };
 
   const displayName = userData?.name || '';
@@ -100,23 +117,19 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
+    <>
     <div className="navbar-container">
-      <img
-        className="theme-aware-logo"
-        src="/csh/mpu_logo.png"
-        alt="Logo"
-        width={210}
-        height={55}
-        style={{ marginBottom: '12px' }}
-      />
-
-      <div className="navbar-title-text-block">
-        <p>{title}</p>
-      </div>
+      <a href="https://mospolytech.ru/" target="_blank" rel="noopener noreferrer" className="navbar-logo-link">
+        <img className="theme-aware-logo" alt="МПУ Логотип" />
+      </a>
 
       <div className="navbar-divider"></div>
+      <a href="/" className="navbar-logo-link navbar-logo-link--left">
+        <img className="navbar-title-logo" alt="Проверка остаточных знаний" />
+      </a>
+      <div className="navbar-divider"></div>
 
-      <div className="navbar-avatar">
+      <a href="https://e.mospolytech.ru/" target="_blank" rel="noopener noreferrer" className="navbar-avatar">
         <img
           src={displayAvatarUrl}
           alt="Avatar"
@@ -124,7 +137,7 @@ const Navbar: React.FC<NavbarProps> = ({
           height={80}
           style={{ borderRadius: '50%', objectFit: 'cover' }}
         />
-      </div>
+      </a>
 
       <div className="navbar-text-container">
         {loading ? (
@@ -169,10 +182,12 @@ const Navbar: React.FC<NavbarProps> = ({
         })}
       </div>
 
-      <div className="navbar-theme-toggle" onClick={toggleTheme}>
-        <span className="navbar-path navbar-deactive-path">
-          Тёмная тема
-        </span>
+      <div className="navbar-theme-toggle" style={{ marginTop: 'auto' }} onClick={toggleTheme}>
+        {!isCollapsed && (
+          <span className="navbar-path navbar-deactive-path">
+            Тёмная тема
+          </span>
+        )}
         {mounted && (
           <div className={`navbar-theme-switch ${isDark ? 'navbar-theme-switch-on' : ''}`}>
             <div className="navbar-theme-switch-thumb"></div>
@@ -197,6 +212,17 @@ const Navbar: React.FC<NavbarProps> = ({
         </button>
       )}
     </div>
+
+    {mounted && (
+      <button
+        className="sidebar-collapse-fab"
+        onClick={toggleCollapse}
+        title={isCollapsed ? 'Развернуть' : 'Свернуть'}
+      >
+        <Maximize2 size={20} />
+      </button>
+    )}
+    </>
   );
 };
 
