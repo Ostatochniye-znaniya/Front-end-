@@ -26,8 +26,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
-  // Фоновое обновление с API
+  // Фоновое обновление с API (только если есть токен — иначе вызовет редирект на /login)
   useEffect(() => {
+    if (!localStorage.getItem('access_token')) return;
     (async () => {
       try {
         const data = await getUserData({ ttl: 60 });
