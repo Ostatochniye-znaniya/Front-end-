@@ -192,7 +192,7 @@ export async function apiClient<T = any>(
   };
   try {
     let response = await makeRequest(accessToken);
-    if (response.status === 403 && !skipAuth) {
+    if ((response.status === 401 || response.status === 403) && !skipAuth) {
       if (!skipRefresh && getRefreshToken()) {
         if (isRefreshing) {
           return new Promise((resolve, reject) => {

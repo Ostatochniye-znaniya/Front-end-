@@ -2,7 +2,6 @@
 
 import React, { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 
 const navLinks = [
@@ -49,16 +48,7 @@ function EditDisciplinesContent() {
     };
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={navLinks}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <h1 className="text-bold" style={{ marginBottom: '20px' }}>
                     Редактирование списка дисциплин
                     <span style={{ color: 'var(--secondary-lock-font-c)', fontWeight: 400, marginLeft: '16px', fontSize: '16px' }}>
@@ -111,7 +101,6 @@ function EditDisciplinesContent() {
                     </button>
                 </div>
             </div>
-        </div>
     );
 }
 

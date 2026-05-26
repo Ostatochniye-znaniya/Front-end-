@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/navbar/Navbar";
 import Table from "@/components/table/Table";
 import Dropdown from "@/components/dropdown/Dropdown";
 import { useState } from "react";
@@ -42,22 +41,7 @@ export default function KafedraMain() {
     const [selectedFaculty, setSelectedFaculty] = useState('');
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={[
-                    { label: "Статистика",              href: "/csh/hod/statistics",        icon: PieChart },
-                    { label: "Выбор групп",          href: "/csh/hod/groups",      icon: Users },
-                    { label: "Выбор дисциплин",      href: "/csh/hod/disciplines", icon: BookOpen },
-                    { label: "Выбор преподавателей", href: "/csh/hod/teachers",    icon: GraduationCap },
-                ]}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-                role="Заведующий кафедрой"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <h1 className="text-bold">Статистика проведения проверки остаточных знаний по факультетам</h1>
                 <div className="search-container" style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
                     <Dropdown
@@ -93,6 +77,5 @@ export default function KafedraMain() {
                 />
                 </div>
             </div>
-        </div>
     );
 }

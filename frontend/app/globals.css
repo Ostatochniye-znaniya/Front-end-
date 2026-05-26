@@ -692,7 +692,6 @@
   position: fixed;
   top: 0;
   left: 0;
-  height: 100%;
   min-height: 100vh;
   width: var(--navbar-width);
   padding: 24px var(--navbar-padding-x);
@@ -704,7 +703,7 @@
   flex-direction: column;
   align-items: center;
   z-index: 100;
-  overflow-y: auto;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -744,6 +743,12 @@
   align-items: center;
   margin-bottom: 4px;
   gap: 2px;
+  animation: navbar-fadein 250ms 50ms both;
+}
+
+@keyframes navbar-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .navbar-user-name {
@@ -866,7 +871,7 @@
     left: 0;
     width: 100vw;
     height: 761px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-blue-c) 50%, #fff), var(--background-c));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-blue-c) 40%, var(--background-c)), var(--background-c));
     
     z-index: -1;
     pointer-events: none;
@@ -1123,6 +1128,13 @@ body {
   --navbar-padding-x: 12px;
 }
 
+/* Блокировка transitions при первом рендере */
+:root.no-transition *,
+:root.no-transition *::before,
+:root.no-transition *::after {
+  transition: none !important;
+}
+
 /* Плавные переходы */
 .navbar-container {
   transition: width 250ms ease;
@@ -1185,11 +1197,15 @@ body {
   justify-content: center;
 }
 
+:root.sidebar-collapsed .navbar-theme-label {
+  display: none;
+}
+
 /* Кнопка свёртывания — FAB в правом нижнем углу основного окна */
 .sidebar-collapse-fab {
   position: fixed;
   bottom: 32px;
-  right: 90px;
+  right: 30px;
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -1212,15 +1228,9 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
-@media (max-width: 1024px) {
-  .sidebar-collapse-fab {
-    right: 36px;
-  }
-}
-
 @media (max-width: 768px) {
   .sidebar-collapse-fab {
-    right: 20px;
+    right: 16px;
     bottom: 20px;
   }
 }
@@ -1295,7 +1305,7 @@ body {
   flex-shrink: 0;
 }
 
-.navbar-theme-switch-on {
+:root.dark .navbar-theme-switch {
   background-color: var(--accent-blue-c);
 }
 
@@ -1311,7 +1321,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-.navbar-theme-switch-on .navbar-theme-switch-thumb {
+:root.dark .navbar-theme-switch .navbar-theme-switch-thumb {
   transform: translateX(20px);
 }
 
