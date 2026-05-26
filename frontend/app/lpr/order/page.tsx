@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/navbar/Navbar";
 import Table from "@/components/table/Table";
 import Search from "@/components/search/Search";
 import Button from "@/components/button/Button";
@@ -59,23 +58,8 @@ export default function LprOrder() {
     };
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={[
-                    { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
-                    { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
-                    { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
-                    { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
-                ]}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-                role="Лицо, принимающее решения"
-            />
-            <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
+        <>
+        <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
                 <div className="p-block-header">
                     <h1 className="text-bold">Приказы</h1>
                     <Button title="#" color="btn-blue" onClick={() => {toggleTableDisplay(true)}} />
@@ -183,6 +167,6 @@ export default function LprOrder() {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

@@ -5,8 +5,6 @@ import { useEffect } from "react";
 
 import Script from "next/script";
 
-import Navbar from "@/components/navbar/Navbar";
-
 import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
 
 //import "../../legacy_styles/style.css";
@@ -391,24 +389,7 @@ export default function LprList() {
     
     return (
         <>
-            <div className="bg-container">
-                <div className="bg-gradient"></div>
-                <Navbar
-                    title="Проверка остаточных знаний"
-                    linkOptions={[
-                        { label: "Статистика",                   href: "/csh/lpr/statistics",     icon: PieChart },
-                        { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
-                        { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
-                        { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
-                        { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
-                    ]}
-                    name="Иван"
-                    surname="Иванов"
-                    lastname="Иванович"
-                    role="Лицо, принимающее решения"
-                />
-
-                <div className="main-container">
+            <div className="main-container">
                     <h1 className="text-bold">Список групп</h1>
                     <div className="p-block-with-padding text" id="recordsCount">
                         Найдено записей: 0
@@ -493,7 +474,6 @@ export default function LprList() {
                         </form>
                     </div>
                 </div>
-            </div>
         </>
     );
 }

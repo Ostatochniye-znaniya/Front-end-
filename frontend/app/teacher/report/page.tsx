@@ -1,5 +1,4 @@
 "use client";
-import Navbar from "@/components/navbar/Navbar";
 import { CalendarDays, FileText, Download, Upload, Clock, AlertCircle, Check } from 'lucide-react';
 import Table, { Column } from "@/components/table/Table";
 import Pagination from "@/components/pagination/Pagination";
@@ -173,19 +172,6 @@ const columns2: Column<Table2Row>[] = [
 
 export default function TeacherReport() {
   return (
-    <div className="bg-container">
-        <div className="bg-gradient"></div>
-        <Navbar
-            title="Проверка остаточных знаний"
-            linkOptions={[
-                { label: "Согласование дат", href: "/csh/teacher/main",   icon: CalendarDays },
-                { label: "Отчеты",           href: "/csh/teacher/report", icon: FileText },
-            ]}
-            name="Иван"
-            surname="Иванов"
-            lastname="Иванович"
-            role="Преподаватель"
-        />
         <div className="main-container">
             <p className="title text-bold">Отчеты о проверке остаточных знаний</p>
             <Button
@@ -224,6 +210,5 @@ export default function TeacherReport() {
             ></Pagination>
             </div>
         </div>
-    </div>
   );
 }

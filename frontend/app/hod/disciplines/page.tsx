@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Pagination from "@/components/pagination/Pagination";
@@ -80,17 +79,7 @@ export default function DisciplineSelection() {
     };
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={navLinks}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-                role="Заведующий кафедрой"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <h1 className="text-bold" style={{ marginBottom: '16px' }}>Выбор дисциплин</h1>
 
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
@@ -169,6 +158,5 @@ export default function DisciplineSelection() {
                     showFirstLast={true}
                 />
             </div>
-        </div>
     );
 }

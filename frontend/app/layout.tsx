@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import NoTransitionOnNav from "@/components/navbar/NoTransitionOnNav";
+import { UserProvider } from "@/contexts/UserContext";
 
 const geistSans = {
   variable: "--font-geist-sans",
@@ -30,12 +32,25 @@ export default function RootLayout({
               } else if (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.documentElement.classList.add('dark');
               }
+              if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-collapsed');
+              }
+              document.documentElement.classList.add('no-transition');
+              requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                  document.documentElement.classList.remove('no-transition');
+                });
+              });
             })();
           `
         }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <NoTransitionOnNav />
+        <div className="bg-gradient"></div>
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );

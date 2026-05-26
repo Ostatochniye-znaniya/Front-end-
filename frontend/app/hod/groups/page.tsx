@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Checkbox from "@/components/checkbox/CheckBox";
@@ -90,17 +89,7 @@ export default function GroupSelection() {
     };
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={navLinks}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-                role="Заведующий кафедрой"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <h1 className="text-bold" style={{ marginBottom: '16px' }}>
                     Выбор групп
                     <span style={{ color: 'var(--secondary-lock-font-c)', fontWeight: 400, marginLeft: '16px', fontSize: '16px' }}>
@@ -202,6 +191,5 @@ export default function GroupSelection() {
                     </button>
                 </div>
             </div>
-        </div>
     );
 }

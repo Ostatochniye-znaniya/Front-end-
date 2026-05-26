@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 import { PieChart, Users, BookOpen, GraduationCap } from 'lucide-react';
@@ -243,17 +242,7 @@ export default function TeacherSelection() {
     };
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={navLinks}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-                role="Заведующий кафедрой"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <h1 className="text-bold" style={{ marginBottom: "16px" }}>
                     Выбор преподавателей
                 </h1>
@@ -342,6 +331,5 @@ export default function TeacherSelection() {
                 </table>
                 </div>
             </div>
-        </div>
     );
 }

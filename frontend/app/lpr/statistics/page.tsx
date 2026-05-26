@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/navbar/Navbar";
 import Table from "@/components/table/Table";
 import Dropdown from "@/components/dropdown/Dropdown";
 import { useState } from "react";
@@ -37,23 +36,7 @@ const style: React.CSSProperties = {
 export default function LprMain() {
     const [selectedSemestr, setSelectedSemestr] = useState('');
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar
-                title="Проверка остаточных знаний"
-                linkOptions={[
-                    { label: "Статистика",                href: "/csh/lpr/statistics", icon: PieChart },
-                    { label: "Приказы",                   href: "/csh/lpr/order",    icon: FileText },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list",     icon: Users },
-                    { label: "Отчеты",                    href: "/csh/lpr/report",   icon: BookOpen },
-                    { label: "Настройки доступа",         href: "/csh/lpr/settings", icon: Settings },
-                ]}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-                role="Лицо, принимающее решения"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <h1 className="text-bold">Главная</h1>
                 <div className="search-container" style={style}>
                     <Dropdown
@@ -82,6 +65,5 @@ export default function LprMain() {
                 />
                 </div>
             </div>
-        </div>
     );
 }

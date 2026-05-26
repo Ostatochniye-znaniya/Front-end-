@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/navbar/Navbar";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Button from "@/components/button/Button";
 import Input from "@/components/input/Input";
@@ -33,22 +32,7 @@ export default function Home() {
     const router = useRouter()
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar 
-                title="Проверка остаточных знаний"
-                linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
-                ]}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-            />
-            <div className="main-container">
+        <div className="main-container">
                 <div className="p-block-header2">
                     <h1 className="text-bold">Приказы</h1>
                     <p>Формирование приказа</p>
@@ -119,6 +103,5 @@ export default function Home() {
                     <div style={{ marginLeft: '10px', flexGrow: '1' }}></div>
                 </div>
             </div>
-        </div>
     );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "@/components/navbar/Navbar";
 import Button from "@/components/button/Button";
 import Dropdown from "@/components/dropdown/Dropdown";
 import CheckBox from "@/components/checkbox/CheckBox";
@@ -73,22 +72,8 @@ export default function LprList() {
 
 
     return (
-        <div className="bg-container">
-            <div className="bg-gradient"></div>
-            <Navbar 
-                title="Проверка остаточных знаний"
-                linkOptions={[
-                    { label: "Главная", href: "/csh/lpr/main" },
-                    { label: "Приказы", href: "/csh/lpr/order" },
-                    { label: "Списки рекомедуемых групп", href: "/csh/lpr/list" },
-                    { label: "Отчеты", href: "/csh/lpr/report" },
-                    { label: "Настройки доступа", href: "/csh/lpr/settings" }
-                ]}
-                name="Иван"
-                surname="Иванов"
-                lastname="Иванович"
-            />
-            <div className="p-modal-container" style={{ visibility: isModalVisible ? 'hidden' : 'visible' }}>
+        <>
+        <div className="p-modal-container" style={{ visibility: isModalVisible ? 'hidden' : 'visible' }}>
                 <h2 className="text-bold">Выбор дисциплин для группы 221-111</h2>
                 <div className="p-two-column">
                     <div>
@@ -350,6 +335,6 @@ export default function LprList() {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
