@@ -5,8 +5,8 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 interface LinkOption {
-  label: string;
-  href: string;
+    label: string;
+    href: string;
 }
 
 interface NavbarProps {
@@ -27,7 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
         setTheme(mediaQuery.matches ? 'dark' : 'light');
 
         const handler = (e: MediaQueryListEvent) => {
-        setTheme(e.matches ? 'dark' : 'light');
+            setTheme(e.matches ? 'dark' : 'light');
         };
 
         mediaQuery.addEventListener('change', handler);
@@ -37,9 +37,9 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
     const logoSrc = theme === 'dark' ? '/csh/mpu_logo_d.png' : '/csh/mpu_logo_l.png';
     return (
         <div className="navbar-container">
-            <img className="theme-aware-logo" src="/csh/mpu_logo.png" alt="Logo" width={250} height={66.21} style={{
+            <img className="theme-aware-logo" src={logoSrc} alt="Logo" width={250} height={66.21} style={{
                 marginBottom: "14px",
-            }}/>
+            }} />
             <div className='line'></div>
             <div className='navbar-title-text-block'>
                 <p>{title}</p>
@@ -54,11 +54,11 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
             <div className='navbar-link-container'>
                 {linkOptions && linkOptions.map((option, index) => {
                     const isActive = pathname === option.href;
-                    
+
                     return (
                         <div key={index} className='navbar-inner-container'>
                             <div className={isActive ? 'navbar-active' : 'navbar-deactive'}></div>
-                            <a 
+                            <a
                                 href={option.href}
                                 className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}
                             >
@@ -70,6 +70,6 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
             </div>
         </div>
     );
-    }
+}
 
 export default Navbar;
