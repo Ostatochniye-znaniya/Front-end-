@@ -1076,6 +1076,96 @@
   gap: 16px
 }
 
+/* ===== Страница приветствия гостя ===== */
+
+.guest-greeting-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  background-color: var(--background-inner-main-element-c);
+  border-radius: 16px;
+  padding: 28px;
+  margin-top: 20px;
+  animation: guest-fade-in 0.4s ease;
+}
+
+.guest-greeting-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--accent-blue-bg-c);
+  color: var(--accent-blue-c);
+}
+
+.guest-greeting-text {
+  margin: 0;
+  color: var(--secondary-font-c);
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.guest-contact-block {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.guest-contact-block .text {
+  margin: 0;
+}
+
+.guest-contact-link {
+  text-decoration: none;
+}
+
+.guest-alert-wrap {
+  max-width: 480px;
+  margin: 24px auto 0;
+}
+
+.guest-submit-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 24px 0 4px;
+  margin-top: 40px;
+  border-top: 1px solid var(--secondary-border-c);
+}
+
+.guest-role-dropdown {
+  width: 100%;
+  max-width: 280px;
+}
+
+@keyframes guest-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .guest-submit-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .guest-role-dropdown {
+    max-width: 100%;
+  }
+
+  .guest-greeting-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* Базовые стили body */
 body {
   background: var(--background-c);

@@ -47,6 +47,12 @@ export interface FetchOptions extends RequestInit {
   skipRefresh?: boolean;
 }
 
+export interface RoleDto {
+  id?: string | number;
+  code?: string;
+  name?: string;
+}
+
 export interface UserMeResponse {
     id?: string;
     external_id?: string;

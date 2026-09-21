@@ -13,6 +13,7 @@ const statusMap: Record<string, string> = {
     'admin': 'Администратор',
     'lpr': 'Лицо, принимающее решения',
     'hod': 'Заведующий кафедрой',
+    'guest': 'Гость',
 };
 
 export async function getUserStatus(): Promise<UserStatusResponse> {
