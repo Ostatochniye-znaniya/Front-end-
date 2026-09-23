@@ -45,7 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({ linkOptions, avatarUrl }) => {
         </a>
 
         <div className="navbar-divider"></div>
-        <Link href="/" className="navbar-logo-link navbar-logo-link--left">
+        <Link href={linkOptions?.[0]?.href ?? '/'} className="navbar-logo-link navbar-logo-link--left">
           <img className="navbar-title-logo" alt="Проверка остаточных знаний" />
         </Link>
         <div className="navbar-divider"></div>
