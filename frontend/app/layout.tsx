@@ -11,6 +11,10 @@ const geistMono = {
 };
 
 export const metadata: Metadata = {
+  icons: {
+    icon: [{ url: "/csh/favicon.svg?v=2", type: "image/svg+xml" }],
+    shortcut: [{ url: "/csh/favicon.svg?v=2", type: "image/svg+xml" }],
+  },
   title: "Остаточные знания",
   description: "Сервис для согласования дат сдачи отчетов и получения отчетов по остаточным знаниям",
 };
