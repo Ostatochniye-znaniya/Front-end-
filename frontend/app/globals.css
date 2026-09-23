@@ -627,6 +627,10 @@
     border-radius: 7px 7px 0 0;
   }
 
+  .dropdown-header.open-up {
+    border-radius: 0 0 7px 7px;
+  }
+
   .dropdown-selected {
     color: var(--secondary-font-c);
 
@@ -659,6 +663,15 @@
     list-style: none;
     z-index: 1000;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .dropdown-list--up {
+    top: auto;
+    bottom: 100%;
+    border-top: 2px solid var(--secondary-border-c, #4a90e2);
+    border-bottom: none;
+    border-radius: 7px 7px 0 0;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .dropdown-item {

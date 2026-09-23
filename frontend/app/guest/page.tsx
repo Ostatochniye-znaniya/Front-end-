@@ -8,7 +8,8 @@ import Button from "@/components/button/Button";
 import Capsule from "@/components/capsule/Capsule";
 import MiniAlert from "@/components/alert/MiniAlert";
 
-import { getGreetingSettings } from "@/services/getGreetingSettings";
+import { getWelcomeText } from "@/services/getWelcomeText";
+import { getAdminEmail } from "@/services/getAdminEmail";
 import { getRoles, RoleOption } from "@/services/getRoles";
 import { submitGuestRequest } from "@/services/submitGuestRequest";
 
@@ -29,13 +30,12 @@ export default function GuestGreetingPage() {
 
         async function load() {
             try {
-                const [greeting, roles] = await Promise.all([
-                    getGreetingSettings(),
+                const [text, roles] = await Promise.all([
+                    getWelcomeText(),
                     getRoles(),
                 ]);
                 if (!mounted) return;
-                setWelcomeText(greeting.welcomeText);
-                setContactEmail(greeting.contactEmail);
+                setWelcomeText(text);
                 setRoleOptions(roles);
             } catch (err) {
                 if (!mounted) return;
@@ -47,6 +47,16 @@ export default function GuestGreetingPage() {
                 if (mounted) setLoading(false);
             }
         }
+
+        // Почта администрации — ручка ещё не реализована на бэке (см.
+        // getAdminEmail.ts), поэтому грузится отдельно от остального: её
+        // отсутствие не должно блокировать загрузку страницы или показывать
+        // общий алерт об ошибке.
+        getAdminEmail()
+            .then((email) => {
+                if (mounted) setContactEmail(email);
+            })
+            .catch(() => {});
 
         load();
         return () => {
@@ -94,7 +104,7 @@ export default function GuestGreetingPage() {
 
             <div className="guest-contact-block">
                 <p className="text">Вы можете связаться с администрацией по почте:</p>
-                {!loading && contactEmail && (
+                {contactEmail && (
                     <a href={`mailto:${contactEmail}`} className="guest-contact-link">
                         <Capsule variant="info" icon={<Mail size={14} />}>
                             {contactEmail}
@@ -117,6 +127,7 @@ export default function GuestGreetingPage() {
                         onChange={setSelectedRole}
                         placeholder="Выберите роль"
                         label="Роль"
+                        openUpward
                     />
                 </div>
                 <Button

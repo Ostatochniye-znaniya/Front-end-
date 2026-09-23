@@ -13,14 +13,21 @@ interface DropdownProps {
   onChange: (value: string) => void;
   placeholder?: string;
   label?: string;
+  // Opens the list above the header instead of below — for a dropdown
+  // anchored near the bottom of its container, opening downward makes
+  // the list poke out past the container's edge (visually breaks a
+  // rounded card, and can trigger a page scrollbar on open/close,
+  // i.e. the layout "jitters").
+  openUpward?: boolean;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({ 
-  options, 
-  value, 
-  onChange, 
+const Dropdown: React.FC<DropdownProps> = ({
+  options,
+  value,
+  onChange,
   placeholder = 'Выберите...',
-  label 
+  label,
+  openUpward = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -42,18 +49,18 @@ const Dropdown: React.FC<DropdownProps> = ({
     <div className="dropdown-container" ref={dropdownRef}>
       {label && <label className="dropdown-label">{label}</label>}
       
-      <div 
-        className={`dropdown-header ${isOpen ? 'open' : ''}`}
+      <div
+        className={`dropdown-header ${isOpen ? (openUpward ? 'open-up' : 'open') : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="dropdown-selected">
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <svg 
+        <svg
           className={`dropdown-arrow ${isOpen ? 'open' : ''}`}
-          width="12" 
-          height="8" 
-          viewBox="0 0 12 8" 
+          width="12"
+          height="8"
+          viewBox="0 0 12 8"
           fill="none"
         >
           <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2"/>
@@ -61,7 +68,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       </div>
 
       {isOpen && (
-        <ul className="dropdown-list">
+        <ul className={`dropdown-list ${openUpward ? 'dropdown-list--up' : ''}`}>
           {options.map((option) => (
             <li 
               key={option.value}
