@@ -16,6 +16,10 @@ const geistMono = {
 export const metadata: Metadata = {
   title: "Остаточные знания",
   description: "Сервис для согласования дат сдачи отчетов и получения отчетов по остаточным знаниям",
+  icons: {
+    icon: [{ url: "/csh/favicon.svg?v=2", type: "image/svg+xml" }],
+    shortcut: [{ url: "/csh/favicon.svg?v=2", type: "image/svg+xml" }],
+  }
 };
 
 export default function RootLayout({
@@ -25,6 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
+      <head>
+        <link rel="icon" href="/csh/favicon.svg?v=2" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/csh/favicon.svg?v=2" type="image/svg+xml" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
