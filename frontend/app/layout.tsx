@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import NoTransitionOnNav from "@/components/navbar/NoTransitionOnNav";
+import Preloader from "@/components/preloader/Preloader";
 import { UserProvider } from "@/contexts/UserContext";
 
 const geistSans = {
@@ -50,6 +51,7 @@ export default function RootLayout({
         }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Preloader />
         <NoTransitionOnNav />
         <div className="bg-gradient"></div>
         <UserProvider>
