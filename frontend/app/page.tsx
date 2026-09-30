@@ -10,7 +10,8 @@ export default function Home() {
             linkOptions={[
                 { label: "Преподаватель", href: "/csh/teacher/main" },
                 { label: "ЛПР", href: "/csh/lpr/main" },
-                { label: "Заведующего кафедрой", href: "/csh/hod/main" }
+                { label: "Заведующего кафедрой", href: "/csh/hod/main" },
+                { label: "Администратор", href: "/csh/admin/tech-logs" }
             ]}
             name="Иван"
             surname="Иванов"

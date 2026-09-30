@@ -11,9 +11,10 @@ interface Column<T = any> {
 interface TableProps<T = any> {
   columns: Column<T>[];
   data: T[];
+  style?: React.CSSProperties;
 }
 
-const Table = <T,>({ columns, data }: TableProps<T>) => {
+const Table = <T,>({ columns, data, style }: TableProps<T>) => {
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -46,7 +47,7 @@ const Table = <T,>({ columns, data }: TableProps<T>) => {
   const sortedData = getSortedData();
 
   return (
-    <table className="table-container">
+    <table className="table-container" style={{ width: '100%', borderCollapse: 'collapse', ...style }}>
       <thead>
         <tr>
           {columns.map((col, i) => (
