@@ -21,6 +21,8 @@ export default function LprList() {
                     router.push('/hod/statistics');
                 } else if (status.status === 'lpr') {
                     router.push('/lpr/statistics');
+                } else if (status.status === 'admin') {
+                    router.push('/admin/processes');
                 } else {
                     return <></>
                 }
