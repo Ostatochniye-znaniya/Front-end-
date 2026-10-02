@@ -1,4 +1,5 @@
 import { NEXT_PUBLIC_MODE } from '@/config';
+import { getUserData } from './getUserData';
 
 const mode = NEXT_PUBLIC_MODE;
 
@@ -16,12 +17,50 @@ const statusMap: Record<string, string> = {
     'guest': 'Гость',
 };
 
+const reverseStatusMap: Record<string, string> = {
+    'студент': 'student',
+    'student': 'student',
+    'преподаватель': 'teacher',
+    'teacher': 'teacher',
+    'администратор': 'admin',
+    'admin': 'admin',
+    'лицо, принимающее решения': 'lpr',
+    'лпр': 'lpr',
+    'lpr': 'lpr',
+    'заведующий кафедрой': 'hod',
+    'заведующий': 'hod',
+    'hod': 'hod',
+    'гость': 'guest',
+    'guest': 'guest',
+};
+
 export async function getUserStatus(): Promise<UserStatusResponse> {
-    if (mode === 'development') {
-        const mockStatus = 'teacher';
-        return Promise.resolve({ status: mockStatus, verbose: statusMap[mockStatus] });
+    try {
+        const userData = await getUserData();
+        const rawRole = (
+            userData.roles?.[0] ||
+            userData.role ||
+            userData.status ||
+            ''
+        ).toString().trim().toLowerCase();
+
+        const mappedStatus = reverseStatusMap[rawRole] || (rawRole in statusMap ? rawRole : null);
+        if (mappedStatus) {
+            return {
+                status: mappedStatus,
+                verbose: statusMap[mappedStatus] || userData.status || mappedStatus,
+            };
+        }
+
+        if (userData.status) {
+            return {
+                status: 'teacher',
+                verbose: userData.status,
+            };
+        }
+    } catch {
+        // Fallback если сервер недоступен или пользователь не авторизован
     }
-    else {
-        throw new Error('Заменить на настоящую реализацию получения статуса пользователя');
-    }
+
+    return { status: 'guest', verbose: statusMap['guest'] };
 }

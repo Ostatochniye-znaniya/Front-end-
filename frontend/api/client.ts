@@ -1,26 +1,28 @@
 import { FetchOptions } from './types';
-import { NEXT_PUBLIC_ADMIN_API_URL } from '@/config';
+import {
+  NEXT_PUBLIC_ADMIN_AUTH_BASE,
+  NEXT_PUBLIC_SERVICE_NAME,
+} from '@/config';
 
-const API_URL =  NEXT_PUBLIC_ADMIN_API_URL
 const REDIRECT_KEY = 'auth_redirect_url';
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
-let globalRouter: any = null;
+let globalRouter: { push: (path: string) => void } | null = null;
 
-const IS_DEV = process.env.NEXT_PUBLIC_NODE_ENV === 'development';
-
-const getApiBaseUrl = (): string => {
-  return IS_DEV
-    ? '/api/auth'
-    : API_URL
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    return '/csh/api';
+  }
+  const backend = process.env.BACKEND_URL || 'localhost:5001';
+  return backend.startsWith('http') ? backend : `http://${backend}`;
 };
 
-const getAccessToken = (): string | null => {
+export const getAccessToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('access_token');
 };
 
-const getRefreshToken = (): string | null => {
+export const getRefreshToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('refresh_token');
 };
@@ -29,6 +31,7 @@ export const setTokens = (accessToken: string, refreshToken: string): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
+    localStorage.setItem('isAuthenticated', 'true');
   }
 };
 
@@ -43,15 +46,19 @@ export const clearTokens = (): void => {
   localStorage.removeItem('userRole');
   localStorage.removeItem('userName');
   localStorage.removeItem('userEmail');
+  localStorage.removeItem('navbar_user');
+  localStorage.removeItem('navbar_status');
+  localStorage.removeItem('user_data_cache');
 };
 
-export const saveRedirectUrl = (): void => {
+export const saveRedirectUrl = (url?: string): void => {
   if (typeof window !== 'undefined') {
-    const currentPath = window.location.pathname + window.location.search;
-    if (!currentPath.includes('/login') && 
-        !currentPath.includes('/csh/login') && 
-        !currentPath.includes('/api/auth')) {
-      localStorage.setItem(REDIRECT_KEY, currentPath);
+    const target = url || (window.location.pathname + window.location.search);
+    if (
+      !target.includes('/login') &&
+      !target.includes('/auth-redirect')
+    ) {
+      localStorage.setItem(REDIRECT_KEY, target);
     }
   }
 };
@@ -71,18 +78,37 @@ export const clearRedirectUrl = (): void => {
   }
 };
 
-export const redirectToLogin = (router?: any): void => {
-  saveRedirectUrl();
-  const loginPath = '/csh/login';
-  if (router) {
-    router.push(loginPath);
-  } else if (typeof window !== 'undefined') {
-    window.location.href = loginPath;
+/**
+ * Перенаправление на страницу входа через сторонний сервис авторизации (ЕУЗ / Admin API).
+ */
+export const redirectToLogin = (_router?: { push: (path: string) => void } | null): void => {
+  if (typeof window === 'undefined') return;
+
+  const pathname = window.location.pathname;
+  if (pathname.includes('/auth-redirect')) {
+    return;
   }
+
+  saveRedirectUrl();
+
+  // Авторизация через сторонний сервис
+  const currentUrl = window.location.href;
+  const effectiveReturnUrl =
+    pathname.includes('/login') || pathname === '/csh' || pathname === '/csh/'
+      ? `${window.location.origin}/csh`
+      : currentUrl;
+
+  const returnUrl = encodeURIComponent(
+    `${window.location.origin}/csh/auth-redirect?return_url=${encodeURIComponent(effectiveReturnUrl)}`
+  );
+  const target = `${NEXT_PUBLIC_ADMIN_AUTH_BASE}/auth?service_name=${NEXT_PUBLIC_SERVICE_NAME}&return_url=${returnUrl}`;
+
+  console.log("Redirecting to external auth:", target);
+  window.location.replace(target);
 };
 
-export const redirectAfterLogin = (router?: any, defaultPath: string = '/'): void => {
-  let redirectUrl = getAndClearRedirectUrl();
+export const redirectAfterLogin = (router?: { push: (path: string) => void } | null, defaultPath: string = '/'): void => {
+  const redirectUrl = getAndClearRedirectUrl();
   let targetPath = redirectUrl || defaultPath;
   if (targetPath.startsWith('/csh')) {
     targetPath = targetPath.replace(/^\/csh/, '') || '/';
@@ -90,26 +116,35 @@ export const redirectAfterLogin = (router?: any, defaultPath: string = '/'): voi
   if (router) {
     router.push(targetPath);
   } else if (typeof window !== 'undefined') {
-    window.location.href = targetPath;
+    window.location.href = targetPath.startsWith('/') ? `/csh${targetPath}` : `/csh/${targetPath}`;
   }
 };
 
-export const setGlobalRouter = (router: any) => {
+export const setGlobalRouter = (router: { push: (path: string) => void } | null) => {
   globalRouter = router;
 };
 
 export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false;
-  const hasToken = !!getAccessToken();
-  return hasToken;
+  return !!getAccessToken();
 };
 
-export const logout = (router?: any): void => {
-  clearTokens();
-  if (router) {
-    router.push('/csh/login');
-  } else if (typeof window !== 'undefined') {
-    window.location.href = '/csh/login';
+export const logout = async (router?: { push: (path: string) => void } | null): Promise<void> => {
+  try {
+    await fetch('/csh/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    clearTokens();
+    const loginPath = '/csh/login';
+    if (router) {
+      router.push(loginPath);
+    } else if (typeof window !== 'undefined') {
+      window.location.href = loginPath;
+    }
   }
 };
 
@@ -128,10 +163,11 @@ const refreshToken = async (): Promise<string | null> => {
     return null;
   }
   try {
-    const url = `${getApiBaseUrl()}/users/refresh`;   
+    const url = `${getApiBaseUrl()}/auth/refresh`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ refresh_token: refreshTokenValue }),
     });
     if (!response.ok) {
@@ -143,7 +179,7 @@ const refreshToken = async (): Promise<string | null> => {
       return data.access_token;
     }
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -170,13 +206,26 @@ const parseError = async (response: Response): Promise<{ message: string; status
   }
 };
 
-export async function apiClient<T = any>(
+const buildRequestUrl = (endpoint: string): string => {
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+  const base = getApiBaseUrl();
+  if (endpoint.startsWith(base)) {
+    return endpoint;
+  }
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${base}${cleanEndpoint}`;
+};
+
+export async function apiClient<T = unknown>(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<T> {
   const { skipAuth = false, skipRefresh = false, ...fetchOptions } = options;
-  const url = `${getApiBaseUrl()}${endpoint}`;
-  let accessToken = skipAuth ? null : getAccessToken();
+  const url = buildRequestUrl(endpoint);
+  const accessToken = skipAuth ? null : getAccessToken();
+
   const makeRequest = async (token: string | null): Promise<Response> => {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -187,11 +236,13 @@ export async function apiClient<T = any>(
     }
     return fetch(url, {
       ...fetchOptions,
+      credentials: 'include',
       headers,
     });
   };
+
   try {
-    let response = await makeRequest(accessToken);
+    const response = await makeRequest(accessToken);
     if ((response.status === 401 || response.status === 403) && !skipAuth) {
       if (!skipRefresh && getRefreshToken()) {
         if (isRefreshing) {
@@ -233,9 +284,18 @@ export async function apiClient<T = any>(
           return JSON.parse(text);
         }
       }
-      redirectToLogin(globalRouter);
+
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        const isAuthPage = path.includes('/auth-redirect');
+        if (!isAuthPage) {
+          console.warn("Сессия истекла или отсутствует. Редирект на авторизацию.");
+          redirectToLogin(globalRouter);
+        }
+      }
       throw new Error('Сессия истекла. Пожалуйста, войдите заново.');
     }
+
     if (!response.ok) {
       const errorData = await parseError(response);
       throw new Error(errorData.message);
@@ -246,7 +306,7 @@ export async function apiClient<T = any>(
     }
     try {
       return JSON.parse(responseText);
-    } catch (e) {
+    } catch {
       return responseText as T;
     }
   } catch (error) {
@@ -255,30 +315,30 @@ export async function apiClient<T = any>(
 }
 
 export const api = {
-  get: <T = any>(endpoint: string, options?: Omit<FetchOptions, 'method' | 'body'>) =>
+  get: <T = unknown>(endpoint: string, options?: Omit<FetchOptions, 'method' | 'body'>) =>
     apiClient<T>(endpoint, { ...options, method: 'GET' }),
 
-  post: <T = any>(endpoint: string, body?: any, options?: Omit<FetchOptions, 'method' | 'body'>) =>
+  post: <T = unknown>(endpoint: string, body?: unknown, options?: Omit<FetchOptions, 'method' | 'body'>) =>
     apiClient<T>(endpoint, {
       ...options,
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  put: <T = any>(endpoint: string, body?: any, options?: Omit<FetchOptions, 'method' | 'body'>) =>
+  put: <T = unknown>(endpoint: string, body?: unknown, options?: Omit<FetchOptions, 'method' | 'body'>) =>
     apiClient<T>(endpoint, {
       ...options,
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  patch: <T = any>(endpoint: string, body?: any, options?: Omit<FetchOptions, 'method' | 'body'>) =>
+  patch: <T = unknown>(endpoint: string, body?: unknown, options?: Omit<FetchOptions, 'method' | 'body'>) =>
     apiClient<T>(endpoint, {
       ...options,
       method: 'PATCH',
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  delete: <T = any>(endpoint: string, options?: Omit<FetchOptions, 'method' | 'body'>) =>
+  delete: <T = unknown>(endpoint: string, options?: Omit<FetchOptions, 'method' | 'body'>) =>
     apiClient<T>(endpoint, { ...options, method: 'DELETE' }),
 };

@@ -30,11 +30,16 @@ export async function getUserData(options?: {
                 if (!isExpired) {
                     return cachedData.data;
                 } else { }
-            } catch (e) { }
+            } catch { }
         }
     }
     try {
-        const userData = await api.get<UserMeResponse>('/users/me');
+        let userData: UserMeResponse;
+        try {
+            userData = await api.get<UserMeResponse>('/auth/me');
+        } catch {
+            userData = await api.get<UserMeResponse>('/users/me');
+        }
         if (typeof window !== 'undefined' && userData) {
             const cacheData: CachedUserData = {
                 data: userData,

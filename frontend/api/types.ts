@@ -53,17 +53,29 @@ export interface RoleDto {
   name?: string;
 }
 
+export interface AuthCallbackData {
+  access: string;
+  refresh: string;
+}
+
 export interface UserMeResponse {
-    id?: string;
+    id?: string | number;
     external_id?: string;
     role?: string;
+    roles?: string[];
+    status_id?: number | null;
+    status?: string;
+    faculty_id?: number | null;
+    faculty?: string;
     external_role?: string;
     type_?: string;
     name?: string;
+    first_name?: string;
+    last_name?: string;
     surname?: string;
     patronymic?: string;
     email?: string;
-    faculty?: string;
+    mail_box?: string;
     login?: string;
     last_login?: string;
     created_at?: string;
@@ -77,5 +89,7 @@ export interface UserMeResponse {
     enter_year?: string;
     course?: string;
     department_code?: string;
+    access_token?: string;
+    refresh_token?: string;
     detail?: any;
-}
+}
