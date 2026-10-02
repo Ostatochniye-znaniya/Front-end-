@@ -27,9 +27,14 @@ export default function AuthRedirectPage() {
     // 1. Извлекаем токены и целевой URL
     const access = getParam("access", fullUrl);
     const refresh = getParam("refresh", fullUrl);
+    const savedRedirect = typeof window !== "undefined" ? localStorage.getItem("auth_redirect_url") : null;
+    if (savedRedirect && typeof window !== "undefined") {
+      localStorage.removeItem("auth_redirect_url");
+    }
     const returnToRaw =
       getParam("return_url", fullUrl) ||
       getParam("return_to", fullUrl) ||
+      savedRedirect ||
       "/csh";
 
     if (!access || !refresh) {
@@ -112,6 +117,8 @@ export default function AuthRedirectPage() {
             targetPath = "/csh/hod/statistics";
           } else if (role === "lpr") {
             targetPath = "/csh/lpr/statistics";
+          } else if (role === "guest") {
+            targetPath = "/csh/guest";
           } else {
             targetPath = "/csh";
           }

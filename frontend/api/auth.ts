@@ -1,6 +1,6 @@
 import { api, setTokens, isAuthenticated as clientIsAuthenticated } from './client';
 
-export { redirectToLogin, logout } from './client';
+export { redirectToLogin, redirectToLoginPage, logout } from './client';
 
 export const handleAuthCallback = async (access: string, refresh: string) => {
     const data = await api.post<{ ok: boolean; user_id?: string }>('/auth/callback', {

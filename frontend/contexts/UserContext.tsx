@@ -32,7 +32,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const isAuthPage = path.includes('/login') || path.includes('/auth-redirect');
     const hasToken = typeof window !== 'undefined' && (!!localStorage.getItem('access_token') || !!localStorage.getItem('isAuthenticated'));
 
-    if (isAuthPage && !hasToken) return;
+    if (isAuthPage || !hasToken) return;
 
     (async () => {
       try {
@@ -45,7 +45,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('navbar_status', JSON.stringify(status));
         }
       } catch {
-        // При 401 перехватчик в apiClient выполнит redirectToLogin
+        // При 401 перехватчик в apiClient выполнит redirectToLoginPage
       }
     })();
   }, []);

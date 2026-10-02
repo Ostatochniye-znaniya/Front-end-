@@ -7,7 +7,12 @@ import {
 const REDIRECT_KEY = 'auth_redirect_url';
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
-let globalRouter: { push: (path: string) => void } | null = null;
+export type NavigationRouter = {
+  push?: (path: string) => void;
+  replace?: (path: string) => void;
+};
+
+let globalRouter: NavigationRouter | null = null;
 
 export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
@@ -78,6 +83,26 @@ export const clearRedirectUrl = (): void => {
   }
 };
 
+export const redirectToLoginPage = (router?: { push?: (path: string) => void; replace?: (path: string) => void } | null): void => {
+  if (typeof window === 'undefined') return;
+
+  const pathname = window.location.pathname;
+  if (pathname.includes('/login') || pathname.includes('/auth-redirect')) {
+    return;
+  }
+
+  saveRedirectUrl();
+
+  const r = router || globalRouter;
+  if (r?.replace) {
+    r.replace('/login');
+  } else if (r?.push) {
+    r.push('/login');
+  } else {
+    window.location.replace('/csh/login');
+  }
+};
+
 /**
  * Перенаправление на страницу входа через сторонний сервис авторизации (ЕУЗ / Admin API).
  */
@@ -91,12 +116,26 @@ export const redirectToLogin = (_router?: { push: (path: string) => void } | nul
 
   saveRedirectUrl();
 
-  // Авторизация через сторонний сервис
   const currentUrl = window.location.href;
-  const effectiveReturnUrl =
-    pathname.includes('/login') || pathname === '/csh' || pathname === '/csh/'
-      ? `${window.location.origin}/csh`
-      : currentUrl;
+  const savedUrl = localStorage.getItem(REDIRECT_KEY);
+  const searchParams = new URLSearchParams(window.location.search);
+  const queryReturnUrl = searchParams.get('return_url') || searchParams.get('return_to');
+
+  let targetReturnUrl = queryReturnUrl || savedUrl;
+  if (targetReturnUrl && (targetReturnUrl.includes('/login') || targetReturnUrl.includes('/auth-redirect'))) {
+    targetReturnUrl = null;
+  }
+
+  let effectiveReturnUrl = currentUrl;
+  if (pathname.includes('/login') || pathname === '/csh' || pathname === '/csh/') {
+    if (targetReturnUrl) {
+      effectiveReturnUrl = targetReturnUrl.startsWith('http')
+        ? targetReturnUrl
+        : `${window.location.origin}${targetReturnUrl.startsWith('/') ? '' : '/'}${targetReturnUrl}`;
+    } else {
+      effectiveReturnUrl = `${window.location.origin}/csh`;
+    }
+  }
 
   const returnUrl = encodeURIComponent(
     `${window.location.origin}/csh/auth-redirect?return_url=${encodeURIComponent(effectiveReturnUrl)}`
@@ -120,7 +159,7 @@ export const redirectAfterLogin = (router?: { push: (path: string) => void } | n
   }
 };
 
-export const setGlobalRouter = (router: { push: (path: string) => void } | null) => {
+export const setGlobalRouter = (router: NavigationRouter | null) => {
   globalRouter = router;
 };
 
@@ -129,7 +168,7 @@ export const isAuthenticated = (): boolean => {
   return !!getAccessToken();
 };
 
-export const logout = async (router?: { push: (path: string) => void } | null): Promise<void> => {
+export const logout = async (router?: { push?: (path: string) => void; replace?: (path: string) => void } | null): Promise<void> => {
   try {
     await fetch('/csh/api/auth/logout', {
       method: 'POST',
@@ -139,11 +178,13 @@ export const logout = async (router?: { push: (path: string) => void } | null): 
     console.error("Logout error:", error);
   } finally {
     clearTokens();
-    const loginPath = '/csh/login';
-    if (router) {
-      router.push(loginPath);
+    const r = router || globalRouter;
+    if (r?.replace) {
+      r.replace('/login');
+    } else if (r?.push) {
+      r.push('/login');
     } else if (typeof window !== 'undefined') {
-      window.location.href = loginPath;
+      window.location.replace('/csh/login');
     }
   }
 };
@@ -287,10 +328,12 @@ export async function apiClient<T = unknown>(
 
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-        const isAuthPage = path.includes('/auth-redirect');
+        const isAuthPage = path.includes('/auth-redirect') || path.includes('/login');
         if (!isAuthPage) {
-          console.warn("Сессия истекла или отсутствует. Редирект на авторизацию.");
-          redirectToLogin(globalRouter);
+          console.warn("Сессия истекла или отсутствует. Редирект на страницу входа.");
+          clearTokens();
+          saveRedirectUrl();
+          redirectToLoginPage(globalRouter);
         }
       }
       throw new Error('Сессия истекла. Пожалуйста, войдите заново.');

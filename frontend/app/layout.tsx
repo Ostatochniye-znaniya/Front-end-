@@ -3,6 +3,7 @@ import "./globals.css";
 import NoTransitionOnNav from "@/components/navbar/NoTransitionOnNav";
 import Preloader from "@/components/preloader/Preloader";
 import { UserProvider } from "@/contexts/UserContext";
+import AuthGate from "@/components/auth/AuthGate";
 
 const geistSans = {
   variable: "--font-geist-sans",
@@ -55,7 +56,9 @@ export default function RootLayout({
         <NoTransitionOnNav />
         <div className="bg-gradient"></div>
         <UserProvider>
-          {children}
+          <AuthGate>
+            {children}
+          </AuthGate>
         </UserProvider>
       </body>
     </html>

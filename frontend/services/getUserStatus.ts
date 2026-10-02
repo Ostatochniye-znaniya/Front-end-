@@ -35,6 +35,13 @@ const reverseStatusMap: Record<string, string> = {
 };
 
 export async function getUserStatus(): Promise<UserStatusResponse> {
+    if (typeof window !== 'undefined') {
+        const hasToken = !!localStorage.getItem('access_token') || !!localStorage.getItem('isAuthenticated');
+        if (!hasToken) {
+            throw new Error('Пользователь не авторизован');
+        }
+    }
+
     try {
         const userData = await getUserData();
         const rawRole = (
