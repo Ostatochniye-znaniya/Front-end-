@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
+import React, { useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
+
+const subscribeToTheme = (onStoreChange: () => void) => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', onStoreChange);
+    return () => mediaQuery.removeEventListener('change', onStoreChange);
+};
+
+const getTheme = (): 'light' | 'dark' => (
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+);
 
 interface LinkOption {
     label: string;
-    href: string;
+    href?: string;
 }
 
 interface NavbarProps {
@@ -16,28 +25,17 @@ interface NavbarProps {
     name: string;
     surname: string;
     lastname: string;
+    variant?: 'default' | 'report';
 }
 
-const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, surname, lastname }) => {
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
-    const pathname = usePathname(); // получаем текущий путь
-
-    useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        setTheme(mediaQuery.matches ? 'dark' : 'light');
-
-        const handler = (e: MediaQueryListEvent) => {
-            setTheme(e.matches ? 'dark' : 'light');
-        };
-
-        mediaQuery.addEventListener('change', handler);
-        return () => mediaQuery.removeEventListener('change', handler);
-    }, []);
+const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, surname, lastname, variant = 'default' }) => {
+    const theme = useSyncExternalStore(subscribeToTheme, getTheme, () => 'light');
+    const pathname = usePathname();
 
     const logoSrc = theme === 'dark' ? '/csh/mpu_logo_d.png' : '/csh/mpu_logo_l.png';
     return (
-        <div className="navbar-container">
-            <img className="theme-aware-logo" src={logoSrc} alt="Logo" width={250} height={66.21} style={{
+        <aside className={`navbar-container ${variant === 'report' ? 'navbar-container--report' : ''}`}>
+            <img className="theme-aware-logo" src={logoSrc} alt="Логотип Московского Политеха" width={250} height={66.21} style={{
                 marginBottom: "14px",
             }} />
             <div className='line'></div>
@@ -58,17 +56,22 @@ const Navbar: React.FC<NavbarProps> = ({ title, linkOptions, avatarUrl, name, su
                     return (
                         <div key={index} className='navbar-inner-container'>
                             <div className={isActive ? 'navbar-active' : 'navbar-deactive'}></div>
-                            <a
-                                href={option.href}
-                                className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}
-                            >
-                                {option.label}
-                            </a>
+                            {option.href ? (
+                                <a
+                                    href={option.href}
+                                    className={isActive ? 'navbar-path navbar-active-path' : 'navbar-path navbar-deactive-path'}
+                                    aria-current={isActive ? 'page' : undefined}
+                                >
+                                    {option.label}
+                                </a>
+                            ) : (
+                                <span className="navbar-path navbar-deactive-path">{option.label}</span>
+                            )}
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </aside>
     );
 }
 

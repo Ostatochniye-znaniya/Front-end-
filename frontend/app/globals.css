@@ -711,6 +711,108 @@
     content: url('/csh/mpu_logo_l.png');
   }
 
+  .navbar-container--report {
+    box-sizing: border-box;
+    flex: 0 0 162px;
+    width: 162px;
+    min-height: calc(100vh - 16px);
+    height: calc(100vh - 16px);
+    margin: 8px 0 8px 8px;
+    padding: 12px 18px 24px;
+    border-radius: 0 15px 15px 0;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .navbar-container--report .theme-aware-logo {
+    width: 113px !important;
+    height: auto !important;
+    margin-bottom: 9px !important;
+  }
+
+  .navbar-container--report .line {
+    width: 113px;
+  }
+
+  .navbar-container--report .navbar-title-text-block {
+    width: 113px;
+    margin: 8px 0 20px;
+    font-size: 9px;
+    line-height: 1.2;
+  }
+
+  .navbar-container--report .navbar-title-text-block p {
+    margin: 0;
+  }
+
+  .navbar-container--report .navbar-avatar,
+  .navbar-container--report .navbar-avatar img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .navbar-container--report .navbar-avatar {
+    margin-bottom: 5px;
+  }
+
+  .navbar-container--report .navbar-text-container {
+    margin-bottom: 25px;
+  }
+
+  .navbar-container--report .navbar-text-container p {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .navbar-container--report .navbar-link-container {
+    width: 113px;
+    gap: 9px;
+  }
+
+  .navbar-container--report .navbar-inner-container {
+    align-items: flex-start;
+  }
+
+  .navbar-container--report .navbar-path {
+    font-size: 11px;
+    line-height: 1.06;
+  }
+
+  .navbar-container--report .navbar-active,
+  .navbar-container--report .navbar-deactive {
+    flex: 0 0 6px;
+    width: 6px;
+    height: 6px;
+    margin: 3px 4px 0 0;
+  }
+
+  @media (max-width: 760px) {
+    .navbar-container--report {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      width: calc(100% - 28px);
+      min-height: 0;
+      height: auto;
+      margin: 8px 14px 0;
+      padding: 12px 16px;
+      border-radius: 12px;
+    }
+
+    .navbar-container--report .line,
+    .navbar-container--report .navbar-title-text-block,
+    .navbar-container--report .navbar-link-container {
+      display: none;
+    }
+
+    .navbar-container--report .navbar-avatar {
+      margin: 0 8px 0 0;
+    }
+
+    .navbar-container--report .navbar-text-container {
+      margin: 0;
+    }
+  }
+
   @media (prefers-color-scheme: dark) {
     .theme-aware-logo {
       content: url('/csh/mpu_logo_d.png');
