@@ -6,6 +6,8 @@ interface Column<T = any> {
   header: React.ReactNode;
   accessor: keyof T | ((row: T) => React.ReactNode);
   sortFn?: (a: T, b: T) => number; // если есть - можно сортировать, если нет - нельзя
+  style?: React.CSSProperties;
+  className?: string;
 }
 
 interface TableProps<T = any> {
@@ -55,7 +57,8 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
             <th 
               key={i} 
               onClick={() => handleSort(i)}
-              style={{ cursor: col.sortFn ? 'pointer' : 'default' }}
+              className={col.className}
+              style={{ cursor: col.sortFn ? 'pointer' : 'default', ...col.style }}
             >
               {col.header}
               {col.sortFn && sortColumn === i && (
@@ -73,7 +76,11 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
                 ? col.accessor(row)
                 : row[col.accessor] as React.ReactNode;
               
-              return <td key={colIndex}>{value}</td>;
+              return (
+                <td key={colIndex} className={col.className} style={col.style}>
+                  {value}
+                </td>
+              );
             })}
           </tr>
         ))}

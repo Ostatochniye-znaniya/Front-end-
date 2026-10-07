@@ -1,19 +1,20 @@
 "use client";
+import React from "react";
 import Navbar from "@/components/navbar/Navbar";
-import { PieChart, FileText, Users, BookOpen, Settings } from "lucide-react";
+import { PieChart, FileText, Users, BookOpen, ShieldCheck } from "lucide-react";
 
-const lprLinks = [
+export const accessRightsNavLinks = [
   { label: "Статистика",                href: "/lpr/statistics", icon: PieChart },
   { label: "Приказы",                   href: "/lpr/order",      icon: FileText },
   { label: "Списки рекомедуемых групп", href: "/lpr/list",       icon: Users },
   { label: "Отчеты",                    href: "/lpr/report",     icon: BookOpen },
-  { label: "Права доступа",             href: "/access-rights",  icon: Settings },
+  { label: "Права доступа",             href: "/access-rights",  icon: ShieldCheck },
 ];
 
-export default function LprLayout({ children }: { children: React.ReactNode }) {
+export default function AccessRightsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-container">
-      <Navbar title="Проверка остаточных знаний" linkOptions={lprLinks} />
+      <Navbar title="Проверка остаточных знаний" linkOptions={accessRightsNavLinks} />
       {children}
     </div>
   );
