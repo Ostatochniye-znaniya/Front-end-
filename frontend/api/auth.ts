@@ -1,4 +1,5 @@
 import { api, setTokens, isAuthenticated as clientIsAuthenticated } from './client';
+import { getUserFromCookie } from '@/services/userCookie';
 
 export { redirectToLogin, redirectToLoginPage, logout } from './client';
 
@@ -12,18 +13,17 @@ export const handleAuthCallback = async (access: string, refresh: string) => {
 };
 
 export const getAccessToken = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('access_token');
+    // Токены хранятся в HttpOnly Cookies
+    return null;
 };
 
 export const getRefreshToken = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('refresh_token');
+    return null;
 };
 
 export const getUserId = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('user_id');
+    const user = getUserFromCookie();
+    return (user?.id ?? user?.external_id ?? null) as string | null;
 };
 
 export const isAuthenticated = (): boolean => {

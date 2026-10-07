@@ -32,6 +32,12 @@ const nextConfig = {
         basePath: false,
         permanent: false,
       },
+      {
+        source: '/403',
+        destination: '/csh/403',
+        basePath: false,
+        permanent: false,
+      },
     ];
   },
 

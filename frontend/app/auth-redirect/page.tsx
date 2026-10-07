@@ -76,7 +76,7 @@ export default function AuthRedirectPage() {
           throw new Error(errData.detail || errData.message || `Ошибка сервера (${response.status})`);
         }
 
-        // 3. Сохраняем токены на клиенте для локальных запросов
+        // 3. Сохраняем сессию в куки
         setTokens(decodedAccess, decodedRefresh);
 
         setStatusMessage("Получение данных профиля...");
@@ -85,13 +85,7 @@ export default function AuthRedirectPage() {
         let role = "teacher";
         try {
           const userData = await getUserData({ forceRefresh: true });
-          if (typeof window !== "undefined") {
-            localStorage.setItem("navbar_user", JSON.stringify(userData));
-          }
           const userStatus = await getUserStatus();
-          if (typeof window !== "undefined") {
-            localStorage.setItem("navbar_status", JSON.stringify(userStatus));
-          }
           if (userStatus?.status) {
             role = userStatus.status;
           }

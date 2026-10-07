@@ -3,6 +3,11 @@ import {
   NEXT_PUBLIC_ADMIN_AUTH_BASE,
   NEXT_PUBLIC_SERVICE_NAME,
 } from '@/config';
+import {
+  setSessionCookie,
+  clearSessionCookie,
+  isSessionActive,
+} from '@/services/userCookie';
 
 const REDIRECT_KEY = 'auth_redirect_url';
 let isRefreshing = false;
@@ -23,25 +28,29 @@ export const getApiBaseUrl = (): string => {
 };
 
 export const getAccessToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('access_token');
+  // Токены хранятся исключительно в cookies браузера
+  return null;
 };
 
 export const getRefreshToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('refresh_token');
+  return null;
 };
 
-export const setTokens = (accessToken: string, refreshToken: string): void => {
+export const setTokens = (_accessToken?: string, _refreshToken?: string): void => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
-    localStorage.setItem('isAuthenticated', 'true');
+    // Вся сессия хранится в cookies
+    setSessionCookie();
+    // Удаляем любые остаточные токены из localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('user_id');
   }
 };
 
 export const clearTokens = (): void => {
   if (typeof window === 'undefined') return;
+  clearSessionCookie();
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user_id');
@@ -165,7 +174,7 @@ export const setGlobalRouter = (router: NavigationRouter | null) => {
 
 export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return !!getAccessToken();
+  return isSessionActive();
 };
 
 export const logout = async (router?: { push?: (path: string) => void; replace?: (path: string) => void } | null): Promise<void> => {
@@ -199,27 +208,20 @@ const subscribeToRefresh = (cb: (token: string) => void): void => {
 };
 
 const refreshToken = async (): Promise<string | null> => {
-  const refreshTokenValue = getRefreshToken();
-  if (!refreshTokenValue) {
-    return null;
-  }
   try {
     const url = `${getApiBaseUrl()}/auth/refresh`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ refresh_token: refreshTokenValue }),
+      body: JSON.stringify({}),
     });
     if (!response.ok) {
       throw new Error('Refresh failed');
     }
     const data = await response.json();
-    if (data.access_token) {
-      setTokens(data.access_token, data.refresh_token || refreshTokenValue);
-      return data.access_token;
-    }
-    return null;
+    setSessionCookie();
+    return data.access_token || 'ok';
   } catch {
     return null;
   }
@@ -285,7 +287,7 @@ export async function apiClient<T = unknown>(
   try {
     const response = await makeRequest(accessToken);
     if ((response.status === 401 || response.status === 403) && !skipAuth) {
-      if (!skipRefresh && getRefreshToken()) {
+      if (!skipRefresh && isSessionActive()) {
         if (isRefreshing) {
           return new Promise((resolve, reject) => {
             subscribeToRefresh(async (newToken: string) => {

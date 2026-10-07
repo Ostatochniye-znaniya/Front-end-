@@ -34,10 +34,12 @@ const reverseStatusMap: Record<string, string> = {
     'guest': 'guest',
 };
 
+import { isAuthenticated } from '@/api/client';
+
 export async function getUserStatus(): Promise<UserStatusResponse> {
     if (typeof window !== 'undefined') {
-        const hasToken = !!localStorage.getItem('access_token') || !!localStorage.getItem('isAuthenticated');
-        if (!hasToken) {
+        const hasSession = isAuthenticated();
+        if (!hasSession) {
             throw new Error('Пользователь не авторизован');
         }
     }

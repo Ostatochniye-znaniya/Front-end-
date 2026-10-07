@@ -3,19 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getUserStatus } from "@/services/getUserStatus";
-import { redirectToLoginPage } from "@/api/client";
+import { redirectToLoginPage, isAuthenticated } from "@/api/client";
 
 export default function LprList() {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
-        const hasToken = typeof window !== 'undefined' && (
-            !!localStorage.getItem('access_token') ||
-            !!localStorage.getItem('isAuthenticated')
-        );
+        const hasSession = typeof window !== 'undefined' && isAuthenticated();
 
-        if (!hasToken) {
+        if (!hasSession) {
             redirectToLoginPage(router);
             return;
         }

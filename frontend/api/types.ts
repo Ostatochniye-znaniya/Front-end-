@@ -70,6 +70,7 @@ export interface UserMeResponse {
     external_role?: string;
     type_?: string;
     name?: string;
+    full_name?: string;
     first_name?: string;
     last_name?: string;
     surname?: string;

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { saveRedirectUrl, setGlobalRouter, redirectToLoginPage } from "@/api/client";
+import { saveRedirectUrl, setGlobalRouter, redirectToLoginPage, isAuthenticated } from "@/api/client";
 
 interface AuthGateProps {
   children: React.ReactNode;
@@ -15,7 +15,9 @@ const isPublicPath = (pathname: string | null): boolean => {
     cleanPath === "/login" ||
     cleanPath.startsWith("/login/") ||
     cleanPath === "/auth-redirect" ||
-    cleanPath.startsWith("/auth-redirect/")
+    cleanPath.startsWith("/auth-redirect/") ||
+    cleanPath === "/403" ||
+    cleanPath.startsWith("/403/")
   );
 };
 
@@ -30,29 +32,22 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   const publicRoute = isPublicPath(pathname);
 
-  const [hasToken, setHasToken] = useState<boolean>(() => {
+  const [hasSession, setHasSession] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     if (publicRoute) return true;
-    return !!(
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("isAuthenticated")
-    );
+    return isAuthenticated();
   });
 
   useLayoutEffect(() => {
     if (publicRoute) {
-      setHasToken(true);
+      setHasSession(true);
       return;
     }
 
-    const tokenExists = !!(
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("isAuthenticated")
-    );
+    const sessionExists = isAuthenticated();
+    setHasSession(sessionExists);
 
-    setHasToken(tokenExists);
-
-    if (!tokenExists) {
+    if (!sessionExists) {
       saveRedirectUrl();
       redirectToLoginPage(router);
     }
@@ -62,7 +57,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  if (!hasToken) {
+  if (!hasSession) {
     return null;
   }
 

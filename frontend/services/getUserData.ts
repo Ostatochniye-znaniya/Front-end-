@@ -1,15 +1,16 @@
-// api/user.ts
+// services/getUserData.ts
 import { useState, useEffect } from 'react';
 import { api } from "@/api/client";
 import { UserMeResponse } from "@/api/types";
 import { NEXT_PUBLIC_ADMIN_API_URL } from '@/config';
+import { getUserFromCookie, syncUserCookie, clearUserCookie } from './userCookie';
 
 interface CachedUserData {
     data: UserMeResponse;
     timestamp: number;
 }
 
-const CACHE_KEY = 'user_data_cache';
+let memoryCache: CachedUserData | null = null;
 const DEFAULT_CACHE_TTL = 60 * 60 * 1000; // 60 минут в миллисекундах
 
 export async function getUserData(options?: {
@@ -17,22 +18,23 @@ export async function getUserData(options?: {
     forceRefresh?: boolean;
 }): Promise<UserMeResponse> {
     const { ttl = DEFAULT_CACHE_TTL, forceRefresh = false } = options || {};
-    const ttlMs = ttl;
+    const now = Date.now();
 
-    if (!forceRefresh && typeof window !== 'undefined') {
-        const cached = localStorage.getItem(CACHE_KEY);
-        
-        if (cached) {
-            try {
-                const cachedData: CachedUserData = JSON.parse(cached);
-                const now = Date.now();
-                const isExpired = now - cachedData.timestamp > ttlMs;
-                if (!isExpired) {
-                    return cachedData.data;
-                } else { }
-            } catch { }
+    if (!forceRefresh) {
+        if (memoryCache && now - memoryCache.timestamp < ttl) {
+            return memoryCache.data;
+        }
+
+        const cookieUser = getUserFromCookie();
+        if (cookieUser && cookieUser.id) {
+            memoryCache = {
+                data: cookieUser as unknown as UserMeResponse,
+                timestamp: now,
+            };
+            return memoryCache.data;
         }
     }
+
     try {
         let userData: UserMeResponse;
         try {
@@ -40,12 +42,19 @@ export async function getUserData(options?: {
         } catch {
             userData = await api.get<UserMeResponse>('/users/me');
         }
-        if (typeof window !== 'undefined' && userData) {
-            const cacheData: CachedUserData = {
+
+        if (userData) {
+            memoryCache = {
                 data: userData,
                 timestamp: Date.now(),
             };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            syncUserCookie(userData);
+            // Чистим любые устаревшие данные из localStorage
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('user_data_cache');
+                localStorage.removeItem('navbar_user');
+                localStorage.removeItem('navbar_status');
+            }
         }
         return userData;
     } catch (error) {
@@ -54,29 +63,24 @@ export async function getUserData(options?: {
 }
 
 export function clearUserDataCache(): void {
+    memoryCache = null;
+    clearUserCookie();
     if (typeof window !== 'undefined') {
-        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem('user_data_cache');
+        localStorage.removeItem('navbar_user');
+        localStorage.removeItem('navbar_status');
     }
 }
 
 export function getLastCacheTime(): number | null {
-    if (typeof window === 'undefined') return null;
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-    try {
-        const cachedData: CachedUserData = JSON.parse(cached);
-        return cachedData.timestamp;
-    } catch {
-        return null;
-    }
+    return memoryCache ? memoryCache.timestamp : null;
 }
 
 export function isCacheValid(ttlMinutes: number = 60): boolean {
     const lastTime = getLastCacheTime();
     if (!lastTime) return false;
     const now = Date.now();
-    const ttlMs = ttlMinutes * 60 * 1000;
-    return now - lastTime < ttlMs;
+    return now - lastTime < ttlMinutes * 60 * 1000;
 }
 
 export function useUserData(options?: {
@@ -87,6 +91,7 @@ export function useUserData(options?: {
     const [userData, setUserData] = useState<UserMeResponse | null>(null);
     const [loading, setLoading] = useState(autoFetch);
     const [error, setError] = useState<Error | null>(null);
+
     const fetchData = async (forceRefresh = false) => {
         setLoading(true);
         setError(null);

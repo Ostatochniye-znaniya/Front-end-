@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useLayoutEffect, useState 
 import { getUserData } from '@/services/getUserData';
 import { UserMeResponse } from '@/api/types';
 import { getUserStatus, UserStatusResponse } from '@/services/getUserStatus';
+import { getUserFromCookie } from '@/services/userCookie';
+import { isAuthenticated } from '@/api/client';
 
 interface UserContextValue {
   userData: UserMeResponse | null;
@@ -12,37 +14,40 @@ interface UserContextValue {
 const UserContext = createContext<UserContextValue>({ userData: null, userStatus: null });
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  // Всегда null — сервер и клиент рендерят одинаково, нет hydration mismatch
   const [userData, setUserData] = useState<UserMeResponse | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatusResponse | null>(null);
 
-  // useLayoutEffect: синхронно до отрисовки браузера — пользователь не видит пустоту
+  // useLayoutEffect: синхронно читаем данные из Cookie до отрисовки
   useLayoutEffect(() => {
     try {
-      const u = localStorage.getItem('navbar_user');
-      const s = localStorage.getItem('navbar_status');
-      if (u) setUserData(JSON.parse(u));
-      if (s) setUserStatus(JSON.parse(s));
+      const u = getUserFromCookie();
+      if (u) {
+        setUserData(u as unknown as UserMeResponse);
+        if (u.role || u.roleSlug) {
+          setUserStatus({
+            status: u.roleSlug || 'guest',
+            verbose: u.role || 'Гость',
+          });
+        }
+      }
     } catch {}
   }, []);
 
-  // Фоновое обновление с API (на страницах входа/редиректа без токена запрос не делаем)
+  // Фоновое обновление с API (на страницах входа/редиректа без сессии запрос не делаем)
   useEffect(() => {
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
     const isAuthPage = path.includes('/login') || path.includes('/auth-redirect');
-    const hasToken = typeof window !== 'undefined' && (!!localStorage.getItem('access_token') || !!localStorage.getItem('isAuthenticated'));
+    const hasSession = typeof window !== 'undefined' && isAuthenticated();
 
-    if (isAuthPage || !hasToken) return;
+    if (isAuthPage || !hasSession) return;
 
     (async () => {
       try {
         const data = await getUserData({ ttl: 60 });
         if (data) {
           setUserData(data);
-          localStorage.setItem('navbar_user', JSON.stringify(data));
           const status = await getUserStatus();
           setUserStatus(status);
-          localStorage.setItem('navbar_status', JSON.stringify(status));
         }
       } catch {
         // При 401 перехватчик в apiClient выполнит redirectToLoginPage
