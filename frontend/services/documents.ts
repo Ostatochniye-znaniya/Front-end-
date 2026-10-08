@@ -64,11 +64,15 @@ export interface ReportFilters {
     departmentId?: number | null;
     academicYear?: string | null;
     status?: DocumentStatus | null;
+    /** Факультет декана; пока подставляется вручную — до интеграции авторизации */
+    facultyId?: number | null;
 }
 
 export interface ScheduleFilters {
     semesterId?: number | null;
     status?: DocumentStatus | null;
+    /** Факультет декана; пока подставляется вручную — до интеграции авторизации */
+    facultyId?: number | null;
 }
 
 export type UploadProgressHandler = (percent: number) => void;
@@ -197,6 +201,7 @@ export function getDeanReports(filters: ReportFilters = {}): Promise<ReportDocum
         departmentId: filters.departmentId,
         academicYear: filters.academicYear,
         status: filters.status,
+        facultyId: filters.facultyId,
     });
     return getJson(`/DeanDocuments/GetReports${query}`, 'Не удалось загрузить отчёты');
 }
@@ -218,7 +223,11 @@ export function rejectReport(reportId: number, comment?: string): Promise<Report
 }
 
 export function getDeanSchedules(filters: ScheduleFilters = {}): Promise<ScheduleDocument[]> {
-    const query = buildQuery({ semesterId: filters.semesterId, status: filters.status });
+    const query = buildQuery({
+        semesterId: filters.semesterId,
+        status: filters.status,
+        facultyId: filters.facultyId,
+    });
     return getJson(`/DeanDocuments/GetSchedules${query}`, 'Не удалось загрузить графики');
 }
 

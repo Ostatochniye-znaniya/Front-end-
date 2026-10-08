@@ -1640,3 +1640,148 @@ body {
     animation: none;
   }
 }
+
+/* ===== Сегментный переключатель (Рассмотрение документов) ===== */
+
+.segmented-toggle {
+  position: relative;
+  /* Сегменты одной ширины: обе половины переключателя выглядят равноправно */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background-color: var(--secondary-any-element-c);
+  border: 1px solid var(--secondary-border-c);
+}
+
+.segmented-toggle-full {
+  display: grid;
+  width: 100%;
+}
+
+/* Обводка, переезжающая на выбранный сегмент */
+.segmented-toggle-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 999px;
+  background-color: var(--background-main-element-c);
+  border: 2px solid var(--accent-blue-c);
+  transition: left 250ms ease, width 250ms ease;
+  pointer-events: none;
+}
+
+.segmented-toggle-option {
+  position: relative;
+  z-index: 1;
+  padding: 14px 36px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--secondary-font-c);
+  transition: color 250ms ease, opacity 250ms ease;
+}
+
+.segmented-toggle-option:hover {
+  opacity: var(--button-hover-opacity);
+}
+
+.segmented-toggle-option-active {
+  color: var(--accent-blue-c);
+}
+
+@media (max-width: 600px) {
+  .segmented-toggle {
+    width: 100%;
+  }
+
+  .segmented-toggle-option {
+    padding: 12px 12px;
+    font-size: 14px;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmented-toggle-thumb {
+    transition: none;
+  }
+}
+
+/* ===== Drag & Drop для отправки PDF ===== */
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 32px 24px;
+  border: 2px dashed var(--secondary-border-c);
+  border-radius: 12px;
+  background-color: var(--background-inner-main-element-c);
+  color: var(--secondary-font-c);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.dropzone:hover:not(.dropzone-disabled),
+.dropzone-active {
+  border-color: var(--accent-blue-c);
+  background-color: var(--accent-blue-bg-c);
+}
+
+.dropzone-disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dropzone-icon {
+  color: var(--accent-blue-c);
+}
+
+.dropzone-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dropzone-hint {
+  font-size: 14px;
+  color: var(--secondary-lock-font-c);
+}
+
+/* Полоса прогресса отправки файла */
+.upload-progress {
+  width: 100%;
+  height: 6px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background-color: var(--secondary-any-element-c);
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--accent-blue-c);
+  transition: width 150ms linear;
+}
+
+/* Ссылка на LMS в таблице графика */
+.link-lms {
+  color: var(--secondary-link-c);
+  text-decoration: underline;
+}
+
+.link-lms:hover {
+  color: var(--secondary-link-hover-c);
+}
