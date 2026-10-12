@@ -94,7 +94,7 @@ export default function DisciplineSelection() {
         <div className="main-container">
             <h1 className="text-bold" style={{ marginBottom: '16px' }}>Выбор дисциплин</h1>
 
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+            <div className="discipline-filters">
                 <Dropdown
                     options={faculties}
                     value={selectedFaculty}
