@@ -4,3 +4,4 @@ frontend/next-env.d.ts/
 frontend/css.d.ts
 .env
 yarn.lock
+screenshots/
