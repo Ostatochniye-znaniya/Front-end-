@@ -18,11 +18,9 @@ import {
   ChevronRight,
   ChevronDown,
   Sparkles,
-  Info,
   CheckCircle,
   AlertTriangle,
-  Building2,
-  GitBranch
+  Building2
 } from 'lucide-react';
 
 export default function LprStatisticsPage() {
@@ -197,7 +195,7 @@ export default function LprStatisticsPage() {
         </div>
       )}
 
-      {/* Информационная плашка формулы расчета норматива */}
+      {/* Сводная плашка показателей по университету */}
       <div
         style={{
           backgroundColor: 'var(--background-main-element-c)',
@@ -206,48 +204,50 @@ export default function LprStatisticsPage() {
           padding: '20px',
           marginBottom: '24px',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
+          gap: '24px',
+          flexWrap: 'wrap',
+          alignItems: 'center'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Info size={18} color="var(--accent-blue-c)" />
-          <span className="text text-bold">Формула норматива групп:</span>
-          <code
-            style={{
-              backgroundColor: 'var(--background-inner-main-element-c)',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontFamily: 'monospace',
-              fontSize: '13px',
-              color: 'var(--secondary-font-c)'
-            }}
-          >
-            Норматив = Профили × 2 × Курсы {isSpring ? '(+1 для 1-го курса весной)' : ''} + Магистратура 2-й курс
-          </code>
+          <Building2 size={20} color="var(--accent-blue-c)" />
+          <span className="text text-bold">Сводка по университету:</span>
         </div>
-
-        <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="text text-blind">Текущий семестр:</span>
-            <Capsule variant={isSpring ? 'warning' : 'default'}>
-              {currentSemesterObj.label}
-            </Capsule>
+        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div>
+            <span className="text text-blind">Групп план: </span>
+            <span className="text text-bold">{universityTotals.groupNorm}</span>
+          </div>
+          <div>
+            <span className="text text-blind">Групп факт: </span>
+            <span className="text text-bold">{universityTotals.groupFact}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="text text-blind">Всего по университету:</span>
-            <span className="text text-bold">План: {universityTotals.groupNorm} гр.</span>
-            <span className="text text-blind">|</span>
-            <span className="text text-bold">Факт: {universityTotals.groupFact} гр.</span>
-            <span className="text text-blind">|</span>
             <span className="text text-blind">Разница:</span>
             <Capsule variant={universityTotals.diff >= 0 ? 'success' : 'danger'}>
               {universityTotals.diff >= 0 ? `+${universityTotals.diff}` : universityTotals.diff}
             </Capsule>
           </div>
+          <div>
+            <span className="text text-blind">Эл. отчёты: </span>
+            <span className="text text-bold">{universityTotals.eReportDone}</span>
+            {universityTotals.eReportRemarks > 0 && (
+              <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
+                ({universityTotals.eReportRemarks} замеч.)
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="text text-blind">Бум. отчёты: </span>
+            <span className="text text-bold">{universityTotals.pReportDone}</span>
+            {universityTotals.pReportRemarks > 0 && (
+              <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
+                ({universityTotals.pReportRemarks} замеч.)
+              </span>
+            )}
+          </div>
         </div>
       </div>
-
       {/* Панель фильтров и управления детализацией */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ width: '320px' }}>
