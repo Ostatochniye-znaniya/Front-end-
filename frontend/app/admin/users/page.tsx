@@ -17,14 +17,12 @@ export default function UsersAndRolesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Модалка предварительной регистрации (п. 7.4 ТЗ)
   const [isPreRegisterOpen, setIsPreRegisterOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [newRole, setNewRole] = useState<UserItem['role']>('Преподаватель');
 
-  // Модалка смены роли
   const [roleChangeUser, setRoleChangeUser] = useState<UserItem | null>(null);
   const [selectedNewRole, setSelectedNewRole] = useState<UserItem['role']>('Преподаватель');
 
@@ -225,7 +223,6 @@ export default function UsersAndRolesPage() {
 
   return (
     <div className="main-container">
-      {/* Заголовок страницы с кнопкой действия */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
@@ -249,7 +246,6 @@ export default function UsersAndRolesPage() {
         </div>
       )}
 
-      {/* Панель поиска и фильтрации */}
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '280px' }}>
           <Search
@@ -279,12 +275,10 @@ export default function UsersAndRolesPage() {
         </div>
       </div>
 
-      {/* Таблица пользователей */}
       <div className="table-wrapper">
         <Table columns={columns} data={filteredUsers} />
       </div>
 
-      {/* Модальное окно предварительной регистрации (п. 7.4 ТЗ) */}
       {isPreRegisterOpen && (
         <div
           style={{
@@ -384,7 +378,6 @@ export default function UsersAndRolesPage() {
         </div>
       )}
 
-      {/* Модальное окно изменения роли */}
       {roleChangeUser && (
         <div
           style={{

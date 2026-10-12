@@ -31,7 +31,6 @@ export default function SettingsPage() {
 
   return (
     <div className="main-container">
-      {/* Заголовок страницы с кнопками сохранения */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
@@ -64,7 +63,6 @@ export default function SettingsPage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '960px' }}>
-        {/* Блок 1: Контакты и каналы обращений */}
         <div
           style={{
             backgroundColor: 'var(--background-main-element-c)',
@@ -95,7 +93,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Блок 2: Текст для гостей без роли */}
         <div
           style={{
             backgroundColor: 'var(--background-main-element-c)',
@@ -128,7 +125,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Блок 3: Инструкция по получению доступа */}
         <div
           style={{
             backgroundColor: 'var(--background-main-element-c)',
@@ -161,7 +157,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Блок 4: Регламентные параметры процессов */}
         <div
           style={{
             backgroundColor: 'var(--background-main-element-c)',

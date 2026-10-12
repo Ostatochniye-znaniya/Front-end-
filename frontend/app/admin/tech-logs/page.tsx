@@ -113,7 +113,6 @@ export default function TechLogsPage() {
 
   return (
     <div className="main-container">
-      {/* Заголовок страницы с краткими счетчиками */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
@@ -134,7 +133,6 @@ export default function TechLogsPage() {
         </div>
       </div>
 
-      {/* Панель поиска и фильтрации */}
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '280px' }}>
           <Search
@@ -164,12 +162,10 @@ export default function TechLogsPage() {
         </div>
       </div>
 
-      {/* Таблица технических логов */}
       <div className="table-wrapper">
         <Table columns={columns} data={filteredLogs} />
       </div>
 
-      {/* Модальное окно просмотра деталей и трассировки ошибки */}
       {selectedLog && (
         <div
           style={{

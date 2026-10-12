@@ -16,7 +16,6 @@ export default function ProcessesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Состояния для модальных окон безопасных сценариев
   const [rescheduleModal, setRescheduleModal] = useState<ProcessItem | null>(null);
   const [newDate, setNewDate] = useState<string>('');
   const [newTime, setNewTime] = useState<string>('');
@@ -202,7 +201,6 @@ export default function ProcessesPage() {
 
   return (
     <div className="main-container">
-      {/* Заголовок страницы */}
       <div style={{ marginBottom: '24px' }}>
         <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
           Бизнес-процессы
@@ -219,7 +217,6 @@ export default function ProcessesPage() {
         </div>
       )}
 
-      {/* Панель поиска и фильтрации */}
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '280px' }}>
           <Search
@@ -240,12 +237,10 @@ export default function ProcessesPage() {
         </div>
       </div>
 
-      {/* Таблица бизнес-процессов */}
       <div className="table-wrapper">
         <Table columns={columns} data={filteredProcesses} />
       </div>
 
-      {/* Модальное окно безопасного изменения даты (Сценарий 9 ТЗ) */}
       {rescheduleModal && (
         <div
           style={{
@@ -337,7 +332,6 @@ export default function ProcessesPage() {
         </div>
       )}
 
-      {/* Модальное окно безопасного отката этапа (Сценарий 10 ТЗ) */}
       {rollbackModal && (
         <div
           style={{

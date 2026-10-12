@@ -48,7 +48,6 @@ export default function LprStatisticsPage() {
     setExpandedFaculties({});
   };
 
-  // Вычисляем показатели для конкретного факультета
   const getFacultyTotals = (faculty: FacultyStat) => {
     let profiles = 0;
     let groupNorm = 0;
@@ -91,7 +90,6 @@ export default function LprStatisticsPage() {
     };
   };
 
-  // Суммарные показатели по всему университету
   const universityTotals = useMemo(() => {
     let profiles = 0;
     let groupNorm = 0;
@@ -135,7 +133,6 @@ export default function LprStatisticsPage() {
 
   return (
     <div className="main-container">
-      {/* Шапка страницы */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
@@ -144,7 +141,6 @@ export default function LprStatisticsPage() {
         </div>
       </div>
 
-      {/* Сводная плашка показателей по университету */}
       <div
         style={{
           backgroundColor: 'var(--background-main-element-c)',
@@ -198,7 +194,6 @@ export default function LprStatisticsPage() {
         </div>
       </div>
 
-      {/* Панель фильтров и управления детализацией */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ width: '280px' }}>
           <Dropdown
@@ -224,7 +219,6 @@ export default function LprStatisticsPage() {
         </div>
       </div>
 
-      {/* Таблица статистики */}
       <div className="table-wrapper">
         <table className="table-container" style={{ width: '100%', borderCollapse: 'separate', fontSize: '13px' }}>
           <thead>
@@ -247,7 +241,6 @@ export default function LprStatisticsPage() {
 
               return (
                 <React.Fragment key={faculty.id}>
-                  {/* Строка факультета */}
                   <tr
                     onClick={() => toggleFaculty(faculty.id)}
                     style={{
@@ -313,7 +306,6 @@ export default function LprStatisticsPage() {
                     </td>
                   </tr>
 
-                  {/* Вложенные строки кафедр */}
                   {isExpanded && faculty.departments.map(dept => {
                     const deptNorm = calculateGroupNorm(dept.profilesCount, dept.coursesCount, isSpring, dept.magistracyCount);
                     const deptDiff = dept.groupFact - deptNorm;

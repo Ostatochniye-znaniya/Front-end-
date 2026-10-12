@@ -14,10 +14,7 @@ import {
   ChevronRight,
   ChevronDown,
   BookOpen,
-  Users,
-  GraduationCap,
-  CheckCircle,
-  AlertCircle
+  GraduationCap
 } from 'lucide-react';
 
 export default function HodStatisticsPage() {
@@ -25,7 +22,7 @@ export default function HodStatisticsPage() {
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedDisciplines, setExpandedDisciplines] = useState<Record<string, boolean>>({
-    disc_net: true, // По умолчанию раскрыта первая дисциплина
+    disc_net: true,
     disc_db: true
   });
 
@@ -71,7 +68,6 @@ export default function HodStatisticsPage() {
     });
   }, [courseFilter, searchQuery]);
 
-  // Сводные данные по кафедре
   const departmentTotals = useMemo(() => {
     let groupNorm = 0;
     let groupFact = 0;
@@ -83,7 +79,6 @@ export default function HodStatisticsPage() {
     let pReportRemarks = 0;
 
     initialHodDisciplinesData.forEach(d => {
-      // План для дисциплины = профилей * 2
       const dNorm = d.profilesCount * 2;
       groupNorm += dNorm;
       groupFact += d.groupFact;
@@ -113,7 +108,6 @@ export default function HodStatisticsPage() {
 
   return (
     <div className="main-container">
-      {/* Шапка страницы кафедры */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
@@ -123,13 +117,12 @@ export default function HodStatisticsPage() {
         </div>
       </div>
 
-      {/* Сводная плашка показателей кафедры */}
       <div
         style={{
           backgroundColor: 'var(--background-main-element-c)',
           border: '1px solid var(--secondary-border-c)',
           borderRadius: '16px',
-          padding: '20px',
+          padding: '18px 24px',
           marginBottom: '24px',
           display: 'flex',
           gap: '24px',
@@ -143,11 +136,11 @@ export default function HodStatisticsPage() {
         </div>
         <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
-            <span className="text text-blind">Групп план: </span>
+            <span className="text text-blind">Групп (план): </span>
             <span className="text text-bold">{departmentTotals.groupNorm}</span>
           </div>
           <div>
-            <span className="text text-blind">Групп факт: </span>
+            <span className="text text-blind">Групп (факт): </span>
             <span className="text text-bold">{departmentTotals.groupFact}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -174,16 +167,9 @@ export default function HodStatisticsPage() {
               </span>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="text text-blind">Всё сдано кафедрой:</span>
-            <Capsule variant={departmentTotals.allPassed ? 'success' : 'danger'}>
-              {departmentTotals.allPassed ? 'Да' : 'Нет'}
-            </Capsule>
-          </div>
         </div>
       </div>
 
-      {/* Панель фильтров */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', gap: '14px', flex: 1, minWidth: '320px', flexWrap: 'wrap' }}>
           <div style={{ minWidth: '240px', flex: 1 }}>
@@ -228,21 +214,20 @@ export default function HodStatisticsPage() {
         </div>
       </div>
 
-      {/* Таблица статистики кафедры по дисциплинам */}
       <div className="table-wrapper">
-        <table className="table-container" style={{ width: '100%', borderCollapse: 'separate' }}>
+        <table className="table-container" style={{ width: '100%', borderCollapse: 'separate', fontSize: '13px' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', minWidth: '260px' }}>Дисциплина кафедры</th>
-              <th style={{ minWidth: '130px' }}>Курс / Семестр</th>
-              <th style={{ minWidth: '80px' }}>Профилей</th>
-              <th style={{ minWidth: '100px' }}>План (групп)</th>
-              <th style={{ minWidth: '100px' }}>Факт (групп)</th>
-              <th style={{ minWidth: '90px' }}>Разница</th>
-              <th style={{ minWidth: '130px' }}>Занятий (план / факт)</th>
-              <th style={{ minWidth: '110px' }}>Эл. отчёты</th>
-              <th style={{ minWidth: '110px' }}>Бум. отчёты</th>
-              <th style={{ minWidth: '90px' }}>Всё сдано</th>
+              <th style={{ textAlign: 'left', padding: '12px 14px' }}>Дисциплина кафедры</th>
+              <th style={{ padding: '12px 6px', width: '130px' }}>Курс / Семестр</th>
+              <th style={{ padding: '12px 6px', width: '70px' }}>Профили</th>
+              <th style={{ padding: '12px 6px', width: '85px' }}>План</th>
+              <th style={{ padding: '12px 6px', width: '85px' }}>Факт</th>
+              <th style={{ padding: '12px 6px', width: '80px' }}>Разница</th>
+              <th style={{ padding: '12px 6px', width: '110px' }}>Занятия</th>
+              <th style={{ padding: '12px 6px', width: '100px' }}>Эл. отчёты</th>
+              <th style={{ padding: '12px 6px', width: '100px' }}>Бум. отчёты</th>
+              <th style={{ padding: '12px 8px', width: '85px' }}>Всё сдано</th>
             </tr>
           </thead>
           <tbody>
@@ -254,7 +239,6 @@ export default function HodStatisticsPage() {
 
               return (
                 <React.Fragment key={disc.id}>
-                  {/* Основная строка дисциплины */}
                   <tr
                     onClick={() => toggleDiscipline(disc.id)}
                     style={{
@@ -263,7 +247,7 @@ export default function HodStatisticsPage() {
                       fontWeight: 600
                     }}
                   >
-                    <td style={{ textAlign: 'left' }}>
+                    <td style={{ textAlign: 'left', padding: '12px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
                           type="button"
@@ -305,7 +289,7 @@ export default function HodStatisticsPage() {
                     <td>
                       <span className="text text-bold">{disc.eReportDone}</span>
                       {disc.eReportRemarks > 0 && (
-                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
+                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
                           ({disc.eReportRemarks})
                         </span>
                       )}
@@ -313,7 +297,7 @@ export default function HodStatisticsPage() {
                     <td>
                       <span className="text text-bold">{disc.pReportDone}</span>
                       {disc.pReportRemarks > 0 && (
-                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
+                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
                           ({disc.pReportRemarks})
                         </span>
                       )}
@@ -325,7 +309,6 @@ export default function HodStatisticsPage() {
                     </td>
                   </tr>
 
-                  {/* Дочерние строки (Детализация по учебным группам и преподавателям) */}
                   {isExpanded && disc.groups.map(grp => {
                     const eStatusText =
                       grp.eReportStatus === 'done' ? 'Сдан' :
@@ -349,7 +332,7 @@ export default function HodStatisticsPage() {
                           fontSize: '13px'
                         }}
                       >
-                        <td style={{ textAlign: 'left', paddingLeft: '40px' }}>
+                        <td style={{ textAlign: 'left', paddingLeft: '38px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ color: 'var(--secondary-lock-font-c)', fontFamily: 'monospace' }}>↳</span>
                             <span className="text-bold" style={{ fontSize: '13px' }}>

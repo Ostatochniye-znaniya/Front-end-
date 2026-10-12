@@ -55,11 +55,6 @@ export interface TransitionGroupCandidate {
   autoReason: string;
   needsManualSelection: boolean;
 }
-
-/**
- * Формула расчета норматива групп:
- * Кол-во профилей × 2 × кол-во курсов (+1 если весенний семестр для первого курса) + только 2й курс магистратуры
- */
 export function calculateGroupNorm(
   profilesCount: number,
   coursesCount: number = 3,

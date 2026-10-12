@@ -120,14 +120,12 @@ export default function AuditLogsPage() {
 
   return (
     <div className="main-container">
-      {/* Заголовок страницы */}
       <div style={{ marginBottom: '24px' }}>
         <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
           Журнал аудита
         </h1>
       </div>
 
-      {/* Панель поиска и фильтрации */}
       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: '280px' }}>
           <Search
@@ -148,12 +146,10 @@ export default function AuditLogsPage() {
         </div>
       </div>
 
-      {/* Таблица аудита */}
       <div className="table-wrapper">
         <Table columns={columns} data={filteredLogs} />
       </div>
 
-      {/* Карточка детального просмотра записи аудита */}
       {selectedAudit && (
         <div
           style={{
