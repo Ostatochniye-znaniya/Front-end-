@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import Table from '@/components/table/Table';
 import Button from '@/components/button/Button';
 import Input from '@/components/input/Input';
 import Dropdown from '@/components/dropdown/Dropdown';
+import Search from '@/components/search/Search';
+import Capsule from '@/components/capsule/Capsule';
 import Alert from '@/components/alert/Alert';
 import { initialProcesses, ProcessItem } from '@/components/admin/mockData';
+import { Lock, Calendar, RotateCcw } from 'lucide-react';
 
 export default function ProcessesPage() {
   const [processes, setProcesses] = useState<ProcessItem[]>(initialProcesses);
@@ -68,7 +70,7 @@ export default function ProcessesPage() {
 
     setAlertInfo({
       type: 'success',
-      title: 'Дата успешно изменена с фиксацией в аудите',
+      title: 'Дата успешно изменена с фиксацией в аудите (п. 9 регламента)',
       text: `Для группы ${rescheduleModal.group} (${rescheduleModal.subject}) назначена дата ${newDate}. Причина: ${rescheduleReason}.`
     });
 
@@ -98,7 +100,7 @@ export default function ProcessesPage() {
 
     setAlertInfo({
       type: 'warning',
-      title: 'Процесс возвращен на этап согласования',
+      title: 'Процесс возвращен на этап согласования (п. 10 регламента)',
       text: `Процесс группы ${rollbackModal.group} разблокирован для внесения правок кафедрой. Обоснование: ${rollbackReason}.`
     });
 
@@ -106,60 +108,22 @@ export default function ProcessesPage() {
     setRollbackReason('');
   };
 
-  const renderStatusBadge = (status: ProcessItem['status'], isLocked: boolean) => {
-    let color = 'var(--secondary-font-c)';
-    let bg = 'var(--secondary-divider-bg-c)';
-
-    if (status === 'Согласовано') {
-      color = 'var(--accent-green-c)';
-      bg = 'var(--accent-green-bg-c)';
-    } else if (status === 'На согласовании') {
-      color = 'var(--accent-blue-c)';
-      bg = 'var(--accent-blue-bg-c)';
-    } else if (status === 'Отклонено' || status === 'Срок истёк') {
-      color = 'var(--accent-red-c)';
-      bg = 'var(--accent-red-bg-c)';
-    }
-
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{
-          padding: '3px 8px',
-          borderRadius: '6px',
-          backgroundColor: bg,
-          color: color,
-          fontWeight: 600,
-          fontSize: '12px'
-        }}>
-          {status}
-        </span>
-        {isLocked && (
-          <span title="Неизменяемый статус (защищён от произвольного редактирования)" style={{ fontSize: '12px', cursor: 'help' }}>
-            🔒
-          </span>
-        )}
-      </div>
-    );
-  };
-
   const columns = [
     {
       header: 'Группа',
       accessor: (row: ProcessItem) => (
-        <span style={{ fontWeight: 700, color: 'var(--secondary-font-c)', fontSize: '13px' }}>
+        <span className="text-bold" style={{ fontSize: '14px' }}>
           {row.group}
         </span>
       ),
       sortFn: (a: ProcessItem, b: ProcessItem) => a.group.localeCompare(b.group)
     },
     {
-      header: 'Дисциплина',
+      header: 'Дисциплина / Кафедра',
       accessor: (row: ProcessItem) => (
-        <div>
-          <div style={{ fontWeight: 600, color: 'var(--secondary-font-c)', fontSize: '13px' }}>
-            {row.subject}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--secondary-lock-font-c)' }}>
+        <div style={{ textAlign: 'left' }}>
+          <div className="text-bold">{row.subject}</div>
+          <div className="text text-blind" style={{ fontSize: '12px', marginTop: '2px' }}>
             {row.department}
           </div>
         </div>
@@ -169,102 +133,87 @@ export default function ProcessesPage() {
     {
       header: 'Преподаватель',
       accessor: (row: ProcessItem) => (
-        <span style={{ fontSize: '13px', color: 'var(--secondary-font-c)' }}>
-          {row.teacher}
-        </span>
+        <span className="text">{row.teacher}</span>
       ),
       sortFn: (a: ProcessItem, b: ProcessItem) => a.teacher.localeCompare(b.teacher)
     },
     {
       header: 'Дата и время',
       accessor: (row: ProcessItem) => (
-        <div style={{ fontSize: '13px', fontFamily: 'var(--font-geist-mono, monospace)' }}>
-          <strong style={{ color: 'var(--secondary-font-c)' }}>{row.scheduledDate}</strong>
-          <span style={{ color: 'var(--secondary-lock-font-c)', marginLeft: '6px' }}>{row.scheduledTime}</span>
+        <div>
+          <span className="text text-bold">{row.scheduledDate}</span>
+          <span className="text text-blind" style={{ marginLeft: '6px', fontSize: '12px' }}>{row.scheduledTime}</span>
         </div>
       )
     },
     {
       header: 'Статус этапа',
-      accessor: (row: ProcessItem) => renderStatusBadge(row.status, row.isLocked)
+      accessor: (row: ProcessItem) => {
+        const variant =
+          row.status === 'Согласовано' ? 'success' :
+          row.status === 'На согласовании' ? 'info' : 'danger';
+        return (
+          <Capsule
+            variant={variant}
+            icon={row.isLocked ? <Lock size={12} /> : undefined}
+          >
+            {row.status}
+          </Capsule>
+        );
+      }
     },
     {
       header: 'Отчет кафедры',
       accessor: (row: ProcessItem) => {
-        let color = 'var(--secondary-lock-font-c)';
-        if (row.reportStatus.includes('сдан') || row.reportStatus.includes('Подписан')) {
-          color = 'var(--accent-green-c)';
-        }
+        const isDone = row.reportStatus.includes('сдан') || row.reportStatus.includes('Подписан');
         return (
-          <span style={{ fontSize: '12px', fontWeight: 600, color }}>
+          <Capsule variant={isDone ? 'success' : 'default'}>
             {row.reportStatus}
-          </span>
+          </Capsule>
         );
       }
     },
     {
       header: 'Безопасные сценарии',
       accessor: (row: ProcessItem) => (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <button
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Button
+            title="Перенос даты"
+            color="btn-blue"
             onClick={() => {
               setRescheduleModal(row);
               setNewDate(row.scheduledDate);
               setNewTime(row.scheduledTime);
             }}
-            title="Сценарий безопасного переноса даты после согласования"
-            style={{
-              background: 'none',
-              border: '1px solid var(--accent-blue-c)',
-              color: 'var(--accent-blue-c)',
-              padding: '5px 10px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 600
-            }}
-          >
-            Перенести дату
-          </button>
-          <button
-            onClick={() => setRollbackModal(row)}
-            title="Возврат процесса на доработку с указанием причины"
-            style={{
-              background: 'none',
-              border: '1px solid var(--accent-orange-c)',
-              color: 'var(--accent-orange-c)',
-              padding: '5px 10px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 600
-            }}
-          >
-            Откатить этап
-          </button>
+          />
+          {row.status === 'Согласовано' && (
+            <Button
+              title="Откат этапа"
+              color="btn-orange"
+              onClick={() => {
+                setRollbackModal(row);
+              }}
+            />
+          )}
         </div>
       )
     }
   ];
 
   return (
-    <AdminLayout
-      title="Монитор бизнес-процессов"
-      subtitle="Центральный раздел контроля состояний. Запрещает произвольное редактирование полей — исправления проводятся строго через регламентированные административные сценарии с фиксацией в аудите."
-      actions={
-        <Button
-          title="Сбросить фильтры"
-          color="btn-orange"
-          onClick={() => {
-            setStatusFilter('all');
-            setSearchQuery('');
-          }}
-        />
-      }
-    >
-      {/* Системное уведомление об успешном действии */}
+    <div className="main-container">
+      {/* Заголовок страницы */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
+          Бизнес-процессы и мониторинг
+        </h1>
+        <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
+          Контроль этапов тестирований кафедр, фиксация зависших состояний и регламентированные безопасные сценарии
+        </p>
+      </div>
+
       {alertInfo && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '24px' }}>
           <Alert
             type={alertInfo.type}
             title={alertInfo.title}
@@ -273,160 +222,106 @@ export default function ProcessesPage() {
         </div>
       )}
 
-      {/* Инфо-карточки регламента */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Принцип безопасного вмешательства</div>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--secondary-font-c)', marginTop: '6px', lineHeight: '1.4' }}>
-            Прямое изменение БД запрещено. Изменение заблокированных данных требует обоснования.
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Контроль инвариантов</div>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--secondary-font-c)', marginTop: '6px', lineHeight: '1.4' }}>
-            Все сданные отчеты сохраняют цифровую подпись кафедры.
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Активных процессов в системе</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-blue-c)', marginTop: '4px' }}>
-            {processes.length}
-          </div>
-        </div>
-      </div>
-
-      {/* Фильтры */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '14px',
-        alignItems: 'flex-end',
-        backgroundColor: 'var(--background-main-element-c)',
-        border: '1px solid var(--secondary-border-c)',
-        borderRadius: '10px',
-        padding: '16px 20px',
-        marginBottom: '20px'
-      }}>
-        <div style={{ flex: '1 1 280px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Поиск по группе, предмету, преподавателю или кафедре
-          </label>
-          <Input
-            hint="Например: 221-111, Сети, Иванов..."
+      {/* Панель поиска и фильтрации */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '280px' }}>
+          <Search
+            hint="Поиск по группе, дисциплине, преподавателю..."
             value={searchQuery}
-            onChange={(val) => setSearchQuery(val)}
+            onChange={setSearchQuery}
+            size="large"
           />
         </div>
-
-        <div style={{ flex: '1 1 220px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Статус согласования
-          </label>
+        <div style={{ width: '220px' }}>
           <Dropdown
+            label="Статус этапа"
             options={statusOptions}
             value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
+            onChange={setStatusFilter}
             placeholder="Все статусы"
           />
         </div>
-
-        <div style={{ paddingBottom: '4px', fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>
-          Отображено процессов: <strong style={{ color: 'var(--secondary-font-c)' }}>{filteredProcesses.length}</strong>
-        </div>
       </div>
 
-      {/* Таблица процессов */}
-      <div style={{ width: '100%', overflowX: 'auto' }}>
+      {/* Таблица бизнес-процессов */}
+      <div className="table-wrapper">
         <Table columns={columns} data={filteredProcesses} />
       </div>
 
-      {/* Модальное окно: Сценарий переноса даты */}
+      {/* Модальное окно безопасного изменения даты (Сценарий 9 ТЗ) */}
       {rescheduleModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '12px',
-            maxWidth: '560px',
-            width: '100%',
-            padding: '26px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-          }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: 'var(--secondary-font-c)' }}>
-              Административный перенос даты тестирования
-            </h3>
-            <p style={{ margin: '0 0 18px 0', fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>
-              Группа <strong>{rescheduleModal.group}</strong> • {rescheduleModal.subject}
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setRescheduleModal(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--background-c)',
+              borderRadius: '16px',
+              border: '1px solid var(--secondary-border-c)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+              padding: '28px',
+              maxWidth: '540px',
+              width: '100%'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <Calendar size={20} color="var(--accent-blue-c)" />
+              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+                Перенос согласованной даты (Сценарий 9 ТЗ)
+              </h2>
+            </div>
+            
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
+              Процесс для группы <strong>{rescheduleModal.group}</strong> ({rescheduleModal.subject}) уже согласован. Согласно регламенту, изменение даты возможно только с обязательным указанием обоснования и протоколированием в аудите.
             </p>
 
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                  Новая дата
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+              <div>
+                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                  Новая дата проведения (ДД.ММ.ГГГГ):
                 </label>
                 <Input
-                  hint="ДД.ММ.ГГГГ (например, 22.06.2026)"
+                  hint="Например, 20.06.2026"
                   value={newDate}
-                  onChange={(val) => setNewDate(val)}
+                  onChange={setNewDate}
                 />
               </div>
-              <div style={{ width: '130px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                  Время
+
+              <div>
+                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                  Время проведения:
                 </label>
                 <Input
-                  hint="12:20"
+                  hint="Например, 12:00 - 13:30"
                   value={newTime}
-                  onChange={(val) => setNewTime(val)}
+                  onChange={setNewTime}
                 />
               </div>
-            </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                Обязательное основание переноса (для аудита) <span style={{ color: 'var(--accent-red-c)' }}>*</span>
-              </label>
-              <Input
-                hint="Номер служебной записки, приказ деканата или причина наложения аудиторий"
-                value={rescheduleReason}
-                onChange={(val) => setRescheduleReason(val)}
-                multiline={true}
-                rows={3}
-              />
+              <div>
+                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                  Официальная причина переноса (обязательно для аудита):
+                </label>
+                <Input
+                  hint="Служебная записка деканата / совпадение с аудиторным фондом"
+                  value={rescheduleReason}
+                  onChange={setRescheduleReason}
+                  multiline
+                  rows={3}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -436,7 +331,7 @@ export default function ProcessesPage() {
                 onClick={() => setRescheduleModal(null)}
               />
               <Button
-                title="Применить и зафиксировать"
+                title="Применить с записью в аудит"
                 color="btn-blue"
                 onClick={handleApplyReschedule}
               />
@@ -445,49 +340,54 @@ export default function ProcessesPage() {
         </div>
       )}
 
-      {/* Модальное окно: Сценарий отката этапа */}
+      {/* Модальное окно безопасного отката этапа (Сценарий 10 ТЗ) */}
       {rollbackModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '12px',
-            maxWidth: '560px',
-            width: '100%',
-            padding: '26px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-          }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: 'var(--secondary-font-c)' }}>
-              Возврат процесса на этап согласования
-            </h3>
-            <p style={{ margin: '0 0 18px 0', fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>
-              Группа <strong>{rollbackModal.group}</strong> • {rollbackModal.subject}
-            </p>
-            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--accent-orange-c)', lineHeight: '1.4' }}>
-              Внимание: Процесс будет переведён в статус «На согласовании», блокировка редактирования снята. Действие будет навсегда внесено в журнал аудита.
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setRollbackModal(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--background-c)',
+              borderRadius: '16px',
+              border: '1px solid var(--secondary-border-c)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+              padding: '28px',
+              maxWidth: '540px',
+              width: '100%'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <RotateCcw size={20} color="var(--accent-orange-c)" />
+              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+                Возврат процесса на доработку (Сценарий 10 ТЗ)
+              </h2>
+            </div>
+
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
+              Возврат процесса для группы <strong>{rollbackModal.group}</strong> снимает блокировку статуса и возвращает его на этап «На согласовании» для исправления кафедрой.
             </p>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                Причина возврата на этап кафедры <span style={{ color: 'var(--accent-red-c)' }}>*</span>
+              <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                Причина возврата на этап согласования:
               </label>
               <Input
-                hint="Опишите, какая ошибка обнаружена после согласования"
+                hint="Например: Необходима замена ответственного преподавателя по заявлению кафедры"
                 value={rollbackReason}
-                onChange={(val) => setRollbackReason(val)}
-                multiline={true}
+                onChange={setRollbackReason}
+                multiline
                 rows={3}
               />
             </div>
@@ -499,7 +399,7 @@ export default function ProcessesPage() {
                 onClick={() => setRollbackModal(null)}
               />
               <Button
-                title="Подтвердить возврат"
+                title="Подтвердить откат статуса"
                 color="btn-orange"
                 onClick={handleApplyRollback}
               />
@@ -507,6 +407,6 @@ export default function ProcessesPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   );
 }

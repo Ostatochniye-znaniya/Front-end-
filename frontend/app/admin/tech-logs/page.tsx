@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import Table from '@/components/table/Table';
 import Button from '@/components/button/Button';
-import Input from '@/components/input/Input';
 import Dropdown from '@/components/dropdown/Dropdown';
+import Search from '@/components/search/Search';
+import Capsule from '@/components/capsule/Capsule';
 import { initialTechLogs, TechLog } from '@/components/admin/mockData';
+import { Terminal, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 export default function TechLogsPage() {
   const [logs, setLogs] = useState<TechLog[]>(initialTechLogs);
@@ -51,303 +52,204 @@ export default function TechLogsPage() {
   const warningCount = logs.filter(l => l.level === 'warning').length;
   const infoCount = logs.filter(l => l.level === 'info').length;
 
-  const renderLevelBadge = (level: TechLog['level']) => {
-    let bg = 'var(--accent-blue-bg-c, rgba(95, 109, 236, 0.15))';
-    let color = 'var(--accent-blue-c, #5f6dec)';
-    let text = 'INFO';
-
-    if (level === 'error') {
-      bg = 'var(--accent-red-bg-c, rgba(236, 95, 107, 0.15))';
-      color = 'var(--accent-red-c, #ec5f6b)';
-      text = 'ERROR';
-    } else if (level === 'warning') {
-      bg = 'var(--accent-orange-bg-c, rgba(238, 158, 68, 0.15))';
-      color = 'var(--accent-orange-c, #ee9e44)';
-      text = 'WARN';
-    }
-
-    return (
-      <span style={{
-        padding: '3px 8px',
-        borderRadius: '6px',
-        backgroundColor: bg,
-        color: color,
-        fontWeight: 700,
-        fontSize: '11px',
-        letterSpacing: '0.5px'
-      }}>
-        {text}
-      </span>
-    );
-  };
-
   const columns = [
     {
-      header: 'Время',
+      header: 'Уровень',
+      accessor: (row: TechLog) => {
+        const variant =
+          row.level === 'error' ? 'danger' :
+          row.level === 'warning' ? 'warning' : 'info';
+        return (
+          <Capsule variant={variant}>
+            {row.level.toUpperCase()}
+          </Capsule>
+        );
+      },
+      sortFn: (a: TechLog, b: TechLog) => a.level.localeCompare(b.level)
+    },
+    {
+      header: 'Дата и время',
       accessor: (row: TechLog) => (
-        <span style={{ fontFamily: 'var(--font-geist-mono, monospace)', fontSize: '13px', whiteSpace: 'nowrap' }}>
+        <span className="text text-bold" style={{ fontSize: '13px' }}>
           {row.timestamp}
         </span>
       ),
       sortFn: (a: TechLog, b: TechLog) => a.timestamp.localeCompare(b.timestamp)
     },
     {
-      header: 'Уровень',
-      accessor: (row: TechLog) => renderLevelBadge(row.level)
-    },
-    {
-      header: 'Сервис',
+      header: 'Сервис-источник',
       accessor: (row: TechLog) => (
-        <span style={{ fontWeight: 600, color: 'var(--secondary-font-c)' }}>
-          {row.service}
-        </span>
+        <span className="text-bold">{row.service}</span>
       ),
       sortFn: (a: TechLog, b: TechLog) => a.service.localeCompare(b.service)
     },
     {
-      header: 'Сообщение события / исключения',
+      header: 'Сообщение об ошибке / событии',
       accessor: (row: TechLog) => (
-        <div style={{ maxWidth: '440px', wordBreak: 'break-word', fontSize: '13px' }}>
-          <div style={{ color: 'var(--secondary-font-c)', fontWeight: 500 }}>{row.message}</div>
-          <div style={{ fontSize: '11px', color: 'var(--secondary-lock-font-c)', marginTop: '2px', fontFamily: 'monospace' }}>
-            Trace: {row.traceId}
-          </div>
-        </div>
+        <span className="text" style={{ textAlign: 'left', display: 'block' }}>
+          {row.message}
+        </span>
       )
     },
     {
-      header: 'Действия',
+      header: 'Trace ID',
       accessor: (row: TechLog) => (
-        <button
+        <span className="text text-blind" style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+          {row.traceId}
+        </span>
+      )
+    },
+    {
+      header: 'Диагностика',
+      accessor: (row: TechLog) => (
+        <Button
+          title="Стек ошибки"
+          color="btn-blue"
           onClick={() => setSelectedLog(row)}
-          style={{
-            background: 'none',
-            border: '1px solid var(--secondary-border-c)',
-            color: 'var(--secondary-link-c, #6d86e4)',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 600
-          }}
-        >
-          Диагностика
-        </button>
+        />
       )
     }
   ];
 
   return (
-    <AdminLayout
-      title="Технические логи системы"
-      subtitle="Централизованный аудит системных событий, интеграций и ошибок backend-сервисов (Grafana-совместимый журнал без персональных данных)."
-      actions={
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button
-            title="Очистить фильтры"
-            color="btn-orange"
-            onClick={() => {
-              setLevelFilter('all');
-              setServiceFilter('all');
-              setSearchQuery('');
-            }}
-          />
-        </div>
-      }
-    >
-      {/* Метрики состояния */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Критические ошибки (Error)</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-red-c)', marginTop: '4px' }}>
-            {errorCount}
-          </div>
+    <div className="main-container">
+      {/* Заголовок страницы с краткими счетчиками */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
+            Технические логи и ошибки
+          </h1>
+          <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
+            Служебные события серверных компонентов, сбои фоновых воркеров и интеграции с 1С (без бизнес-данных)
+          </p>
         </div>
 
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Предупреждения (Warning)</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-orange-c)', marginTop: '4px' }}>
-            {warningCount}
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Информационные (Info)</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-green-c)', marginTop: '4px' }}>
-            {infoCount}
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Статус интеграций</div>
-          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-green-c)', marginTop: '8px' }}>
-            ● Все шлюзы онлайн
-          </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Capsule variant="danger" icon={<AlertCircle size={13} />}>
+            {errorCount} Ошибок
+          </Capsule>
+          <Capsule variant="warning" icon={<AlertTriangle size={13} />}>
+            {warningCount} Предупреждений
+          </Capsule>
+          <Capsule variant="info" icon={<Info size={13} />}>
+            {infoCount} Инфо
+          </Capsule>
         </div>
       </div>
 
-      {/* Панель фильтров */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '14px',
-        alignItems: 'flex-end',
-        backgroundColor: 'var(--background-main-element-c)',
-        border: '1px solid var(--secondary-border-c)',
-        borderRadius: '10px',
-        padding: '16px 20px',
-        marginBottom: '20px'
-      }}>
-        <div style={{ flex: '1 1 240px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Поиск по сообщению или Trace ID
-          </label>
-          <Input
-            hint="Например: PDFGeneration, 1C, deadlock..."
+      {/* Панель поиска и фильтрации */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '280px' }}>
+          <Search
+            hint="Поиск по сообщению, Trace ID, сервису..."
             value={searchQuery}
-            onChange={(val) => setSearchQuery(val)}
+            onChange={setSearchQuery}
+            size="large"
           />
         </div>
-
-        <div style={{ flex: '1 1 200px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Уровень важности
-          </label>
+        <div style={{ width: '220px' }}>
           <Dropdown
+            label="Уровень логирования"
             options={levelOptions}
             value={levelFilter}
-            onChange={(val) => setLevelFilter(val)}
+            onChange={setLevelFilter}
             placeholder="Все уровни"
           />
         </div>
-
-        <div style={{ flex: '1 1 200px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Подсистема / Сервис
-          </label>
+        <div style={{ width: '220px' }}>
           <Dropdown
+            label="Сервис-источник"
             options={serviceOptions}
             value={serviceFilter}
-            onChange={(val) => setServiceFilter(val)}
+            onChange={setServiceFilter}
             placeholder="Все сервисы"
           />
         </div>
-
-        <div style={{ paddingBottom: '4px', fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>
-          Найдено записей: <strong style={{ color: 'var(--secondary-font-c)' }}>{filteredLogs.length}</strong>
-        </div>
       </div>
 
-      {/* Таблица логов */}
-      <div style={{ width: '100%', overflowX: 'auto' }}>
+      {/* Таблица технических логов */}
+      <div className="table-wrapper">
         <Table columns={columns} data={filteredLogs} />
       </div>
 
-      {/* Модальное окно диагностики */}
+      {/* Модальное окно просмотра деталей и трассировки ошибки */}
       {selectedLog && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '12px',
-            maxWidth: '650px',
-            width: '100%',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {renderLevelBadge(selectedLog.level)}
-                <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--secondary-font-c)' }}>
-                  Детализация события #{selectedLog.id}
-                </h3>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setSelectedLog(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--background-c)',
+              borderRadius: '16px',
+              border: '1px solid var(--secondary-border-c)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+              padding: '28px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Terminal size={20} color="var(--accent-blue-c)" />
+              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+                Диагностика события {selectedLog.id}
+              </h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
+                <span className="text text-blind">Время:</span>
+                <span className="text text-bold">{selectedLog.timestamp}</span>
               </div>
-              <button
-                onClick={() => setSelectedLog(null)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
+                <span className="text text-blind">Сервис:</span>
+                <span className="text text-bold">{selectedLog.service}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
+                <span className="text text-blind">Trace ID:</span>
+                <span className="text text-bold" style={{ fontFamily: 'monospace' }}>{selectedLog.traceId}</span>
+              </div>
+              <div style={{ borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
+                <span className="text text-blind" style={{ display: 'block', marginBottom: '4px' }}>Сообщение:</span>
+                <span className="text text-bold" style={{ color: selectedLog.level === 'error' ? 'var(--accent-red-c)' : 'var(--secondary-font-c)' }}>
+                  {selectedLog.message}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p className="text text-bold" style={{ marginBottom: '6px' }}>Стек вызовов / Детализация:</p>
+              <pre
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '22px',
-                  cursor: 'pointer',
-                  color: 'var(--secondary-lock-font-c)'
+                  backgroundColor: 'var(--background-inner-main-element-c)',
+                  color: 'var(--secondary-font-c)',
+                  padding: '16px',
+                  borderRadius: '10px',
+                  fontSize: '12px',
+                  overflowX: 'auto',
+                  lineHeight: '1.5',
+                  fontFamily: 'monospace',
+                  margin: 0
                 }}
               >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px', fontSize: '13px', marginBottom: '16px' }}>
-              <span style={{ color: 'var(--secondary-lock-font-c)' }}>Сервис:</span>
-              <strong style={{ color: 'var(--secondary-font-c)' }}>{selectedLog.service}</strong>
-
-              <span style={{ color: 'var(--secondary-lock-font-c)' }}>Время:</span>
-              <span style={{ fontFamily: 'monospace' }}>{selectedLog.timestamp}</span>
-
-              <span style={{ color: 'var(--secondary-lock-font-c)' }}>Trace ID:</span>
-              <span style={{ fontFamily: 'monospace', color: 'var(--accent-blue-c)' }}>{selectedLog.traceId}</span>
-
-              <span style={{ color: 'var(--secondary-lock-font-c)' }}>Сообщение:</span>
-              <span style={{ color: 'var(--secondary-font-c)' }}>{selectedLog.message}</span>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '6px' }}>
-                Диагностический контекст / Стек вызовов
-              </label>
-              <pre style={{
-                margin: 0,
-                padding: '12px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--background-inner-main-element-c)',
-                color: 'var(--secondary-font-c)',
-                fontSize: '12px',
-                fontFamily: 'var(--font-geist-mono, monospace)',
-                overflowX: 'auto',
-                whiteSpace: 'pre-wrap',
-                border: '1px solid var(--secondary-border-c)'
-              }}>
-                {selectedLog.details || "Дополнительные сведения отсутствуют"}
+                {selectedLog.details || 'Дополнительный стек вызова отсутствует для данного уровня логирования.'}
               </pre>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
               <Button
                 title="Закрыть"
                 color="btn-blue"
@@ -357,6 +259,6 @@ export default function TechLogsPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   );
 }

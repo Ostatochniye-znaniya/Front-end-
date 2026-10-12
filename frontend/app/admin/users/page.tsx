@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import Table from '@/components/table/Table';
 import Button from '@/components/button/Button';
 import Input from '@/components/input/Input';
 import Dropdown from '@/components/dropdown/Dropdown';
+import Search from '@/components/search/Search';
+import Capsule from '@/components/capsule/Capsule';
 import Alert from '@/components/alert/Alert';
 import { initialUsers, UserItem } from '@/components/admin/mockData';
+import { UserPlus, Shield, UserCheck } from 'lucide-react';
 
 export default function UsersAndRolesPage() {
   const [users, setUsers] = useState<UserItem[]>(initialUsers);
@@ -134,69 +136,13 @@ export default function UsersAndRolesPage() {
     });
   };
 
-  const renderRoleBadge = (role: UserItem['role']) => {
-    let color = 'var(--accent-blue-c)';
-    let bg = 'var(--accent-blue-bg-c)';
-
-    if (role === 'Администратор') {
-      color = 'var(--accent-purple-c)';
-      bg = 'var(--accent-purple-bg-c)';
-    } else if (role === 'ЛПР') {
-      color = 'var(--accent-green-c)';
-      bg = 'var(--accent-green-bg-c)';
-    } else if (role.includes('Заведующий')) {
-      color = 'var(--accent-orange-c)';
-      bg = 'var(--accent-orange-bg-c)';
-    } else if (role === 'Гость / Без роли') {
-      color = 'var(--secondary-lock-font-c)';
-      bg = 'var(--secondary-divider-bg-c)';
-    }
-
-    return (
-      <span style={{
-        padding: '3px 8px',
-        borderRadius: '6px',
-        backgroundColor: bg,
-        color: color,
-        fontWeight: 600,
-        fontSize: '12px'
-      }}>
-        {role}
-      </span>
-    );
-  };
-
-  const renderStatusBadge = (status: UserItem['status']) => {
-    if (status === 'active') {
-      return (
-        <span style={{ color: 'var(--accent-green-c)', fontWeight: 600, fontSize: '12px' }}>
-          ● Активен
-        </span>
-      );
-    }
-    if (status === 'pending') {
-      return (
-        <span style={{ color: 'var(--accent-orange-c)', fontWeight: 600, fontSize: '12px' }}>
-          ⏳ Ожидает входа
-        </span>
-      );
-    }
-    return (
-      <span style={{ color: 'var(--accent-red-c)', fontWeight: 600, fontSize: '12px' }}>
-        ✖ Деактивирован
-      </span>
-    );
-  };
-
   const columns = [
     {
       header: 'Сотрудник',
       accessor: (row: UserItem) => (
-        <div>
-          <div style={{ fontWeight: 600, color: 'var(--secondary-font-c)', fontSize: '13px' }}>
-            {row.name}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--secondary-lock-font-c)', fontFamily: 'monospace' }}>
+        <div style={{ textAlign: 'left' }}>
+          <div className="text-bold">{row.name}</div>
+          <div className="text text-blind" style={{ fontSize: '12px' }}>
             {row.email}
           </div>
         </div>
@@ -206,24 +152,51 @@ export default function UsersAndRolesPage() {
     {
       header: 'Подразделение / Кафедра',
       accessor: (row: UserItem) => (
-        <span style={{ fontSize: '13px', color: 'var(--secondary-font-c)' }}>
-          {row.department}
-        </span>
+        <span className="text">{row.department}</span>
       ),
       sortFn: (a: UserItem, b: UserItem) => a.department.localeCompare(b.department)
     },
     {
       header: 'Назначенная роль (RBAC)',
-      accessor: (row: UserItem) => renderRoleBadge(row.role)
+      accessor: (row: UserItem) => {
+        let variant: 'default' | 'success' | 'warning' | 'danger' | 'info' = 'default';
+        if (row.role === 'Администратор') variant = 'info';
+        else if (row.role === 'ЛПР') variant = 'success';
+        else if (row.role.includes('Заведующий')) variant = 'warning';
+
+        return (
+          <Capsule variant={variant}>
+            {row.role}
+          </Capsule>
+        );
+      }
     },
     {
       header: 'Статус доступа',
-      accessor: (row: UserItem) => renderStatusBadge(row.status)
+      accessor: (row: UserItem) => {
+        let variant: 'default' | 'success' | 'warning' | 'danger' | 'info' = 'default';
+        let label = 'Неизвестно';
+        if (row.status === 'active') {
+          variant = 'success';
+          label = 'Активен';
+        } else if (row.status === 'pending') {
+          variant = 'warning';
+          label = 'Ожидает входа';
+        } else if (row.status === 'deactivated') {
+          variant = 'danger';
+          label = 'Деактивирован';
+        }
+        return (
+          <Capsule variant={variant}>
+            {label}
+          </Capsule>
+        );
+      }
     },
     {
       header: 'Последний вход',
       accessor: (row: UserItem) => (
-        <span style={{ fontSize: '12px', color: 'var(--secondary-lock-font-c)', fontFamily: 'monospace' }}>
+        <span className="text text-blind" style={{ fontSize: '12px' }}>
           {row.lastLogin}
         </span>
       )
@@ -231,60 +204,46 @@ export default function UsersAndRolesPage() {
     {
       header: 'Управление доступом',
       accessor: (row: UserItem) => (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <button
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <Button
+            title="Сменить роль"
+            color="btn-blue"
             onClick={() => {
               setRoleChangeUser(row);
               setSelectedNewRole(row.role);
             }}
-            style={{
-              background: 'none',
-              border: '1px solid var(--secondary-border-c)',
-              color: 'var(--secondary-link-c, #6d86e4)',
-              padding: '5px 10px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 600
-            }}
-          >
-            Сменить роль
-          </button>
-          <button
+          />
+          <Button
+            title={row.status === 'deactivated' ? 'Активировать' : 'Деактивировать'}
+            color={row.status === 'deactivated' ? 'btn-green' : 'btn-red'}
             onClick={() => handleToggleDeactivate(row)}
-            title={row.status === 'deactivated' ? 'Восстановить доступ' : 'Мягкая деактивация без удаления истории'}
-            style={{
-              background: 'none',
-              border: `1px solid ${row.status === 'deactivated' ? 'var(--accent-green-c)' : 'var(--accent-red-c)'}`,
-              color: row.status === 'deactivated' ? 'var(--accent-green-c)' : 'var(--accent-red-c)',
-              padding: '5px 10px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '11px',
-              fontWeight: 600
-            }}
-          >
-            {row.status === 'deactivated' ? 'Активировать' : 'Деактивировать'}
-          </button>
+          />
         </div>
       )
     }
   ];
 
   return (
-    <AdminLayout
-      title="Роли, разрешения и пользователи"
-      subtitle="Модель разграничения доступа RBAC. Предварительное назначение ролей до первой авторизации через корпоративную почту и мягкая деактивация сотрудников без удаления аудита."
-      actions={
+    <div className="main-container">
+      {/* Заголовок страницы с кнопкой действия */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
+            Пользователи и роли (RBAC)
+          </h1>
+          <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
+            Управление правами доступа, предварительная привязка по @mospolytech.ru и регламентная мягкая деактивация
+          </p>
+        </div>
         <Button
-          title="+ Предварительно добавить по email"
+          title="Предварительная регистрация"
           color="btn-blue"
           onClick={() => setIsPreRegisterOpen(true)}
         />
-      }
-    >
+      </div>
+
       {alertInfo && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '24px' }}>
           <Alert
             type={alertInfo.type}
             title={alertInfo.title}
@@ -293,192 +252,123 @@ export default function UsersAndRolesPage() {
         </div>
       )}
 
-      {/* Метрики пользователей */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Всего учетных записей</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-blue-c)', marginTop: '4px' }}>
-            {users.length}
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Активных преподавателей и ЛПР</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-green-c)', marginTop: '4px' }}>
-            {users.filter(u => u.status === 'active' && u.role !== 'Гость / Без роли').length}
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Ожидают первого входа (предрегистрация)</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--accent-orange-c)', marginTop: '4px' }}>
-            {users.filter(u => u.status === 'pending').length}
-          </div>
-        </div>
-
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '10px',
-          padding: '16px 20px'
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>Сохранённых в аудите (деактивированных)</div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--secondary-lock-font-c)', marginTop: '4px' }}>
-            {users.filter(u => u.status === 'deactivated').length}
-          </div>
-        </div>
-      </div>
-
-      {/* Панель фильтрации */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '14px',
-        alignItems: 'flex-end',
-        backgroundColor: 'var(--background-main-element-c)',
-        border: '1px solid var(--secondary-border-c)',
-        borderRadius: '10px',
-        padding: '16px 20px',
-        marginBottom: '20px'
-      }}>
-        <div style={{ flex: '1 1 260px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Поиск по ФИО, email или кафедре
-          </label>
-          <Input
-            hint="Например: Иванов, mospolytech.ru, кафедра..."
+      {/* Панель поиска и фильтрации */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '280px' }}>
+          <Search
+            hint="Поиск по ФИО, email, подразделению..."
             value={searchQuery}
-            onChange={(val) => setSearchQuery(val)}
+            onChange={setSearchQuery}
+            size="large"
           />
         </div>
-
-        <div style={{ flex: '1 1 200px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Роль в системе
-          </label>
+        <div style={{ width: '220px' }}>
           <Dropdown
+            label="Роль"
             options={roleOptions}
             value={roleFilter}
-            onChange={(val) => setRoleFilter(val)}
+            onChange={setRoleFilter}
             placeholder="Все роли"
           />
         </div>
-
-        <div style={{ flex: '1 1 200px' }}>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--secondary-lock-font-c)' }}>
-            Статус активности
-          </label>
+        <div style={{ width: '220px' }}>
           <Dropdown
+            label="Статус"
             options={statusOptions}
             value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
+            onChange={setStatusFilter}
             placeholder="Все статусы"
           />
-        </div>
-
-        <div style={{ paddingBottom: '4px', fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>
-          Найдено: <strong style={{ color: 'var(--secondary-font-c)' }}>{filteredUsers.length}</strong>
         </div>
       </div>
 
       {/* Таблица пользователей */}
-      <div style={{ width: '100%', overflowX: 'auto' }}>
+      <div className="table-wrapper">
         <Table columns={columns} data={filteredUsers} />
       </div>
 
-      {/* Модалка предварительной регистрации по email (п. 7.4 ТЗ) */}
+      {/* Модальное окно предварительной регистрации (п. 7.4 ТЗ) */}
       {isPreRegisterOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '12px',
-            maxWidth: '540px',
-            width: '100%',
-            padding: '26px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-          }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--secondary-font-c)' }}>
-              Предварительное назначение роли (до первого входа)
-            </h3>
-            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--secondary-lock-font-c)', lineHeight: '1.4' }}>
-              В соответствии с п. 7.4 ТЗ, укажите корпоративную почту преподавателя или руководителя. При первом входе система автоматически применит назначенную роль.
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setIsPreRegisterOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--background-c)',
+              borderRadius: '16px',
+              border: '1px solid var(--secondary-border-c)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+              padding: '28px',
+              maxWidth: '540px',
+              width: '100%'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <UserPlus size={20} color="var(--accent-blue-c)" />
+              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+                Предварительная регистрация сотрудника (п. 7.4 ТЗ)
+              </h2>
+            </div>
+
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
+              Привязка роли к корпоративной почте до первой авторизации через единую систему МосПолитеха. При первом входе пользователь сразу получит нужные права без статуса «Гость».
             </p>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                Корпоративный Email (@mospolytech.ru) <span style={{ color: 'var(--accent-red-c)' }}>*</span>
-              </label>
-              <Input
-                hint="example@mospolytech.ru"
-                value={newEmail}
-                onChange={(val) => setNewEmail(val)}
-              />
-            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+              <div>
+                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                  Корпоративная почта (@mospolytech.ru):
+                </label>
+                <Input
+                  hint="i.i.ivanov@mospolytech.ru"
+                  value={newEmail}
+                  onChange={setNewEmail}
+                />
+              </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                ФИО сотрудника <span style={{ color: 'var(--accent-red-c)' }}>*</span>
-              </label>
-              <Input
-                hint="Иванов Иван Иванович"
-                value={newName}
-                onChange={(val) => setNewName(val)}
-              />
-            </div>
+              <div>
+                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                  ФИО сотрудника:
+                </label>
+                <Input
+                  hint="Иванов Иван Иванович"
+                  value={newName}
+                  onChange={setNewName}
+                />
+              </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                Кафедра / Подразделение
-              </label>
-              <Input
-                hint="Кафедра Информационных технологий"
-                value={newDepartment}
-                onChange={(val) => setNewDepartment(val)}
-              />
-            </div>
+              <div>
+                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                  Подразделение / Кафедра:
+                </label>
+                <Input
+                  hint="Кафедра Информационных технологий"
+                  value={newDepartment}
+                  onChange={setNewDepartment}
+                />
+              </div>
 
-            <div style={{ marginBottom: '22px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '4px' }}>
-                Назначаемая роль
-              </label>
-              <Dropdown
-                options={roleOptions.filter(o => o.value !== 'all')}
-                value={newRole}
-                onChange={(val) => setNewRole(val as UserItem['role'])}
-              />
+              <div>
+                <Dropdown
+                  label="Назначаемая роль"
+                  options={roleOptions.filter(r => r.value !== 'all')}
+                  value={newRole}
+                  onChange={(val) => setNewRole(val as UserItem['role'])}
+                  placeholder="Выберите роль"
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -488,7 +378,7 @@ export default function UsersAndRolesPage() {
                 onClick={() => setIsPreRegisterOpen(false)}
               />
               <Button
-                title="Предварительно создать"
+                title="Создать привязку"
                 color="btn-blue"
                 onClick={handlePreRegister}
               />
@@ -497,45 +387,53 @@ export default function UsersAndRolesPage() {
         </div>
       )}
 
-      {/* Модалка смены роли */}
+      {/* Модальное окно изменения роли */}
       {roleChangeUser && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '12px',
-            maxWidth: '500px',
-            width: '100%',
-            padding: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
-          }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--secondary-font-c)' }}>
-              Изменение роли пользователя
-            </h3>
-            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--secondary-lock-font-c)' }}>
-              Сотрудник: <strong>{roleChangeUser.name}</strong> ({roleChangeUser.email})
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(2px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setRoleChangeUser(null)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--background-c)',
+              borderRadius: '16px',
+              border: '1px solid var(--secondary-border-c)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
+              padding: '28px',
+              maxWidth: '480px',
+              width: '100%'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <Shield size={20} color="var(--accent-blue-c)" />
+              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+                Изменение роли пользователя
+              </h2>
+            </div>
+
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
+              Сотрудник: <strong>{roleChangeUser.name}</strong> ({roleChangeUser.email})<br />
+              Текущая роль: <strong>{roleChangeUser.role}</strong>
             </p>
 
-            <div style={{ marginBottom: '22px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '6px' }}>
-                Выберите новую роль:
-              </label>
+            <div style={{ marginBottom: '20px' }}>
               <Dropdown
-                options={roleOptions.filter(o => o.value !== 'all')}
+                label="Новая роль"
+                options={roleOptions.filter(r => r.value !== 'all')}
                 value={selectedNewRole}
                 onChange={(val) => setSelectedNewRole(val as UserItem['role'])}
+                placeholder="Выберите роль"
               />
             </div>
 
@@ -554,6 +452,6 @@ export default function UsersAndRolesPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   );
 }

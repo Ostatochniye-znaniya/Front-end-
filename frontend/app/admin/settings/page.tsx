@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import Button from '@/components/button/Button';
 import Input from '@/components/input/Input';
 import Alert from '@/components/alert/Alert';
+import CheckBox from '@/components/checkbox/CheckBox';
 import { initialSettings, SystemSettings } from '@/components/admin/mockData';
+import { Mail, HelpCircle, ShieldCheck } from 'lucide-react';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SystemSettings>(initialSettings);
@@ -15,7 +16,7 @@ export default function SettingsPage() {
     setAlertInfo({
       type: 'success',
       title: 'Настройки успешно сохранены',
-      text: 'Изменения бизнес-параметров применены ко всей системе без необходимости перезапуска сервисов.'
+      text: 'Изменения параметров применены без необходимости перезапуска сервисов.'
     });
   };
 
@@ -24,15 +25,23 @@ export default function SettingsPage() {
     setAlertInfo({
       type: 'info',
       title: 'Параметры сброшены к исходным значениям',
-      text: 'Восстановлены стандартные шаблоны и регламентные интервалы.'
+      text: 'Восстановлены стандартные регламентные интервалы и шаблоны сообщений.'
     });
   };
 
   return (
-    <AdminLayout
-      title="Бизнес-настройки системы"
-      subtitle="Управление регламентными параметрами, шаблонами сообщений и контактами без изменения исходного кода и деплоя (технические секреты и пароли здесь не отображаются)."
-      actions={
+    <div className="main-container">
+      {/* Заголовок страницы с кнопками сохранения */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
+            Бизнес-настройки системы
+          </h1>
+          <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
+            Управление регламентными параметрами, шаблонами сообщений и контактами без изменения исходного кода и деплоя
+          </p>
+        </div>
+
         <div style={{ display: 'flex', gap: '10px' }}>
           <Button
             title="Сбросить к исходным"
@@ -45,8 +54,8 @@ export default function SettingsPage() {
             onClick={handleSave}
           />
         </div>
-      }
-    >
+      </div>
+
       {alertInfo && (
         <div style={{ marginBottom: '24px' }}>
           <Alert
@@ -59,22 +68,27 @@ export default function SettingsPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '960px' }}>
         {/* Блок 1: Контакты и каналы обращений */}
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '12px',
-          padding: '24px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--secondary-font-c)' }}>
-            1. Каналы обращений и поддержка (п. 8.1 ТЗ)
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-            Адрес электронной почты для связи пользователей с технической поддержкой и методическим отделом. Отображается в шапке и подвале системы.
+        <div
+          style={{
+            backgroundColor: 'var(--background-main-element-c)',
+            border: '1px solid var(--secondary-border-c)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Mail size={18} color="var(--accent-blue-c)" />
+            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+              1. Каналы обращений и поддержка (п. 8.1 ТЗ)
+            </h2>
+          </div>
+          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+            Адрес электронной почты для связи пользователей с технической поддержкой и методическим отделом. Отображается в интерфейсе гостя и в уведомлениях.
           </p>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '6px' }}>
-              Email для обращений преподавателей и кафедр
+            <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+              Email для обращений преподавателей и кафедр:
             </label>
             <Input
               hint="support@mospolytech.ru"
@@ -84,162 +98,123 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Блок 2: Тексты для пользователей без роли */}
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '12px',
-          padding: '24px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--secondary-font-c)' }}>
-            2. Информационные тексты для гостей (п. 8.1 ТЗ)
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-            Тексты, которые видят сотрудники при первом входе в систему до того, как администратор назначит им права преподавателя или заведующего кафедрой.
+        {/* Блок 2: Текст для гостей без роли */}
+        <div
+          style={{
+            backgroundColor: 'var(--background-main-element-c)',
+            border: '1px solid var(--secondary-border-c)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <HelpCircle size={18} color="var(--accent-blue-c)" />
+            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+              2. Приветственный текст для гостей (п. 8.2 ТЗ)
+            </h2>
+          </div>
+          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+            Сообщение, которое видит авторизованный сотрудник, которому ещё не назначена роль (страница /guest).
           </p>
 
-          <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '6px' }}>
-              Приветственное сообщение для пользователей без назначенной роли
+          <div>
+            <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+              Текст сообщения на экране ожидания роли:
             </label>
             <Input
-              hint="Добро пожаловать в систему..."
+              hint="Введите текст приветствия..."
               value={settings.welcomeGuestText}
               onChange={(val) => setSettings({ ...settings, welcomeGuestText: val })}
-              multiline={true}
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '6px' }}>
-              Инструкция: куда обратиться для получения доступа и прав
-            </label>
-            <Input
-              hint="Для получения роли обратитесь в учебно-методический отдел..."
-              value={settings.accessRequestInstructions}
-              onChange={(val) => setSettings({ ...settings, accessRequestInstructions: val })}
-              multiline={true}
-              rows={3}
+              multiline
+              rows={4}
             />
           </div>
         </div>
 
-        {/* Блок 3: Шаблоны системных уведомлений */}
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '12px',
-          padding: '24px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--secondary-font-c)' }}>
-            3. Шаблоны системных уведомлений (п. 8.1 ТЗ)
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-            Шаблон почтового письма о согласовании дат и сроках сдачи отчетов. Поддерживает подстановку переменных <code>&#123;userName&#125;</code>, <code>&#123;groupName&#125;</code>, <code>&#123;subject&#125;</code>, <code>&#123;date&#125;</code>, <code>&#123;time&#125;</code>.
+        {/* Блок 3: Инструкция по получению доступа */}
+        <div
+          style={{
+            backgroundColor: 'var(--background-main-element-c)',
+            border: '1px solid var(--secondary-border-c)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <HelpCircle size={18} color="var(--accent-blue-c)" />
+            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+              3. Инструкция для пользователей при запросе прав (п. 8.3 ТЗ)
+            </h2>
+          </div>
+          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+            Пошаговые действия для заведующих кафедрами и преподавателей для получения корректных прав доступа.
           </p>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--secondary-lock-font-c)', marginBottom: '6px' }}>
-              Шаблон уведомления о дате тестирования
+            <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+              Текст регламента запроса доступа:
             </label>
             <Input
-              hint="Текст шаблона с переменными..."
-              value={settings.notificationTemplate}
-              onChange={(val) => setSettings({ ...settings, notificationTemplate: val })}
-              multiline={true}
+              hint="Введите регламент..."
+              value={settings.accessRequestInstructions}
+              onChange={(val) => setSettings({ ...settings, accessRequestInstructions: val })}
+              multiline
               rows={4}
             />
           </div>
         </div>
 
         {/* Блок 4: Регламентные параметры процессов */}
-        <div style={{
-          backgroundColor: 'var(--background-main-element-c)',
-          border: '1px solid var(--secondary-border-c)',
-          borderRadius: '12px',
-          padding: '24px'
-        }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--secondary-font-c)' }}>
-            4. Регламентные бизнес-инварианты (п. 10 ТЗ)
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--secondary-lock-font-c)', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-            Правила автоматической блокировки редактирования и защиты журнала аудита от несанкционированных изменений.
+        <div
+          style={{
+            backgroundColor: 'var(--background-main-element-c)',
+            border: '1px solid var(--secondary-border-c)',
+            borderRadius: '16px',
+            padding: '24px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <ShieldCheck size={18} color="var(--accent-blue-c)" />
+            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
+              4. Регламентные параметры безопасности
+            </h2>
+          </div>
+          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+            Глобальные правила изменения данных в соответствии с концепцией безопасного аудита.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: '8px', backgroundColor: 'var(--background-inner-main-element-c)' }}>
-              <div>
-                <strong style={{ display: 'block', fontSize: '14px', color: 'var(--secondary-font-c)' }}>
-                  Обязательное обоснование критических действий
-                </strong>
-                <span style={{ fontSize: '12px', color: 'var(--secondary-lock-font-c)' }}>
-                  Запрещает сохранение переноса даты или отката этапа без указания причины для аудита
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.requireReasonForOverrides}
-                onChange={(e) => setSettings({ ...settings, requireReasonForOverrides: e.target.checked })}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            <div>
+              <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
+                Срок автоматической фиксации (блокировки) процесса после сдачи тестирования (в днях):
+              </label>
+              <Input
+                hint="3"
+                value={String(settings.autoLockDaysAfterExam)}
+                onChange={(val) => setSettings({ ...settings, autoLockDaysAfterExam: Number(val) || 0 })}
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: '8px', backgroundColor: 'var(--background-inner-main-element-c)' }}>
-              <div>
-                <strong style={{ display: 'block', fontSize: '14px', color: 'var(--secondary-font-c)' }}>
-                  Автоблокировка редактирования ведомостей
-                </strong>
-                <span style={{ fontSize: '12px', color: 'var(--secondary-lock-font-c)' }}>
-                  Количество дней после даты тестирования, после которых отчёт переходит в статус «Только чтение»
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="number"
-                  value={settings.autoLockDaysAfterExam}
-                  onChange={(e) => setSettings({ ...settings, autoLockDaysAfterExam: Number(e.target.value) })}
-                  style={{
-                    width: '60px',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--secondary-border-c)',
-                    backgroundColor: 'var(--background-main-element-c)',
-                    color: 'var(--secondary-font-c)',
-                    textAlign: 'center'
-                  }}
-                />
-                <span style={{ fontSize: '13px', color: 'var(--secondary-font-c)' }}>дней</span>
-              </div>
+            <div>
+              <CheckBox
+                text="Требовать обязательное обоснование при переносе дат и отмене согласований"
+                state={settings.requireReasonForOverrides}
+                type="blue"
+                onChange={(val) => setSettings({ ...settings, requireReasonForOverrides: val })}
+              />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderRadius: '8px', backgroundColor: 'var(--background-inner-main-element-c)' }}>
-              <div>
-                <strong style={{ display: 'block', fontSize: '14px', color: 'var(--secondary-font-c)' }}>
-                  Режим плановых технических работ (Maintenance Mode)
-                </strong>
-                <span style={{ fontSize: '12px', color: 'var(--secondary-lock-font-c)' }}>
-                  Ограничивает доступ преподавателей на время генерации сводных отчетов
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.maintenanceMode}
-                onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            <div>
+              <CheckBox
+                text="Включить режим регламентного обслуживания (вход только для Администраторов)"
+                state={settings.maintenanceMode}
+                type="red"
+                onChange={(val) => setSettings({ ...settings, maintenanceMode: val })}
               />
             </div>
           </div>
         </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-          <Button
-            title="Сохранить изменения"
-            color="btn-blue"
-            onClick={handleSave}
-          />
-        </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
