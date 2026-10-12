@@ -70,8 +70,8 @@ export default function ProcessesPage() {
 
     setAlertInfo({
       type: 'success',
-      title: 'Дата успешно изменена с фиксацией в аудите (п. 9 регламента)',
-      text: `Для группы ${rescheduleModal.group} (${rescheduleModal.subject}) назначена дата ${newDate}. Причина: ${rescheduleReason}.`
+      title: 'Дата успешно изменена',
+      text: `Для группы ${rescheduleModal.group} (${rescheduleModal.subject}) назначена дата ${newDate}.`
     });
 
     setRescheduleModal(null);
@@ -100,8 +100,8 @@ export default function ProcessesPage() {
 
     setAlertInfo({
       type: 'warning',
-      title: 'Процесс возвращен на этап согласования (п. 10 регламента)',
-      text: `Процесс группы ${rollbackModal.group} разблокирован для внесения правок кафедрой. Обоснование: ${rollbackReason}.`
+      title: 'Процесс возвращен на этап согласования',
+      text: `Процесс группы ${rollbackModal.group} возвращен на согласование кафедрой.`
     });
 
     setRollbackModal(null);
@@ -205,11 +205,8 @@ export default function ProcessesPage() {
       {/* Заголовок страницы */}
       <div style={{ marginBottom: '24px' }}>
         <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-          Бизнес-процессы и мониторинг
+          Бизнес-процессы
         </h1>
-        <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
-          Контроль этапов тестирований кафедр, фиксация зависших состояний и регламентированные безопасные сценарии
-        </p>
       </div>
 
       {alertInfo && (
@@ -279,12 +276,12 @@ export default function ProcessesPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <Calendar size={20} color="var(--accent-blue-c)" />
               <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-                Перенос согласованной даты (Сценарий 9 ТЗ)
+                Перенос даты
               </h2>
             </div>
             
-            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-              Процесс для группы <strong>{rescheduleModal.group}</strong> ({rescheduleModal.subject}) уже согласован. Согласно регламенту, изменение даты возможно только с обязательным указанием обоснования и протоколированием в аудите.
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0' }}>
+              Группа: <strong>{rescheduleModal.group}</strong> ({rescheduleModal.subject})
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
@@ -371,12 +368,12 @@ export default function ProcessesPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <RotateCcw size={20} color="var(--accent-orange-c)" />
               <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-                Возврат процесса на доработку (Сценарий 10 ТЗ)
+                Возврат процесса на согласование
               </h2>
             </div>
 
-            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-              Возврат процесса для группы <strong>{rollbackModal.group}</strong> снимает блокировку статуса и возвращает его на этап «На согласовании» для исправления кафедрой.
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0' }}>
+              Группа: <strong>{rollbackModal.group}</strong> ({rollbackModal.subject})
             </p>
 
             <div style={{ marginBottom: '20px' }}>

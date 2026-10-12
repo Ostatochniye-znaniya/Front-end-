@@ -113,19 +113,13 @@ export default function HodStatisticsPage() {
 
   return (
     <div className="main-container">
-      {/* Шапка страницы заведующего кафедрой */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-            <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-              Статистика кафедры «Информационные технологии»
-            </h1>
-            <Capsule variant="info">Заведующий кафедрой (HOD)</Capsule>
-            <Capsule variant="default">Факультет: ФИТ</Capsule>
-          </div>
-          <p className="text text-blind" style={{ margin: 0 }}>
-            Зона видимости подразделения: показатели проверки остаточных знаний по закрепленным дисциплинам кафедры и учебным группам
-          </p>
+      {/* Шапка страницы кафедры */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
+            Статистика кафедры «Информационные технологии»
+          </h1>
+          <Capsule variant="default">ФИТ</Capsule>
         </div>
       </div>
 
@@ -239,16 +233,16 @@ export default function HodStatisticsPage() {
         <table className="table-container" style={{ width: '100%', borderCollapse: 'separate' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', minWidth: '280px' }}>Дисциплина кафедры</th>
-              <th>Курс / Семестр</th>
-              <th>Профилей</th>
-              <th>По нормативу (План)</th>
-              <th>По факту</th>
-              <th>Разница (План/Факт)</th>
-              <th>Занятий план / факт</th>
-              <th>Эл. отчёты (Сдано/Замеч.)</th>
-              <th>Бум. отчёты (Сдано/Замеч.)</th>
-              <th>Всё сдано</th>
+              <th style={{ textAlign: 'left', minWidth: '260px' }}>Дисциплина кафедры</th>
+              <th style={{ minWidth: '130px' }}>Курс / Семестр</th>
+              <th style={{ minWidth: '80px' }}>Профилей</th>
+              <th style={{ minWidth: '100px' }}>План (групп)</th>
+              <th style={{ minWidth: '100px' }}>Факт (групп)</th>
+              <th style={{ minWidth: '90px' }}>Разница</th>
+              <th style={{ minWidth: '130px' }}>Занятий (план / факт)</th>
+              <th style={{ minWidth: '110px' }}>Эл. отчёты</th>
+              <th style={{ minWidth: '110px' }}>Бум. отчёты</th>
+              <th style={{ minWidth: '90px' }}>Всё сдано</th>
             </tr>
           </thead>
           <tbody>

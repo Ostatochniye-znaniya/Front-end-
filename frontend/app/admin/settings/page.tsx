@@ -35,11 +35,8 @@ export default function SettingsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-            Бизнес-настройки системы
+            Настройки системы
           </h1>
-          <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
-            Управление регламентными параметрами, шаблонами сообщений и контактами без изменения исходного кода и деплоя
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -79,7 +76,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <Mail size={18} color="var(--accent-blue-c)" />
             <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              1. Каналы обращений и поддержка (п. 8.1 ТЗ)
+              Поддержка и контакты
             </h2>
           </div>
           <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
@@ -110,7 +107,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <HelpCircle size={18} color="var(--accent-blue-c)" />
             <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              2. Приветственный текст для гостей (п. 8.2 ТЗ)
+              Сообщение для новых пользователей
             </h2>
           </div>
           <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
@@ -143,7 +140,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <HelpCircle size={18} color="var(--accent-blue-c)" />
             <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              3. Инструкция для пользователей при запросе прав (п. 8.3 ТЗ)
+              Инструкция по получению доступа
             </h2>
           </div>
           <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
@@ -176,7 +173,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <ShieldCheck size={18} color="var(--accent-blue-c)" />
             <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              4. Регламентные параметры безопасности
+              Параметры безопасности
             </h2>
           </div>
           <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>

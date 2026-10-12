@@ -123,11 +123,8 @@ export default function AuditLogsPage() {
       {/* Заголовок страницы */}
       <div style={{ marginBottom: '24px' }}>
         <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-          Журнал аудита действий
+          Журнал аудита
         </h1>
-        <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
-          Неизменяемый реестр операций пользователей: фиксация автора, времени, сущности, состояний ДО/ПОСЛЕ и обоснований
-        </p>
       </div>
 
       {/* Панель поиска и фильтрации */}

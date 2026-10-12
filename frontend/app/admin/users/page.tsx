@@ -82,8 +82,8 @@ export default function UsersAndRolesPage() {
     setUsers(prev => [newUser, ...prev]);
     setAlertInfo({
       type: 'success',
-      title: 'Предварительная регистрация выполнена (п. 7.4 ТЗ)',
-      text: `Пользователь ${newEmail} успешно привязан к роли «${newRole}». Роль активируется автоматически при первой SSO-авторизации.`
+      title: 'Пользователь успешно добавлен',
+      text: `Пользователь ${newEmail} привязан к роли «${newRole}».`
     });
 
     setIsPreRegisterOpen(false);
@@ -129,9 +129,9 @@ export default function UsersAndRolesPage() {
 
     setAlertInfo({
       type: isDeactivating ? 'warning' : 'success',
-      title: isDeactivating ? 'Мягкая деактивация пользователя (п. 7.5 ТЗ)' : 'Пользователь снова активирован',
+      title: isDeactivating ? 'Пользователь деактивирован' : 'Пользователь активирован',
       text: isDeactivating
-        ? `Пользователь ${user.name} переведён в статус «Деактивирован». Все созданные им отчеты и ведомости сохранены в истории системы.`
+        ? `Пользователь ${user.name} деактивирован.`
         : `Доступ для ${user.name} восстановлен.`
     });
   };
@@ -229,14 +229,11 @@ export default function UsersAndRolesPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-            Пользователи и роли (RBAC)
+            Пользователи и роли
           </h1>
-          <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
-            Управление правами доступа, предварительная привязка по @mospolytech.ru и регламентная мягкая деактивация
-          </p>
         </div>
         <Button
-          title="Предварительная регистрация"
+          title="Добавить пользователя"
           color="btn-blue"
           onClick={() => setIsPreRegisterOpen(true)}
         />
@@ -318,12 +315,12 @@ export default function UsersAndRolesPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <UserPlus size={20} color="var(--accent-blue-c)" />
               <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-                Предварительная регистрация сотрудника (п. 7.4 ТЗ)
+                Добавление пользователя
               </h2>
             </div>
 
-            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0', lineHeight: '1.4' }}>
-              Привязка роли к корпоративной почте до первой авторизации через единую систему МосПолитеха. При первом входе пользователь сразу получит нужные права без статуса «Гость».
+            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0' }}>
+              Назначение роли и подразделения сотруднику по корпоративной почте.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>

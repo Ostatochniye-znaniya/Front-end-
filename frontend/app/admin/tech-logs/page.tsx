@@ -117,11 +117,8 @@ export default function TechLogsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-            Технические логи и ошибки
+            Технические логи
           </h1>
-          <p className="text text-blind" style={{ margin: '6px 0 0 0' }}>
-            Служебные события серверных компонентов, сбои фоновых воркеров и интеграции с 1С (без бизнес-данных)
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
