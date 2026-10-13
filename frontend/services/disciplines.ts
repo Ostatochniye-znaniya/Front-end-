@@ -5,10 +5,12 @@
  * Отдельной таблицы под выбор нет: на шаге 2.2 ЛПР выбирает группы, для них создаются
  * тестирования (testing) с группой и семестром, а здесь в них записываются дисциплины.
  *
- *   GET /csh/api/GroupDiscipline/GetGroups?departmentId=        — группы с выбранными дисциплинами
+ *   GET /csh/api/GroupDiscipline/GetDepartment                  — кафедра текущего пользователя
+ *   GET /csh/api/GroupDiscipline/GetGroups                      — группы кафедры с выбранными дисциплинами
  *   GET /csh/api/GroupDiscipline/GetAvailableDisciplines/{id}   — дисциплины кафедры группы
  *   PUT /csh/api/GroupDiscipline/SetDisciplines/{id}            — { disciplineIds: number[] }, заменяет выбор
  *
+ * Кафедру не передаём: бэкенд берёт её из текущего пользователя и отдаёт только её группы.
  * Семестр не передаём: бэкенд берёт самый поздний.
  * Ошибки бэкенд отдаёт как { message }, его и показываем пользователю.
  */
@@ -27,8 +29,6 @@ export type Discipline = {
 export type DisciplineGroupRow = {
     id: number;
     group: string;
-    faculty: string;
-    department: string;
     spec: string;
     /** Сколько дисциплин можно выбрать (не больше двух и не больше числа тестирований группы). */
     maxDisciplines: number;
@@ -39,8 +39,6 @@ type GroupDisciplinesResponse = {
     groupId: number;
     groupNumber: string;
     studyProgramName: string | null;
-    departmentName: string | null;
-    facultyName: string | null;
     maxDisciplines: number;
     disciplines: Discipline[];
 };
@@ -56,18 +54,27 @@ async function errorMessage(res: Response, fallback: string): Promise<string> {
     return `${fallback} (код ${res.status})`;
 }
 
-/** Группы, выбранные для проверки в текущем семестре, со сводкой выбранных дисциплин. */
-export async function getGroups(departmentId?: number): Promise<DisciplineGroupRow[]> {
-    const query = departmentId ? `?departmentId=${departmentId}` : '';
-    const res = await fetch(`${API_BASE_URL}/GetGroups${query}`);
+export type Department = {
+    id: number;
+    name: string;
+};
+
+/** Кафедра текущего пользователя (заведующего кафедрой). */
+export async function getDepartment(): Promise<Department> {
+    const res = await fetch(`${API_BASE_URL}/GetDepartment`);
+    if (!res.ok) throw new Error(await errorMessage(res, 'Не удалось загрузить кафедру'));
+    return (await res.json()) as Department;
+}
+
+/** Группы кафедры, выбранные для проверки в текущем семестре, со сводкой выбранных дисциплин. */
+export async function getGroups(): Promise<DisciplineGroupRow[]> {
+    const res = await fetch(`${API_BASE_URL}/GetGroups`);
     if (!res.ok) throw new Error(await errorMessage(res, 'Не удалось загрузить список групп'));
 
     const data = (await res.json()) as GroupDisciplinesResponse[];
     return data.map(g => ({
         id: g.groupId,
         group: g.groupNumber,
-        faculty: g.facultyName ?? '—',
-        department: g.departmentName ?? '—',
         spec: g.studyProgramName ?? '—',
         maxDisciplines: g.maxDisciplines,
         disciplines: g.disciplines,

@@ -2,22 +2,9 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Button from "@/components/button/Button";
-import Dropdown from "@/components/dropdown/Dropdown";
 import Pagination from "@/components/pagination/Pagination";
 import EditDisciplinesModal from "./EditDisciplinesModal";
-import { getGroups, type DisciplineGroupRow } from "@/services/disciplines";
-
-const faculties = [
-    { value: 'fit', label: 'ФИТ' },
-    { value: 'fm', label: 'ФМ' },
-    { value: 'tf', label: 'ТФ' },
-];
-
-const departments = [
-    { value: 'iiit', label: 'ИиИТ' },
-    { value: 'ib', label: 'ИБ' },
-    { value: 'ikt', label: 'ИКТ' },
-];
+import { getDepartment, getGroups, type DisciplineGroupRow } from "@/services/disciplines";
 
 const expandedCellStyle: React.CSSProperties = {
     padding: '12px 16px',
@@ -31,8 +18,7 @@ const detailTextStyle: React.CSSProperties = {
 };
 
 export default function DisciplineSelection() {
-    const [selectedFaculty, setSelectedFaculty] = useState('');
-    const [selectedDepartment, setSelectedDepartment] = useState('');
+    const [departmentName, setDepartmentName] = useState<string | null>(null);
     const [rows, setRows] = useState<DisciplineGroupRow[] | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -53,6 +39,12 @@ export default function DisciplineSelection() {
 
     useEffect(() => {
         let cancelled = false;
+        // подпись к заголовку; если не загрузилась — страница работает и без неё
+        getDepartment()
+            .then(d => {
+                if (!cancelled) setDepartmentName(d.name);
+            })
+            .catch(() => {});
         getGroups()
             .then(data => {
                 if (!cancelled) setRows(data);
@@ -92,24 +84,14 @@ export default function DisciplineSelection() {
 
     return (
         <div className="main-container">
-            <h1 className="text-bold" style={{ marginBottom: '16px' }}>Выбор дисциплин</h1>
-
-            <div className="discipline-filters">
-                <Dropdown
-                    options={faculties}
-                    value={selectedFaculty}
-                    onChange={setSelectedFaculty}
-                    placeholder="Не выбрано"
-                    label="Факультет/институт"
-                />
-                <Dropdown
-                    options={departments}
-                    value={selectedDepartment}
-                    onChange={setSelectedDepartment}
-                    placeholder="Не выбрано"
-                    label="Кафедра"
-                />
-            </div>
+            <h1 className="text-bold" style={{ marginBottom: '16px' }}>
+                Выбор дисциплин
+                {departmentName && (
+                    <span style={{ color: 'var(--secondary-lock-font-c)', fontWeight: 400, marginLeft: '16px', fontSize: '16px' }}>
+                        Кафедра {departmentName}
+                    </span>
+                )}
+            </h1>
 
             {loadError && <p className="modal-error">{loadError}</p>}
             {!loadError && !rows && <p style={detailTextStyle}>Загрузка...</p>}
@@ -125,9 +107,8 @@ export default function DisciplineSelection() {
                     <table className="table-container table-container-centered">
                         <thead>
                             <tr>
-                                <th>Факультет ↕</th>
-                                <th>Кафедра ↕</th>
                                 <th>Группа ↕</th>
+                                <th>Профиль/специализация</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -135,9 +116,8 @@ export default function DisciplineSelection() {
                             {rows.map(row => (
                                 <React.Fragment key={row.id}>
                                     <tr>
-                                        <td>{row.faculty}</td>
-                                        <td>{row.department}</td>
                                         <td>{row.group}</td>
+                                        <td>{row.spec}</td>
                                         <td>
                                             <button
                                                 style={toggleBtnStyle}
@@ -149,10 +129,7 @@ export default function DisciplineSelection() {
                                     </tr>
                                     {expandedRows.has(row.id) && (
                                         <tr>
-                                            <td colSpan={4} style={expandedCellStyle}>
-                                                <p style={detailTextStyle}>Факультет/институт: {row.faculty}</p>
-                                                <p style={detailTextStyle}>Подразделение (Кафедра): {row.department}</p>
-                                                <p style={detailTextStyle}>Профиль/специализация: {row.spec}</p>
+                                            <td colSpan={3} style={expandedCellStyle}>
                                                 <p style={detailTextStyle}>
                                                     Выбранные дисциплины:{' '}
                                                     {row.disciplines.length > 0
