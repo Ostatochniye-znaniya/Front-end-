@@ -1,172 +1,101 @@
 "use client";
 
-import Table from "@/components/table/Table";
-import Search from "@/components/search/Search";
 import Button from "@/components/button/Button";
+import CreateOrderModal from "@/components/orders/CreateOrderModal";
+import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
+import Search from "@/components/search/Search";
+import Table, { type Column } from "@/components/table/Table";
+import type { OrderEssentials } from "@/services/orders";
+import { matchesOrderNumber } from "@/services/orderForm";
+import { useCallback, useMemo, useState } from "react";
+import styles from "./page.module.css";
 
-import { useState } from "react";
-import { redirect } from "next/dist/server/api-utils";
-import { RedirectType } from "next/navigation";
-import { useRouter } from 'next/navigation'
+// Только статические строки для просмотра вёрстки; эти ID не используются в API.
+const STATIC_ORDERS: OrderEssentials[] = [
+  {
+    id: "visual-order-1", number: "142-У",
+    name: "О проведении анкетирования и проверки остаточных знаний",
+    academicYear: 2026, semester: 2,
+  },
+  {
+    id: "visual-order-2", number: "68-У",
+    name: "О проведении проверки остаточных знаний студентов",
+    academicYear: 2026, semester: 1,
+  },
+  {
+    id: "visual-order-3", number: "131-У",
+    name: "О проведении анкетирования студентов",
+    academicYear: 2025, semester: 2,
+  },
+];
 
-import { PieChart, FileText, Users, BookOpen, Settings } from 'lucide-react';
+const orderColumns: Column<OrderEssentials>[] = [
+  { header: "№", accessor: "number" },
+  { header: "Название", accessor: "name" },
+  { header: "Учебный год", accessor: "academicYear" },
+  { header: "Семестр", accessor: "semester" },
+];
 
+export default function LprOrderPage() {
+  const [searchValue, setSearchValue] = useState("");
+  const [showOrders, setShowOrders] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<OrderEssentials | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const closeOrderDetails = useCallback(() => setSelectedOrder(null), []);
+  const closeCreateModal = useCallback(() => setIsCreateOpen(false), []);
 
-const table_1 = [
-    {
-        number: "001", name: 'Приказ "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    },
-    {
-        number: "002", name: 'Приказ "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    },
-    {
-        number: "003", name: 'Приказ "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    },
-    {
-        number: "004", name: 'Приказ "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    }
-]
+  const filteredOrders = useMemo(
+    () => STATIC_ORDERS.filter((order) => matchesOrderNumber(order.number, searchValue)),
+    [searchValue],
+  );
 
-const table_2 = [
-    {
-        number: "001", name: 'Черновик "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    },
-    {
-        number: "002", name: 'Черновик "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    },
-    {
-        number: "003", name: 'Черновик "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    },
-    {
-        number: "004", name: 'Черновик "О проведении анкетирования и проверки остаточных знаний"', year: "2025", semestr: "Весна"
-    }
-]
+  return (
+    <div className="main-container">
+      {selectedOrder && <OrderDetailsModal key={selectedOrder.id} order={selectedOrder} onClose={closeOrderDetails} />}
+      {isCreateOpen && <CreateOrderModal onClose={closeCreateModal} />}
+      <div className={`p-block-header ${styles.header}`}>
+        <h1 className="text-bold">{showOrders ? "Приказы" : "Черновики"}</h1>
+        <Button
+          title="Сформировать новый приказ"
+          color="btn-blue"
+          onClick={() => setIsCreateOpen(true)}
+        />
+        <Button
+          title={showOrders ? "Черновики" : "Приказы"}
+          color="btn-purple"
+          onClick={() => setShowOrders((current) => !current)}
+        />
+      </div>
 
+      {showOrders && <div className="p-block-with-padding">
+        <Search
+          hint="Поиск по номеру приказа"
+          label="Поиск по номеру приказа"
+          value={searchValue}
+          onChange={setSearchValue}
+          size="large"
+        />
+      </div>}
 
-export default function LprOrder() {
-    const router = useRouter()
-    const [searchBigValue, setSearchBigValue] = useState('');
-
-    const [isFirstVisible, setIsFirstVisible] = useState(true);
-    const toggleDisplay = () => {
-        setIsFirstVisible(!isFirstVisible);
-    };
-
-    const [isTableVisible, setIsTableVisible] = useState(true);
-    const toggleTableDisplay = (state: boolean) => {
-        setIsTableVisible(state);
-    };
-
-    return (
-        <>
-        <div className="main-container" style={{ display: isFirstVisible ? 'block' : 'none' }}>
-                <div className="p-block-header">
-                    <h1 className="text-bold">Приказы</h1>
-                    <Button title="#" color="btn-blue" onClick={() => {toggleTableDisplay(true)}} />
-                    <div style={{ marginLeft: '10px' }}></div>
-                    <Button title=".-" color="btn-blue" onClick={() => {toggleTableDisplay(false)}} />
-                    <div style={{ marginLeft: '10px' }}></div>
-                    <Button title="Сформировать новый приказ" color="btn-blue" onClick={() => router.push('/lpr/create_order')} />
-                    <div style={{ marginLeft: '10px' }}></div>
-                    <Button title="Черновики" color="btn-purple" onClick={toggleDisplay} />
-                </div>
-                <div className="p-block-with-padding">
-                    <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
-                </div>
-                <div style={{ display: isTableVisible ? 'block' : 'none' }}>
-                    <div className="table-wrapper">
-                    <Table 
-                        columns={[
-                        { 
-                            header: '№', 
-                            accessor: 'number'
-                        },
-                        { 
-                            header: 'Название', 
-                            accessor: 'name'
-                        },
-                        { 
-                            header: 'Учебный год', 
-                            accessor: 'year'
-                        },
-                        { 
-                            header: 'Семестр', 
-                            accessor: 'semestr'
-                        }
-                        ]}
-                        data={table_1}
-                    />
-                    </div>
-                </div>
-                <div style={{ display: isTableVisible ? 'none' : 'block' }}>
-                    <div className="p-list-item text">
-                        Приказ "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                    <div className="p-list-item text">
-                        Приказ "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                    <div className="p-list-item text">
-                        Приказ "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                    <div className="p-list-item text">
-                        Приказ "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                </div>
-            </div>
-            <div className="main-container" style={{ display: isFirstVisible ? 'none' : 'block' }}>
-                <div className="p-block-header">
-                    <h1 className="text-bold">Черновики</h1>
-                    <Button title="#" color="btn-blue" onClick={() => {toggleTableDisplay(true)}} />
-                    <div style={{ marginLeft: '10px' }}></div>
-                    <Button title=".-" color="btn-blue" onClick={() => {toggleTableDisplay(false)}} />
-                    <div style={{ marginLeft: '10px' }}></div>
-                    <Button title="Сформировать новый приказ" color="btn-blue" onClick={() => router.push('/lpr/create_order')} />
-                    <div style={{ marginLeft: '10px' }}></div>
-                    <Button title="Приказы" color="btn-purple" onClick={toggleDisplay} />
-                </div>
-                <div className="p-block-with-padding">
-                    <Search hint="Введите сюда" value={searchBigValue} onChange={(value) => setSearchBigValue(value)} size="large" />
-                </div>
-                <div style={{ display: isTableVisible ? 'block' : 'none' }}>
-                    <div className="table-wrapper">
-                    <Table 
-                        columns={[
-                        { 
-                            header: '№', 
-                            accessor: 'number'
-                        },
-                        { 
-                            header: 'Название', 
-                            accessor: 'name'
-                        },
-                        { 
-                            header: 'Учебный год', 
-                            accessor: 'year'
-                        },
-                        { 
-                            header: 'Семестр', 
-                            accessor: 'semestr'
-                        }
-                        ]}
-                        data={table_2}
-                    />
-                    </div>
-                </div>
-                <div style={{ display: isTableVisible ? 'none' : 'block' }}>
-                    <div className="p-list-item text">
-                        Черновик "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                    <div className="p-list-item text">
-                        Черновик "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                    <div className="p-list-item text">
-                        Черновик "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                    <div className="p-list-item text">
-                        Черновик "О проведении анкетирования и проверки остаточных знаний"
-                    </div>
-                </div>
-            </div>
-        </>
-    );
+      {!showOrders ? (
+        <div className="p-block-with-padding text">
+          Работа с черновиками пока не подключена к API.
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="p-block-with-padding text">
+          {searchValue.trim()
+            ? "По вашему запросу ничего не найдено"
+            : "Приказов пока нет"}
+        </div>
+      ) : (
+        <div className="table-wrapper">
+          <Table<OrderEssentials>
+            columns={orderColumns}
+            data={filteredOrders}
+            onRowClick={setSelectedOrder}
+          />
+        </div>
+      )}
+    </div>
+  );
 }

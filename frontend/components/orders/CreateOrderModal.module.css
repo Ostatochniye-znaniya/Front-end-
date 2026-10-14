@@ -1,0 +1,117 @@
+.dialog {
+  box-sizing: border-box;
+  width: min(960px, calc(100% - 32px));
+  max-height: 90vh;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid var(--secondary-border-c);
+  border-radius: 16px;
+  background: var(--background-main-element-c);
+  color: var(--secondary-font-c);
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+
+.header,
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header {
+  justify-content: space-between;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.tableScroll {
+  overflow: auto;
+  min-height: 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border: 1px solid var(--secondary-border-c);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th {
+  width: 44%;
+  font-weight: 500;
+}
+
+.table thead {
+  background: var(--background-inner-main-element-c);
+}
+
+.table input,
+.table select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--secondary-border-c);
+  border-radius: 6px;
+  background: var(--background-inner-main-element-c);
+  color: var(--secondary-font-c);
+  font: inherit;
+  color-scheme: light dark;
+}
+
+.table input:focus-visible,
+.table select:focus-visible {
+  outline: 2px solid var(--accent-blue-c);
+  outline-offset: 2px;
+}
+
+.table [aria-invalid="true"] {
+  border-color: var(--accent-red-c);
+}
+
+.actions {
+  justify-content: flex-end;
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

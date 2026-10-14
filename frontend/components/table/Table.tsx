@@ -2,19 +2,20 @@
 
 import React, { useState } from 'react';
 
-interface Column<T = any> {
+interface Column<T = Record<string, unknown>> {
   header: React.ReactNode;
   accessor: keyof T | ((row: T) => React.ReactNode);
   sortFn?: (a: T, b: T) => number; // если есть - можно сортировать, если нет - нельзя
 }
 
-interface TableProps<T = any> {
+interface TableProps<T = Record<string, unknown>> {
   columns: Column<T>[];
   data: T[];
   style?: React.CSSProperties;
+  onRowClick?: (row: T) => void;
 }
 
-const Table = <T,>({ columns, data, style }: TableProps<T>) => {
+const Table = <T,>({ columns, data, style, onRowClick }: TableProps<T>) => {
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -67,7 +68,18 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
       </thead>
       <tbody>
         {sortedData.map((row, rowIndex) => (
-          <tr key={rowIndex}>
+          <tr
+            key={rowIndex}
+            onClick={() => onRowClick?.(row)}
+            onKeyDown={(event) => {
+              if (onRowClick && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                onRowClick(row);
+              }
+            }}
+            tabIndex={onRowClick ? 0 : undefined}
+            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+          >
             {columns.map((col, colIndex) => {
               const value = typeof col.accessor === 'function'
                 ? col.accessor(row)
