@@ -3,7 +3,7 @@ import Navbar from "@/components/navbar/Navbar";
 import { CalendarDays, FileText } from "lucide-react";
 
 const teacherLinks = [
-  { label: "Согласование дат", href: "/teacher/main", icon: CalendarDays },
+  { label: "Согласование дат", href: "/teacher/dates", icon: CalendarDays },
   { label: "Отчеты", href: "/teacher/report", icon: FileText },
 ];
 

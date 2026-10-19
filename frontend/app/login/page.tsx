@@ -107,7 +107,7 @@ export default function LoginPage() {
                     const userData = getUserData();
                     const getDefaultPathByRole = () => {
                         if (userData?.role === 'teacher') {
-                            return "/csh/teacher/main";
+                            return "/csh/teacher/dates";
                         } else if (userData?.role === 'student') {
                             return "/csh/student/main";
                         } else if (userData?.role === 'admin') {
