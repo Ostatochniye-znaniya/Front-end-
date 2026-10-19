@@ -11,10 +11,11 @@ import Dropzone from "@/components/dropzone/Dropzone";
 import {
   downloadTeacherReportTemplate,
   getTeacherReports,
+  MAX_DOCX_SIZE_MB,
   TeacherReportTask,
   uploadTeacherReport,
+  validateDocxFile,
 } from "@/services/teacherWorkflow";
-import { validatePdfFile } from "@/services/documents";
 
 const PAGE_SIZE = 10;
 
@@ -86,7 +87,7 @@ export default function TeacherReport() {
       setError("Для этого тестирования отчёт ещё не создан.");
       return;
     }
-    const validationError = validatePdfFile(file);
+    const validationError = validateDocxFile(file);
     if (validationError) {
       setError(validationError);
       return;
@@ -98,19 +99,19 @@ export default function TeacherReport() {
     setNotice("");
     try {
       await uploadTeacherReport(selected.reportId, file, setUploadProgress);
-      setNotice("PDF отправлен на проверку.");
+      setNotice("DOCX отправлен на проверку.");
       setSelected(null);
       try {
         setItems(await getTeacherReports());
       } catch (reason) {
         setError(
-          `PDF загружен, но список отчётов не обновился: ${
+          `DOCX загружен, но список отчётов не обновился: ${
             reason instanceof Error ? reason.message : "ошибка загрузки списка"
           }`
         );
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Не удалось загрузить PDF");
+      setError(reason instanceof Error ? reason.message : "Не удалось загрузить DOCX");
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -195,11 +196,11 @@ export default function TeacherReport() {
             setError("");
           }}
           disabled={!item.reportId}
-          title={item.reportId ? "Загрузить PDF" : "Отчёт ещё не создан"}
+          title={item.reportId ? "Загрузить DOCX" : "Отчёт ещё не создан"}
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
         >
           <Upload size={18} />
-          Загрузить PDF
+          Загрузить DOCX
         </Button>
       ),
     },
@@ -239,7 +240,7 @@ export default function TeacherReport() {
         onClose={() => {
           if (!uploading) setSelected(null);
         }}
-        title="Загрузка электронного отчёта"
+        title="Загрузка заполненного отчёта"
         footer={
           <button
             type="button"
@@ -257,9 +258,9 @@ export default function TeacherReport() {
               {selected.groupName} — {selected.disciplineName}
             </p>
             <Dropzone
-              title="Выберите PDF или перетащите его сюда"
-              hint="Только PDF, размер не более 20 МБ"
-              accept=".pdf,application/pdf"
+              title="Выберите заполненный DOCX или перетащите его сюда"
+              hint={`Только DOCX, размер не более ${MAX_DOCX_SIZE_MB} МБ`}
+              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onFile={(file) => void handleUpload(file)}
               disabled={uploading}
             />

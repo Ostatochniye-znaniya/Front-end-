@@ -1,4 +1,5 @@
 const API_BASE_URL = "/csh/api/TeacherWorkflow";
+export const MAX_DOCX_SIZE_MB = 20;
 
 export interface TeacherTesting {
   testingId: number;
@@ -45,6 +46,15 @@ export class TeacherWorkflowApiError extends Error {
     super(message);
     this.name = "TeacherWorkflowApiError";
   }
+}
+
+export function validateDocxFile(file: File): string | null {
+  if (!file.name.toLowerCase().endsWith(".docx")) return "Можно загрузить только DOCX-файл";
+  if (file.size === 0) return "Файл пустой";
+  if (file.size > MAX_DOCX_SIZE_MB * 1024 * 1024) {
+    return `Файл больше ${MAX_DOCX_SIZE_MB} МБ`;
+  }
+  return null;
 }
 
 async function readError(response: Response, fallback: string): Promise<TeacherWorkflowApiError> {
