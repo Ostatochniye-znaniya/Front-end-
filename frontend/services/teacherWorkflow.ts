@@ -131,23 +131,37 @@ function getFilename(response: Response, fallback: string): string {
   return header?.match(/filename="?([^";]+)"?/i)?.[1] ?? fallback;
 }
 
-export async function downloadTeacherReportTemplate(task: TeacherReportTask): Promise<void> {
-  const query = new URLSearchParams({
-    groupId: String(task.groupId),
-    semesterId: String(task.semesterId),
-    disciplineId: String(task.disciplineId),
-  });
-  const response = await fetch(`${API_BASE_URL}/GenerateReport?${query}`);
+async function downloadDocx(url: string, fallback: string): Promise<void> {
+  const response = await fetch(url);
   if (!response.ok) throw await readError(response, "Не удалось скачать шаблон отчёта");
 
   const objectUrl = URL.createObjectURL(await response.blob());
   const link = document.createElement("a");
   link.href = objectUrl;
-  link.download = getFilename(response, `Отчёт_${task.groupName}_${task.disciplineName}.docx`);
+  link.download = getFilename(response, fallback);
   document.body.appendChild(link);
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+export function downloadBlankTeacherReportTemplate(): Promise<void> {
+  return downloadDocx(
+    `${API_BASE_URL}/GenerateBlankReportTemplate`,
+    "Шаблон_отчёта.docx",
+  );
+}
+
+export function downloadTeacherReportTemplate(task: TeacherReportTask): Promise<void> {
+  const query = new URLSearchParams({
+    groupId: String(task.groupId),
+    semesterId: String(task.semesterId),
+    disciplineId: String(task.disciplineId),
+  });
+  return downloadDocx(
+    `${API_BASE_URL}/GenerateReport?${query}`,
+    `Отчёт_${task.groupName}_${task.disciplineName}.docx`,
+  );
 }
 
 export function uploadTeacherReport(
@@ -172,7 +186,7 @@ export function uploadTeacherReport(
         return;
       }
       const response = new Response(xhr.responseText, { status: xhr.status });
-      void readError(response, "Не удалось загрузить PDF").then(reject);
+      void readError(response, "Не удалось загрузить DOCX").then(reject);
     };
     xhr.onerror = () => reject(new TeacherWorkflowApiError("Сеть недоступна, файл не отправлен", 0));
     xhr.onabort = () => reject(new TeacherWorkflowApiError("Загрузка отменена", 0));

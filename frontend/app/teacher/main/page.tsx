@@ -160,7 +160,16 @@ export default function Home() {
   };
 
   const columns: Column<TeacherTesting>[] = [
-    { header: "Группа", accessor: "groupName" },
+    {
+      header: "Группа",
+      accessor: "groupName",
+      rowSpan: (item, index, rows) => {
+        if (index > 0 && rows[index - 1].groupName === item.groupName) return 0;
+        let span = 1;
+        while (index + span < rows.length && rows[index + span].groupName === item.groupName) span++;
+        return span;
+      },
+    },
     { header: "Дисциплина", accessor: "disciplineName" },
     {
       header: "Дата и время",
@@ -172,19 +181,21 @@ export default function Home() {
       ),
     },
     {
-      header: "Формат",
+      header: "Очный формат",
       accessor: (item) => {
         const draft = draftFor(item);
         return (
-          <CheckBox
-            text={draft.isInPerson ? "Очно" : "Дистанционно"}
-            type="blue"
-            state={draft.isInPerson}
-            onChange={(isInPerson) => setDrafts((current) => ({
-              ...current,
-              [item.testingId]: { ...draftFor(item), isInPerson },
-            }))}
-          />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <CheckBox
+              text=""
+              type="blue"
+              state={draft.isInPerson}
+              onChange={(isInPerson) => setDrafts((current) => ({
+                ...current,
+                [item.testingId]: { ...draftFor(item), isInPerson },
+              }))}
+            />
+          </div>
         );
       },
     },
@@ -194,7 +205,7 @@ export default function Home() {
         const draft = draftFor(item);
         const lmsUrl = safeLmsUrl(item.lmsUrl);
         return (
-          <div style={{ minWidth: 170 }}>
+          <div style={{ minWidth: 170, display: "flex", flexDirection: "column", alignItems: "stretch" }}>
             <input
               className="input-field"
               aria-label={draft.isInPerson ? `Аудитория для ${item.groupName}` : `Ссылка LMS для ${item.groupName}`}
@@ -209,25 +220,25 @@ export default function Home() {
                 },
               }))}
             />
+            <Button
+              color="btn-blue"
+              onClick={() => void saveDelivery(item)}
+              disabled={busyId === item.testingId}
+              style={{ width: "100%", boxSizing: "border-box", marginTop: 6 }}
+            >
+              Сохранить
+            </Button>
             {!draft.isInPerson && lmsUrl && (
               <a
                 className="link-lms"
                 href={lmsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: "inline-block", marginTop: 6 }}
+                style={{ display: "block", marginTop: 6, overflowWrap: "anywhere" }}
               >
-                Открыть LMS
+                Открыть ссылку
               </a>
             )}
-            <Button
-              color="btn-blue"
-              onClick={() => void saveDelivery(item)}
-              disabled={busyId === item.testingId}
-              style={{ marginTop: 6 }}
-            >
-              Сохранить
-            </Button>
           </div>
         );
       },
@@ -256,11 +267,12 @@ export default function Home() {
     {
       header: "Действие",
       accessor: (item) => item.approvalStatus === "pending" ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: 112, marginInline: "auto" }}>
           <Button
             color="btn-blue"
             onClick={() => void handleApprove(item)}
             disabled={busyId === item.testingId}
+            style={{ width: "100%", boxSizing: "border-box", textAlign: "center" }}
           >
             Согласовать
           </Button>
@@ -272,6 +284,7 @@ export default function Home() {
               setError("");
             }}
             disabled={busyId === item.testingId}
+            style={{ width: "100%", boxSizing: "border-box", textAlign: "center" }}
           >
             Отклонить
           </Button>
@@ -281,7 +294,13 @@ export default function Home() {
   ];
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const pageItems = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const groupedItems = [...items].sort((a, b) =>
+    a.groupName.localeCompare(b.groupName, "ru") ||
+    a.disciplineName.localeCompare(b.disciplineName, "ru") ||
+    (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? "") ||
+    (a.scheduledTime ?? "").localeCompare(b.scheduledTime ?? "")
+  );
+  const pageItems = groupedItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="main-container">

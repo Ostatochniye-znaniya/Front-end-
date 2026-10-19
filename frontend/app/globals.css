@@ -233,6 +233,7 @@
   .capsule:hover {
     filter: brightness(0.98);
   }
+
   .btn {
     color: var(--background-c);
     height: fit-content;
@@ -1723,8 +1724,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-sizing: border-box;
   width: 100%;
-  padding: 32px 24px;
+  min-height: 180px;
+  padding: 48px 24px;
   border: 2px dashed var(--secondary-border-c);
   border-radius: 12px;
   background-color: var(--background-inner-main-element-c);
