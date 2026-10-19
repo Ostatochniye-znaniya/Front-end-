@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertCircle, Check, Clock, Download, Upload } from "lucide-react";
 import Table, { Column } from "@/components/table/Table";
 import Pagination from "@/components/pagination/Pagination";
@@ -10,6 +11,7 @@ import Modal from "@/components/modal/Modal";
 import Dropzone from "@/components/dropzone/Dropzone";
 import {
   downloadTeacherReportTemplate,
+  downloadBlankTeacherReportTemplate,
   getTeacherReports,
   MAX_DOCX_SIZE_MB,
   TeacherReportTask,
@@ -51,6 +53,13 @@ export default function TeacherReport() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [downloadingBlank, setDownloadingBlank] = useState(false);
+  const [fileTooltip, setFileTooltip] = useState<{
+    id: string;
+    text: string;
+    left: number;
+    top: number;
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,6 +88,18 @@ export default function TeacherReport() {
       setError(reason instanceof Error ? reason.message : "Не удалось скачать шаблон отчёта");
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleDownloadBlank = async () => {
+    setDownloadingBlank(true);
+    setError("");
+    try {
+      await downloadBlankTeacherReportTemplate();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Не удалось скачать пустой шаблон отчёта");
+    } finally {
+      setDownloadingBlank(false);
     }
   };
 
@@ -120,46 +141,64 @@ export default function TeacherReport() {
 
   const columns: Column<TeacherReportTask>[] = [
     {
-      header: "Группа / дисциплина",
-      accessor: (item) => (
-        <div>
-          <div className="text-bold">{item.groupName}</div>
-          <div className="text-blind">{item.disciplineName}</div>
-        </div>
-      ),
+      header: "Группа",
+      accessor: "groupName",
+      rowSpan: (item, index, rows) => {
+        if (index > 0 && rows[index - 1].groupName === item.groupName) return 0;
+        let span = 1;
+        while (index + span < rows.length && rows[index + span].groupName === item.groupName) span++;
+        return span;
+      },
     },
+    { header: "Дисциплина", accessor: "disciplineName" },
     {
       header: "Электронный отчёт",
-      accessor: (item) => (
-        <div>
-          <Capsule
-            variant={statusVariant(item.status)}
-            icon={item.status === "signed"
-              ? <Check size={16} />
-              : item.status === "pending"
-                ? <Clock size={16} />
-                : item.status === "rejected"
-                  ? <AlertCircle size={16} />
-                  : <Upload size={16} />}
-          >
-            {item.statusLabel || "Не загружен"}
-          </Capsule>
-          {item.uploadedAt && (
-            <div className="text-blind" style={{ marginTop: 6 }}>
-              {formatDate(item.uploadedAt)}
-            </div>
-          )}
-          {item.fileName && (
-            <div
-              className="text-blind"
-              title={item.fileName}
-              style={{ marginTop: 4, maxWidth: 220, overflowWrap: "anywhere" }}
+      accessor: (item) => {
+        const tooltipId = `report-file-${item.reportId ?? `${item.groupId}-${item.disciplineId}`}`;
+        const showFileTooltip = (element: HTMLElement) => {
+          if (!item.fileName) return;
+          const rect = element.getBoundingClientRect();
+          setFileTooltip({
+            id: tooltipId,
+            text: item.fileName,
+            left: Math.max(8, Math.min(rect.left, window.innerWidth - 368)),
+            top: Math.min(rect.bottom + 8, window.innerHeight - 120),
+          });
+        };
+
+        return (
+          <div>
+            <span
+              role="group"
+              aria-label={item.fileName ? `${item.statusLabel}; имя файла` : item.statusLabel}
+              aria-describedby={item.fileName ? tooltipId : undefined}
+              tabIndex={item.fileName ? 0 : undefined}
+              onMouseEnter={(event) => showFileTooltip(event.currentTarget)}
+              onMouseLeave={() => setFileTooltip(null)}
+              onFocus={(event) => showFileTooltip(event.currentTarget)}
+              onBlur={() => setFileTooltip(null)}
             >
-              {item.fileName}
-            </div>
-          )}
-        </div>
-      ),
+              <Capsule
+                variant={statusVariant(item.status)}
+                icon={item.status === "signed"
+                  ? <Check size={16} />
+                  : item.status === "pending"
+                    ? <Clock size={16} />
+                    : item.status === "rejected"
+                      ? <AlertCircle size={16} />
+                      : <Upload size={16} />}
+              >
+                {item.statusLabel || "Не загружен"}
+              </Capsule>
+            </span>
+            {item.uploadedAt && (
+              <div className="text-blind" style={{ marginTop: 6 }}>
+                {formatDate(item.uploadedAt)}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: "Бумажный отчёт",
@@ -169,7 +208,7 @@ export default function TeacherReport() {
       },
     },
     {
-      header: "Шаблон отчёта",
+      header: "Скачать шаблон отчёта",
       accessor: (item) => (
         <Button
           color="btn-blue"
@@ -178,7 +217,7 @@ export default function TeacherReport() {
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
         >
           <Download size={18} />
-          Скачать шаблон
+          Скачать
         </Button>
       ),
     },
@@ -187,7 +226,7 @@ export default function TeacherReport() {
       accessor: (item) => item.reviewComment || "—",
     },
     {
-      header: "Действия",
+      header: "Загрузить готовый отчёт",
       accessor: (item) => (
         <Button
           color="btn-blue"
@@ -200,20 +239,35 @@ export default function TeacherReport() {
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
         >
           <Upload size={18} />
-          Загрузить DOCX
+          Загрузить
         </Button>
       ),
     },
   ];
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const pageItems = items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const groupedItems = [...items].sort((a, b) =>
+    a.groupName.localeCompare(b.groupName, "ru") ||
+    a.disciplineName.localeCompare(b.disciplineName, "ru")
+  );
+  const pageItems = groupedItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="main-container">
       <p className="title text-bold">Отчеты о проверке остаточных знаний</p>
       {error && <p role="alert" className="modal-error">{error}</p>}
       {notice && <p role="status" className="text">{notice}</p>}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <Button
+          color="btn-blue"
+          onClick={() => void handleDownloadBlank()}
+          disabled={downloadingBlank}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          <Download size={18} />
+          {downloadingBlank ? "Скачиваем шаблон…" : "Скачать пустой шаблон отчёта"}
+        </Button>
+      </div>
       {loading ? (
         <p className="text text-blind">Загружаем отчёты…</p>
       ) : items.length === 0 ? (
@@ -240,17 +294,7 @@ export default function TeacherReport() {
         onClose={() => {
           if (!uploading) setSelected(null);
         }}
-        title="Загрузка заполненного отчёта"
-        footer={
-          <button
-            type="button"
-            className="modal-cancel"
-            onClick={() => setSelected(null)}
-            disabled={uploading}
-          >
-            Закрыть
-          </button>
-        }
+        title="Загрузка готового отчёта"
       >
         {selected && (
           <>
@@ -279,6 +323,34 @@ export default function TeacherReport() {
           </>
         )}
       </Modal>
+      {fileTooltip && typeof document !== "undefined" && createPortal(
+        <div
+          id={fileTooltip.id}
+          role="tooltip"
+          style={{
+            position: "fixed",
+            zIndex: 10000,
+            left: fileTooltip.left,
+            top: fileTooltip.top,
+            maxWidth: "min(360px, calc(100vw - 16px))",
+            maxHeight: "40vh",
+            overflowWrap: "anywhere",
+            overflowY: "auto",
+            padding: "8px 12px",
+            border: "1px solid var(--secondary-border-c)",
+            borderRadius: 6,
+            background: "var(--background-inner-main-element-c)",
+            color: "var(--secondary-font-c)",
+            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.2)",
+            fontSize: 13,
+            lineHeight: 1.4,
+            pointerEvents: "none",
+          }}
+        >
+          {fileTooltip.text}
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
