@@ -50,7 +50,7 @@ function getApprovalStatus(status: string): {
   return { label: "Ожидает ответа", variant: "default" };
 }
 
-export default function Home() {
+export default function TeacherDates() {
   const [items, setItems] = useState<TeacherTesting[]>([]);
   const [drafts, setDrafts] = useState<Record<number, DeliveryDraft>>({});
   const [loading, setLoading] = useState(true);
