@@ -5,6 +5,7 @@ import Dropdown from '@/components/dropdown/Dropdown';
 import Search from '@/components/search/Search';
 import Button from '@/components/button/Button';
 import Capsule from '@/components/capsule/Capsule';
+import CheckBox from '@/components/checkbox/CheckBox';
 import {
   DisciplineStat,
   initialHodDisciplinesData,
@@ -227,7 +228,7 @@ export default function HodStatisticsPage() {
               <th style={{ padding: '12px 6px', width: '110px' }}>Занятия</th>
               <th style={{ padding: '12px 6px', width: '100px' }}>Эл. отчёты</th>
               <th style={{ padding: '12px 6px', width: '100px' }}>Бум. отчёты</th>
-              <th style={{ padding: '12px 8px', width: '85px' }}>Всё сдано</th>
+              <th style={{ padding: '12px 8px', width: '65px' }}>Сдано</th>
             </tr>
           </thead>
           <tbody>
@@ -303,9 +304,9 @@ export default function HodStatisticsPage() {
                       )}
                     </td>
                     <td>
-                      <Capsule variant={allPassed ? 'success' : 'danger'}>
-                        {allPassed ? 'Да' : 'Нет'}
-                      </Capsule>
+                      <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+                        <CheckBox text="" type={allPassed ? 'blue' : 'red'} state={true} />
+                      </div>
                     </td>
                   </tr>
 
@@ -358,9 +359,9 @@ export default function HodStatisticsPage() {
                           <Capsule variant={pVariant}>{pStatusText}</Capsule>
                         </td>
                         <td>
-                          <Capsule variant={grp.allPassed ? 'success' : 'danger'}>
-                            {grp.allPassed ? 'Да' : 'Нет'}
-                          </Capsule>
+                          <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+                            <CheckBox text="" type={grp.allPassed ? 'blue' : 'red'} state={true} />
+                          </div>
                         </td>
                       </tr>
                     );

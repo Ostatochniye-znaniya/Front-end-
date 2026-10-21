@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Button from '@/components/button/Button';
 import Capsule from '@/components/capsule/Capsule';
+import CheckBox from '@/components/checkbox/CheckBox';
 import {
   FacultyStat,
   DepartmentStat,
@@ -160,18 +161,18 @@ export default function LprStatisticsPage() {
         </div>
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
-            <span className="text text-blind">Групп (план): </span>
-            <span className="text text-bold">{universityTotals.groupNorm}</span>
-          </div>
-          <div>
-            <span className="text text-blind">Групп (факт): </span>
-            <span className="text text-bold">{universityTotals.groupFact}</span>
+            <span className="text text-blind">Группы (план / факт): </span>
+            <span className="text text-bold">{universityTotals.groupNorm} / {universityTotals.groupFact}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span className="text text-blind">Разница:</span>
             <Capsule variant={universityTotals.diff >= 0 ? 'success' : 'danger'}>
               {universityTotals.diff >= 0 ? `+${universityTotals.diff}` : universityTotals.diff}
             </Capsule>
+          </div>
+          <div>
+            <span className="text text-blind">Дисциплины (план / факт): </span>
+            <span className="text text-bold">{universityTotals.classNorm} / {universityTotals.classFact}</span>
           </div>
           <div>
             <span className="text text-blind">Эл. отчёты: </span>
@@ -223,15 +224,20 @@ export default function LprStatisticsPage() {
         <table className="table-container" style={{ width: '100%', borderCollapse: 'separate', fontSize: '13px' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: '12px 14px' }}>Факультет / Кафедра</th>
-              <th style={{ padding: '12px 6px', width: '70px' }}>Профили</th>
-              <th style={{ padding: '12px 6px', width: '85px' }}>План</th>
-              <th style={{ padding: '12px 6px', width: '85px' }}>Факт</th>
-              <th style={{ padding: '12px 6px', width: '80px' }}>Разница</th>
-              <th style={{ padding: '12px 6px', width: '110px' }}>Занятия</th>
-              <th style={{ padding: '12px 6px', width: '100px' }}>Эл. отчёты</th>
-              <th style={{ padding: '12px 6px', width: '100px' }}>Бум. отчёты</th>
-              <th style={{ padding: '12px 8px', width: '85px' }}>Всё сдано</th>
+              <th rowSpan={2} style={{ textAlign: 'left', padding: '12px 14px' }}>Факультет / Кафедра</th>
+              <th colSpan={3} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Выбранные группы</th>
+              <th colSpan={2} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Дисциплины</th>
+              <th colSpan={2} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Отчёты</th>
+              <th rowSpan={2} style={{ padding: '12px 8px', width: '65px' }}>Сдано</th>
+            </tr>
+            <tr>
+              <th style={{ padding: '8px 6px', width: '70px' }}>План</th>
+              <th style={{ padding: '8px 6px', width: '70px' }}>Факт</th>
+              <th style={{ padding: '8px 6px', width: '75px' }}>Разница</th>
+              <th style={{ padding: '8px 6px', width: '70px' }}>План</th>
+              <th style={{ padding: '8px 6px', width: '70px' }}>Факт</th>
+              <th style={{ padding: '8px 6px', width: '90px' }}>Эл. отчёты</th>
+              <th style={{ padding: '8px 6px', width: '90px' }}>Бум. отчёты</th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +255,7 @@ export default function LprStatisticsPage() {
                       fontWeight: 600
                     }}
                   >
-                    <td style={{ textAlign: 'left' }}>
+                    <td style={{ textAlign: 'left', padding: '12px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
                           type="button"
@@ -274,7 +280,6 @@ export default function LprStatisticsPage() {
                         </span>
                       </div>
                     </td>
-                    <td>{totals.profiles}</td>
                     <td><strong className="text-bold">{totals.groupNorm}</strong></td>
                     <td>{totals.groupFact}</td>
                     <td>
@@ -282,7 +287,8 @@ export default function LprStatisticsPage() {
                         {totals.diff >= 0 ? `+${totals.diff}` : totals.diff}
                       </Capsule>
                     </td>
-                    <td>{totals.classNorm} / {totals.classFact}</td>
+                    <td>{totals.classNorm}</td>
+                    <td>{totals.classFact}</td>
                     <td>
                       <span className="text text-bold">{totals.eReportDone}</span>
                       {totals.eReportRemarks > 0 && (
@@ -300,9 +306,9 @@ export default function LprStatisticsPage() {
                       )}
                     </td>
                     <td>
-                      <Capsule variant={totals.allPassed ? 'success' : 'danger'}>
-                        {totals.allPassed ? 'Да' : 'Нет'}
-                      </Capsule>
+                      <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+                        <CheckBox text="" type={totals.allPassed ? 'blue' : 'red'} state={true} />
+                      </div>
                     </td>
                   </tr>
 
@@ -327,7 +333,6 @@ export default function LprStatisticsPage() {
                             </span>
                           </div>
                         </td>
-                        <td>{dept.profilesCount}</td>
                         <td>{deptNorm}</td>
                         <td>{dept.groupFact}</td>
                         <td>
@@ -335,7 +340,8 @@ export default function LprStatisticsPage() {
                             {deptDiff >= 0 ? `+${deptDiff}` : deptDiff}
                           </Capsule>
                         </td>
-                        <td>{dept.classNorm} / {dept.classFact}</td>
+                        <td>{dept.classNorm}</td>
+                        <td>{dept.classFact}</td>
                         <td>
                           <span>{dept.eReportDone}</span>
                           {dept.eReportRemarks > 0 && (
@@ -353,9 +359,9 @@ export default function LprStatisticsPage() {
                           )}
                         </td>
                         <td>
-                          <Capsule variant={deptPassed ? 'success' : 'danger'}>
-                            {deptPassed ? 'Да' : 'Нет'}
-                          </Capsule>
+                          <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+                            <CheckBox text="" type={deptPassed ? 'blue' : 'red'} state={true} />
+                          </div>
                         </td>
                       </tr>
                     );
