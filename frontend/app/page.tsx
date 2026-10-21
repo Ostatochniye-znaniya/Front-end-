@@ -2,30 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUserStatus, UserStatusResponse } from "@/services/getUserStatus";
+import { getUserStatus } from "@/services/getUserStatus";
+import { redirectToLoginPage, isAuthenticated } from "@/api/client";
 
 export default function LprList() {
-    const [userStatus, setUserStatus] = useState<UserStatusResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
+        const hasSession = typeof window !== 'undefined' && isAuthenticated();
+
+        if (!hasSession) {
+            redirectToLoginPage(router);
+            return;
+        }
+
         const fetchUserRole = async () => {
             try {
                 const status = await getUserStatus();
-                setUserStatus(status);
-                    
+
                 if (status.status === 'teacher') {
                     router.push('/teacher/dates');
                 } else if (status.status === 'hod') {
                     router.push('/hod/statistics');
                 } else if (status.status === 'lpr') {
                     router.push('/lpr/statistics');
+                } else if (status.status === 'guest') {
+                    router.push('/guest');
                 } else {
-                    return <></>
+                    router.push('/teacher/main');
                 }
             } catch (error) {
-                router.push('/csh/login');
+                console.warn("Ошибка проверки статуса пользователя, перенаправление на страницу входа:", error);
+                redirectToLoginPage(router);
             } finally {
                 setLoading(false);
             }
@@ -41,4 +50,6 @@ export default function LprList() {
             </div>
         );
     }
+
+    return null;
 }
