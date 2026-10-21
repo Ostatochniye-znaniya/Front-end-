@@ -1,71 +1,86 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Добавляем базовый путь
+
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  // Базовый путь приложения
   basePath: '/csh',
 
-  // Если нужно, чтобы статика тоже была с префиксом
+  // Префикс для статических ресурсов
   assetPrefix: '/csh',
 
   reactStrictMode: true,
 
-  // Для продакшена
+  // Сборка для Docker
   output: 'standalone',
-
-  async rewrites() {
-    if (process.env.NODE_ENV !== 'development') return [];
-
-    const backendOrigin = process.env.BACKEND_API_PROXY_URL || 'http://127.0.0.1:5134';
-    return [
-      {
-        source: '/csh/api/:path*',
-        destination: `${backendOrigin}/csh/api/:path*`,
-        basePath: false,
-      },
-    ];
-  },
-}
 
   // Перенаправления с корневых путей без /csh
   async redirects() {
+    const origin = process.env.PUBLIC_APP_ORIGIN?.replace(/\/$/, '');
+
+    if (!origin) {
+      return [];
+    }
+
     return [
       {
         source: '/',
-        destination: '/csh',
+        destination: `${origin}/csh`,
         basePath: false,
         permanent: false,
       },
       {
         source: '/login',
-        destination: '/csh/login',
+        destination: `${origin}/csh/login`,
         basePath: false,
         permanent: false,
       },
       {
         source: '/auth-redirect',
-        destination: '/csh/auth-redirect',
+        destination: `${origin}/csh/auth-redirect`,
         basePath: false,
         permanent: false,
       },
       {
         source: '/403',
-        destination: '/csh/403',
+        destination: `${origin}/csh/403`,
         basePath: false,
         permanent: false,
       },
     ];
   },
 
-  // Проксирование запросов к API бэкенда при локальной разработке
+  // Проксирование запросов к API бэкенда
   async rewrites() {
-    const backend = process.env.BACKEND_URL || 'localhost:8000';
-    const backendUrl = backend.startsWith('http') ? backend : `http://${backend}`;
+    let backendUrl: string;
+
+    if (process.env.NODE_ENV === 'development') {
+      backendUrl =
+        process.env.BACKEND_API_PROXY_URL ||
+        'http://127.0.0.1:5134';
+    } else {
+      backendUrl =
+        process.env.BACKEND_URL ||
+        'http://api:8080';
+    }
+
+    // Добавляем протокол, если он отсутствует
+    if (!backendUrl.startsWith('http')) {
+      backendUrl = `http://${backendUrl}`;
+    }
+
+    // Убираем завершающий слеш
+    backendUrl = backendUrl.replace(/\/$/, '');
+
     return [
       {
+        // С учётом basePath запрос будет /csh/api/:path*
         source: '/api/:path*',
-        destination: `${backendUrl}/:path*`,
+
+        // ASP.NET Core API
+        destination: `${backendUrl}/csh/api/:path*`,
       },
     ];
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
