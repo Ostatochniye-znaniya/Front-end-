@@ -203,7 +203,17 @@ export function getUserFromCookie(cookieSource?: string): UserCookieData | null 
 
   if (rawCookie) {
     try {
-      const data: UserCookieData = JSON.parse(rawCookie);
+      let json = rawCookie;
+      while (json.includes('%7B') || json.includes('%22') || json.startsWith('%')) {
+        try {
+          const dec = decodeURIComponent(json);
+          if (dec === json) break;
+          json = dec;
+        } catch {
+          break;
+        }
+      }
+      const data: UserCookieData = JSON.parse(json);
       // Гарантируем наличие roleSlug и role
       if (!data.roleSlug && data.role) {
         data.roleSlug = normalizeRoleSlug(data.role);

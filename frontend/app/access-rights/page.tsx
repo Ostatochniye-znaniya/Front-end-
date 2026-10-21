@@ -6,6 +6,8 @@ import Search from "@/components/search/Search";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Pagination from "@/components/pagination/Pagination";
 import Alert from "@/components/alert/Alert";
+import { getUserRoles } from "@/services/userCookie";
+import { useRouter } from "next/navigation";
 import { EmployeeCardModal } from "@/components/access-rights/EmployeeCardModal";
 import { RoleEditModal } from "@/components/access-rights/RoleEditModal";
 import { PrintedFormsModal } from "@/components/access-rights/PrintedFormsModal";
@@ -18,6 +20,23 @@ import {
 import { Loader2 } from "lucide-react";
 
 export default function AccessRightsPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Доступ только для администраторов и ЛПР
+    const roles = getUserRoles();
+    const hasAccess =
+      roles.includes('admin') ||
+      roles.includes('lpr') ||
+      roles.includes('Администратор') ||
+      roles.includes('Лицо, принимающее решения (ЛПР)') ||
+      roles.includes('Лицо, принимающее решения');
+
+    if (!hasAccess) {
+      router.push('/403');
+    }
+  }, [router]);
+
   const [users, setUsers] = useState<UserAccessItem[]>([]);
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

@@ -22,10 +22,10 @@ export default function ForbiddenPage() {
       await fetch("/csh/api/auth/logout", {
         method: "POST",
         credentials: "include",
-      }).catch(() => {});
+      }).catch(() => { });
     } finally {
       clearTokens();
-      redirectToLogin();
+      router.push("/login");
     }
   };
 
