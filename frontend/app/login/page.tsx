@@ -218,11 +218,24 @@ export default function LoginPage() {
             Нажмите, если переход не произошёл автоматически
           </button>
         </div>
-
         <style jsx>{`
           @keyframes spin {
             to {
               transform: rotate(360deg);
+                setTimeout(() => {
+                    const userData = getUserData();
+                    const getDefaultPathByRole = () => {
+                        if (userData?.role === 'teacher') {
+                            return "/csh/teacher/dates";
+                        } else if (userData?.role === 'student') {
+                            return "/csh/student/main";
+                        } else if (userData?.role === 'admin') {
+                            return "/csh/admin/main";
+                        }
+                        return "/";
+                    };
+                    redirectAfterLogin(router, getDefaultPathByRole());
+                }, 1000);
             }
           }
         `}</style>

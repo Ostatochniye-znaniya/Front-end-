@@ -2,15 +2,16 @@
 
 import React, { useState } from 'react';
 
-interface Column<T = any> {
+interface Column<T> {
   header: React.ReactNode;
   accessor: keyof T | ((row: T) => React.ReactNode);
   sortFn?: (a: T, b: T) => number; // если есть - можно сортировать, если нет - нельзя
   style?: React.CSSProperties;
   className?: string;
+  rowSpan?: (row: T, rowIndex: number, rows: T[]) => number;
 }
 
-interface TableProps<T = any> {
+interface TableProps<T> {
   columns: Column<T>[];
   data: T[];
   style?: React.CSSProperties;
@@ -72,12 +73,14 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
         {sortedData.map((row, rowIndex) => (
           <tr key={rowIndex}>
             {columns.map((col, colIndex) => {
+              const rowSpan = col.rowSpan?.(row, rowIndex, sortedData) ?? 1;
+              if (rowSpan === 0) return null;
+
               const value = typeof col.accessor === 'function'
                 ? col.accessor(row)
                 : row[col.accessor] as React.ReactNode;
-              
               return (
-                <td key={colIndex} className={col.className} style={col.style}>
+                <td key={colIndex} rowSpan={rowSpan} className={col.className} style={col.style}>
                   {value}
                 </td>
               );

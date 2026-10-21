@@ -22,7 +22,7 @@ export default function LprList() {
                 const status = await getUserStatus();
 
                 if (status.status === 'teacher') {
-                    router.push('/teacher/main');
+                    router.push('/teacher/dates');
                 } else if (status.status === 'hod') {
                     router.push('/hod/statistics');
                 } else if (status.status === 'lpr') {

@@ -11,6 +11,20 @@ const nextConfig = {
   // Для продакшена
   output: 'standalone',
 
+  async rewrites() {
+    if (process.env.NODE_ENV !== 'development') return [];
+
+    const backendOrigin = process.env.BACKEND_API_PROXY_URL || 'http://127.0.0.1:5134';
+    return [
+      {
+        source: '/csh/api/:path*',
+        destination: `${backendOrigin}/csh/api/:path*`,
+        basePath: false,
+      },
+    ];
+  },
+}
+
   // Перенаправления с корневых путей без /csh
   async redirects() {
     return [
