@@ -1922,6 +1922,15 @@ body {
   margin: 0 auto;
 }
 
+.discipline-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 16px;
+}
+
 .discipline-counter {
   margin: 0 0 12px;
   color: var(--secondary-lock-font-c);

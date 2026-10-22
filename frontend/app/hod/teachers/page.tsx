@@ -5,6 +5,8 @@ import { Check, Clock, X } from "lucide-react";
 import Button from "@/components/button/Button";
 import Capsule from "@/components/capsule/Capsule";
 import Dropdown from "@/components/dropdown/Dropdown";
+import Pagination from "@/components/pagination/Pagination";
+import { usePagination } from "@/components/pagination/usePagination";
 import AssignTeachersModal from "./AssignTeachersModal";
 import { getDepartment } from "@/services/disciplines";
 import {
@@ -14,6 +16,17 @@ import {
     type DepartmentTesting,
     type PairSlot,
 } from "@/services/teacherAssignments";
+
+const PAGE_SIZE = 10;
+
+/** Фильтр «чьи группы»: свои (в т.ч. с заявками наружу) или заявки от кафедр других факультетов. */
+type Origin = "" | "own" | "incoming";
+
+const originOptions: { value: Origin; label: string }[] = [
+    { value: "", label: "Все" },
+    { value: "own", label: "Своей кафедры" },
+    { value: "incoming", label: "Заявки других кафедр" },
+];
 
 type Status = {
     label: string;
@@ -72,6 +85,7 @@ export default function TeacherSelection() {
     const [editing, setEditing] = useState<DepartmentTesting | null>(null);
     const [selectedGroup, setSelectedGroup] = useState("");
     const [selectedDiscipline, setSelectedDiscipline] = useState("");
+    const [selectedOrigin, setSelectedOrigin] = useState<Origin>("");
 
     const loadRows = useCallback(() => {
         return getDepartmentTestings()
@@ -125,10 +139,19 @@ export default function TeacherSelection() {
             (rows ?? []).filter(
                 r =>
                     (!selectedGroup || String(r.groupId) === selectedGroup) &&
-                    (!selectedDiscipline || String(r.disciplineId) === selectedDiscipline)
+                    (!selectedDiscipline || String(r.disciplineId) === selectedDiscipline) &&
+                    (!selectedOrigin || (selectedOrigin === "incoming") === (r.kind === "incoming"))
             ),
-        [rows, selectedGroup, selectedDiscipline]
+        [rows, selectedGroup, selectedDiscipline, selectedOrigin]
     );
+
+    const { currentPage, totalPages, pageItems, setPage } = usePagination(displayedRows, PAGE_SIZE);
+
+    /** Смена фильтра возвращает на первую страницу. */
+    const withFirstPage = <T,>(setter: (value: T) => void) => (value: T) => {
+        setter(value);
+        setPage(1);
+    };
 
     const hasIncoming = (rows ?? []).some(r => r.kind === "incoming");
 
@@ -169,16 +192,23 @@ export default function TeacherSelection() {
 
             <div className="teacher-filters">
                 <Dropdown
+                    options={originOptions}
+                    value={selectedOrigin}
+                    onChange={withFirstPage(v => setSelectedOrigin(v as Origin))}
+                    placeholder="Все"
+                    label="Группы"
+                />
+                <Dropdown
                     options={groupOptions}
                     value={selectedGroup}
-                    onChange={setSelectedGroup}
+                    onChange={withFirstPage(setSelectedGroup)}
                     placeholder="Все"
                     label="Группа"
                 />
                 <Dropdown
                     options={disciplineOptions}
                     value={selectedDiscipline}
-                    onChange={setSelectedDiscipline}
+                    onChange={withFirstPage(setSelectedDiscipline)}
                     placeholder="Все"
                     label="Дисциплина"
                 />
@@ -210,12 +240,12 @@ export default function TeacherSelection() {
                                 <th>Преподаватели</th>
                                 <th>Период</th>
                                 <th>Дата и время</th>
+                                <th>Действие</th>
                                 <th>Статус</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {displayedRows.map(row => {
+                            {pageItems.map(row => {
                                 const status = statusOf(row);
                                 return (
                                     <tr
@@ -271,11 +301,6 @@ export default function TeacherSelection() {
                                             )}
                                         </td>
                                         <td>
-                                            <Capsule variant={status.variant} icon={status.icon}>
-                                                {status.label}
-                                            </Capsule>
-                                        </td>
-                                        <td>
                                             {row.canManage && (
                                                 <Button
                                                     title={row.teachers.length === 0 ? "Назначить" : "Изменить"}
@@ -297,6 +322,11 @@ export default function TeacherSelection() {
                                                 </span>
                                             )}
                                         </td>
+                                        <td>
+                                            <Capsule variant={status.variant} icon={status.icon}>
+                                                {status.label}
+                                            </Capsule>
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -308,6 +338,16 @@ export default function TeacherSelection() {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {totalPages > 1 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    siblingCount={2}
+                    showFirstLast={true}
+                />
             )}
 
             {editing && (
