@@ -29,6 +29,7 @@ export type Discipline = {
 export type DisciplineGroupRow = {
     id: number;
     group: string;
+    programId: number;
     spec: string;
     /** Сколько дисциплин можно выбрать (не больше двух и не больше числа тестирований группы). */
     maxDisciplines: number;
@@ -38,6 +39,7 @@ export type DisciplineGroupRow = {
 type GroupDisciplinesResponse = {
     groupId: number;
     groupNumber: string;
+    studyProgramId: number;
     studyProgramName: string | null;
     maxDisciplines: number;
     disciplines: Discipline[];
@@ -75,6 +77,7 @@ export async function getGroups(): Promise<DisciplineGroupRow[]> {
     return data.map(g => ({
         id: g.groupId,
         group: g.groupNumber,
+        programId: g.studyProgramId,
         spec: g.studyProgramName ?? '—',
         maxDisciplines: g.maxDisciplines,
         disciplines: g.disciplines,

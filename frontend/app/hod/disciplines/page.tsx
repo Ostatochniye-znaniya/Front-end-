@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Button from "@/components/button/Button";
+import Dropdown from "@/components/dropdown/Dropdown";
 import Pagination from "@/components/pagination/Pagination";
+import { usePagination } from "@/components/pagination/usePagination";
 import EditDisciplinesModal from "./EditDisciplinesModal";
 import { getDepartment, getGroups, type DisciplineGroupRow } from "@/services/disciplines";
+
+const PAGE_SIZE = 10;
 
 const expandedCellStyle: React.CSSProperties = {
     padding: '12px 16px',
@@ -23,8 +27,7 @@ export default function DisciplineSelection() {
     const [loadError, setLoadError] = useState<string | null>(null);
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
     const [editingGroup, setEditingGroup] = useState<DisciplineGroupRow | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = 10;
+    const [selectedProgram, setSelectedProgram] = useState('');
 
     const loadRows = useCallback(() => {
         return getGroups()
@@ -58,6 +61,28 @@ export default function DisciplineSelection() {
             cancelled = true;
         };
     }, []);
+
+    const programOptions = useMemo(() => {
+        const programs = new Map((rows ?? []).map(r => [r.programId, r.spec]));
+        return [
+            { value: '', label: 'Все' },
+            ...[...programs.entries()]
+                .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
+                .map(([id, name]) => ({ value: String(id), label: name })),
+        ];
+    }, [rows]);
+
+    const displayedRows = useMemo(
+        () => (rows ?? []).filter(r => !selectedProgram || String(r.programId) === selectedProgram),
+        [rows, selectedProgram]
+    );
+
+    const { currentPage, totalPages, pageItems, setPage } = usePagination(displayedRows, PAGE_SIZE);
+
+    const handleProgramChange = (value: string) => {
+        setSelectedProgram(value);
+        setPage(1);
+    };
 
     const toggleRow = (id: number) => {
         setExpandedRows(prev => {
@@ -103,6 +128,18 @@ export default function DisciplineSelection() {
             )}
 
             {rows && rows.length > 0 && (
+                <div className="discipline-filters">
+                    <Dropdown
+                        options={programOptions}
+                        value={selectedProgram}
+                        onChange={handleProgramChange}
+                        placeholder="Все"
+                        label="Образовательная программа"
+                    />
+                </div>
+            )}
+
+            {rows && rows.length > 0 && (
                 <div className="table-wrapper">
                     <table className="table-container table-container-centered">
                         <thead>
@@ -113,7 +150,7 @@ export default function DisciplineSelection() {
                             </tr>
                         </thead>
                         <tbody>
-                            {rows.map(row => (
+                            {pageItems.map(row => (
                                 <React.Fragment key={row.id}>
                                     <tr>
                                         <td>{row.group}</td>
@@ -148,18 +185,25 @@ export default function DisciplineSelection() {
                                     )}
                                 </React.Fragment>
                             ))}
+                            {displayedRows.length === 0 && (
+                                <tr>
+                                    <td colSpan={3}>Нет групп по выбранной программе</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
             )}
 
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                siblingCount={2}
-                showFirstLast={true}
-            />
+            {totalPages > 1 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    siblingCount={2}
+                    showFirstLast={true}
+                />
+            )}
 
             {editingGroup && (
                 <EditDisciplinesModal
