@@ -20,9 +20,12 @@ import {
 
 export default function LprStatisticsPage() {
   const [selectedSemester, setSelectedSemester] = useState<string>('spring2025');
+  const [reportRequirement, setReportRequirement] = useState<'both' | 'electronic_only'>('both');
   const [expandedFaculties, setExpandedFaculties] = useState<Record<string, boolean>>({
     fit: true
   });
+
+  const includePaper = reportRequirement === 'both';
 
   const currentSemesterObj = useMemo(() => {
     return semesterOptions.find(s => s.value === selectedSemester) || semesterOptions[1];
@@ -59,6 +62,7 @@ export default function LprStatisticsPage() {
     let eReportRemarks = 0;
     let pReportDone = 0;
     let pReportRemarks = 0;
+    let unsubmittedCount = 0;
 
     faculty.departments.forEach(dept => {
       profiles += dept.profilesCount;
@@ -71,22 +75,27 @@ export default function LprStatisticsPage() {
       eReportRemarks += dept.eReportRemarks;
       pReportDone += dept.pReportDone;
       pReportRemarks += dept.pReportRemarks;
+
+      const eMissing = Math.max(0, dept.classFact - dept.eReportDone);
+      const pMissing = includePaper ? Math.max(0, dept.classFact - dept.pReportDone) : 0;
+      unsubmittedCount += Math.max(eMissing, pMissing);
     });
 
-    const diff = groupFact - groupNorm;
-    const allPassed = diff >= 0 && eReportRemarks === 0 && pReportRemarks === 0;
+    const hasRemarks = eReportRemarks > 0 || (includePaper && pReportRemarks > 0);
+    const allPassed = unsubmittedCount === 0 && !hasRemarks;
 
     return {
       profiles,
       groupNorm,
       groupFact,
-      diff,
       classNorm,
       classFact,
       eReportDone,
       eReportRemarks,
       pReportDone,
       pReportRemarks,
+      unsubmittedCount,
+      hasRemarks,
       allPassed
     };
   };
@@ -101,6 +110,7 @@ export default function LprStatisticsPage() {
     let eReportRemarks = 0;
     let pReportDone = 0;
     let pReportRemarks = 0;
+    let totalDebt = 0;
 
     initialFacultiesData.forEach(f => {
       const totals = getFacultyTotals(f);
@@ -113,24 +123,23 @@ export default function LprStatisticsPage() {
       eReportRemarks += totals.eReportRemarks;
       pReportDone += totals.pReportDone;
       pReportRemarks += totals.pReportRemarks;
+      totalDebt += totals.unsubmittedCount;
     });
-
-    const diff = groupFact - groupNorm;
 
     return {
       profiles,
       groupNorm,
       groupFact,
-      diff,
       classNorm,
       classFact,
       eReportDone,
       eReportRemarks,
       pReportDone,
       pReportRemarks,
-      allPassed: diff >= 0
+      totalDebt,
+      allPassed: totalDebt === 0
     };
-  }, [isSpring]);
+  }, [isSpring, includePaper]);
 
   return (
     <div className="main-container">
@@ -164,12 +173,6 @@ export default function LprStatisticsPage() {
             <span className="text text-blind">Группы (план / факт): </span>
             <span className="text text-bold">{universityTotals.groupNorm} / {universityTotals.groupFact}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="text text-blind">Разница:</span>
-            <Capsule variant={universityTotals.diff >= 0 ? 'success' : 'danger'}>
-              {universityTotals.diff >= 0 ? `+${universityTotals.diff}` : universityTotals.diff}
-            </Capsule>
-          </div>
           <div>
             <span className="text text-blind">Дисциплины (план / факт): </span>
             <span className="text text-bold">{universityTotals.classNorm} / {universityTotals.classFact}</span>
@@ -178,32 +181,60 @@ export default function LprStatisticsPage() {
             <span className="text text-blind">Эл. отчёты: </span>
             <span className="text text-bold">{universityTotals.eReportDone}</span>
             {universityTotals.eReportRemarks > 0 && (
-              <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
-                ({universityTotals.eReportRemarks} замеч.)
+              <span style={{ color: 'var(--accent-red-c)', marginLeft: '6px', fontSize: '12px', fontWeight: 600 }}>
+                (замечаний: {universityTotals.eReportRemarks})
               </span>
             )}
           </div>
-          <div>
-            <span className="text text-blind">Бум. отчёты: </span>
-            <span className="text text-bold">{universityTotals.pReportDone}</span>
-            {universityTotals.pReportRemarks > 0 && (
-              <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
-                ({universityTotals.pReportRemarks} замеч.)
-              </span>
-            )}
+          {includePaper ? (
+            <div>
+              <span className="text text-blind">Бум. отчёты: </span>
+              <span className="text text-bold">{universityTotals.pReportDone}</span>
+              {universityTotals.pReportRemarks > 0 && (
+                <span style={{ color: 'var(--accent-red-c)', marginLeft: '6px', fontSize: '12px', fontWeight: 600 }}>
+                  (замечаний: {universityTotals.pReportRemarks})
+                </span>
+              )}
+            </div>
+          ) : (
+            <div>
+              <span className="text text-blind">Бум. отчёты: </span>
+              <span className="text text-bold" style={{ color: 'var(--secondary-lock-font-c)' }}>не требуются</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="text text-blind">Недосдано отчётов:</span>
+            <Capsule variant={universityTotals.totalDebt === 0 ? 'success' : 'danger'}>
+              {universityTotals.totalDebt === 0 ? '0' : `-${universityTotals.totalDebt}`}
+            </Capsule>
           </div>
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ width: '280px' }}>
-          <Dropdown
-            label="Семестр"
-            options={semesterOptions}
-            value={selectedSemester}
-            onChange={setSelectedSemester}
-            placeholder="Выберите семестр"
-          />
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ width: '280px' }}>
+            <Dropdown
+              label="Семестр"
+              options={semesterOptions}
+              value={selectedSemester}
+              onChange={setSelectedSemester}
+              placeholder="Выберите семестр"
+            />
+          </div>
+
+          <div style={{ width: '270px' }}>
+            <Dropdown
+              label="Форма отчётности (настройка ЛПР)"
+              options={[
+                { value: 'both', label: 'Электронные + Бумажные' },
+                { value: 'electronic_only', label: 'Только электронные' }
+              ]}
+              value={reportRequirement}
+              onChange={(val) => setReportRequirement(val as 'both' | 'electronic_only')}
+              placeholder="Форма отчётности"
+            />
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -225,19 +256,18 @@ export default function LprStatisticsPage() {
           <thead>
             <tr>
               <th rowSpan={2} style={{ textAlign: 'left', padding: '12px 14px' }}>Факультет / Кафедра</th>
-              <th colSpan={3} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Выбранные группы</th>
+              <th colSpan={2} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Выбранные группы</th>
               <th colSpan={2} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Дисциплины</th>
-              <th colSpan={2} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Отчёты</th>
-              <th rowSpan={2} style={{ padding: '12px 8px', width: '65px' }}>Сдано</th>
+              <th colSpan={includePaper ? 2 : 1} style={{ padding: '8px 6px', borderBottom: '1px solid var(--secondary-border-c)' }}>Отчёты</th>
+              <th rowSpan={2} style={{ padding: '12px 8px', width: '120px' }}>Сдача отчётов</th>
             </tr>
             <tr>
-              <th style={{ padding: '8px 6px', width: '70px' }}>План</th>
-              <th style={{ padding: '8px 6px', width: '70px' }}>Факт</th>
-              <th style={{ padding: '8px 6px', width: '75px' }}>Разница</th>
-              <th style={{ padding: '8px 6px', width: '70px' }}>План</th>
-              <th style={{ padding: '8px 6px', width: '70px' }}>Факт</th>
-              <th style={{ padding: '8px 6px', width: '90px' }}>Эл. отчёты</th>
-              <th style={{ padding: '8px 6px', width: '90px' }}>Бум. отчёты</th>
+              <th style={{ padding: '8px 6px', width: '75px' }}>План</th>
+              <th style={{ padding: '8px 6px', width: '75px' }}>Факт</th>
+              <th style={{ padding: '8px 6px', width: '75px' }}>План</th>
+              <th style={{ padding: '8px 6px', width: '75px' }}>Факт</th>
+              <th style={{ padding: '8px 6px', width: '100px' }}>Эл. отчёты</th>
+              {includePaper && <th style={{ padding: '8px 6px', width: '100px' }}>Бум. отчёты</th>}
             </tr>
           </thead>
           <tbody>
@@ -282,40 +312,49 @@ export default function LprStatisticsPage() {
                     </td>
                     <td><strong className="text-bold">{totals.groupNorm}</strong></td>
                     <td>{totals.groupFact}</td>
-                    <td>
-                      <Capsule variant={totals.diff >= 0 ? 'success' : 'danger'}>
-                        {totals.diff >= 0 ? `+${totals.diff}` : totals.diff}
-                      </Capsule>
-                    </td>
                     <td>{totals.classNorm}</td>
                     <td>{totals.classFact}</td>
                     <td>
-                      <span className="text text-bold">{totals.eReportDone}</span>
-                      {totals.eReportRemarks > 0 && (
-                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
-                          ({totals.eReportRemarks})
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span className="text text-bold">{totals.eReportDone}</span>
+                        {totals.eReportRemarks > 0 && (
+                          <span style={{ color: 'var(--accent-red-c)', fontSize: '11px', marginTop: '2px', lineHeight: '1.2' }}>
+                            замечаний: {totals.eReportRemarks}
+                          </span>
+                        )}
+                      </div>
                     </td>
+                    {includePaper && (
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <span className="text text-bold">{totals.pReportDone}</span>
+                          {totals.pReportRemarks > 0 && (
+                            <span style={{ color: 'var(--accent-red-c)', fontSize: '11px', marginTop: '2px', lineHeight: '1.2' }}>
+                              замечаний: {totals.pReportRemarks}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td>
-                      <span className="text text-bold">{totals.pReportDone}</span>
-                      {totals.pReportRemarks > 0 && (
-                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
-                          ({totals.pReportRemarks})
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-                        <CheckBox text="" type={totals.allPassed ? 'blue' : 'red'} state={true} />
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        {totals.unsubmittedCount > 0 ? (
+                          <Capsule variant="danger">-{totals.unsubmittedCount}</Capsule>
+                        ) : totals.hasRemarks ? (
+                          <Capsule variant="warning">Замечания</Capsule>
+                        ) : (
+                          <Capsule variant="success">Сдано</Capsule>
+                        )}
                       </div>
                     </td>
                   </tr>
 
                   {isExpanded && faculty.departments.map(dept => {
                     const deptNorm = calculateGroupNorm(dept.profilesCount, dept.coursesCount, isSpring, dept.magistracyCount);
-                    const deptDiff = dept.groupFact - deptNorm;
-                    const deptPassed = deptDiff >= 0 && dept.eReportRemarks === 0 && dept.pReportRemarks === 0;
+                    const eMissing = Math.max(0, dept.classFact - dept.eReportDone);
+                    const pMissing = includePaper ? Math.max(0, dept.classFact - dept.pReportDone) : 0;
+                    const deptDebt = Math.max(eMissing, pMissing);
+                    const deptHasRemarks = dept.eReportRemarks > 0 || (includePaper && dept.pReportRemarks > 0);
 
                     return (
                       <tr
@@ -335,32 +374,39 @@ export default function LprStatisticsPage() {
                         </td>
                         <td>{deptNorm}</td>
                         <td>{dept.groupFact}</td>
-                        <td>
-                          <Capsule variant={deptDiff >= 0 ? 'success' : 'danger'}>
-                            {deptDiff >= 0 ? `+${deptDiff}` : deptDiff}
-                          </Capsule>
-                        </td>
                         <td>{dept.classNorm}</td>
                         <td>{dept.classFact}</td>
                         <td>
-                          <span>{dept.eReportDone}</span>
-                          {dept.eReportRemarks > 0 && (
-                            <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
-                              ({dept.eReportRemarks})
-                            </span>
-                          )}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span>{dept.eReportDone}</span>
+                            {dept.eReportRemarks > 0 && (
+                              <span style={{ color: 'var(--accent-red-c)', fontSize: '11px', marginTop: '2px', lineHeight: '1.2' }}>
+                                замечаний: {dept.eReportRemarks}
+                              </span>
+                            )}
+                          </div>
                         </td>
+                        {includePaper && (
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                              <span>{dept.pReportDone}</span>
+                              {dept.pReportRemarks > 0 && (
+                                <span style={{ color: 'var(--accent-red-c)', fontSize: '11px', marginTop: '2px', lineHeight: '1.2' }}>
+                                  замечаний: {dept.pReportRemarks}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        )}
                         <td>
-                          <span>{dept.pReportDone}</span>
-                          {dept.pReportRemarks > 0 && (
-                            <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
-                              ({dept.pReportRemarks})
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-                            <CheckBox text="" type={deptPassed ? 'blue' : 'red'} state={true} />
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            {deptDebt > 0 ? (
+                              <Capsule variant="danger">-{deptDebt}</Capsule>
+                            ) : deptHasRemarks ? (
+                              <Capsule variant="warning">Замечания</Capsule>
+                            ) : (
+                              <Capsule variant="success">Сдано</Capsule>
+                            )}
                           </div>
                         </td>
                       </tr>

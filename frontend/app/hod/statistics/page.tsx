@@ -20,12 +20,15 @@ import {
 
 export default function HodStatisticsPage() {
   const [selectedSemester, setSelectedSemester] = useState<string>('spring2025');
+  const [reportRequirement, setReportRequirement] = useState<'both' | 'electronic_only'>('both');
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedDisciplines, setExpandedDisciplines] = useState<Record<string, boolean>>({
     disc_net: true,
     disc_db: true
   });
+
+  const includePaper = reportRequirement === 'both';
 
   const courseOptions = [
     { value: 'all', label: 'Все курсы' },
@@ -78,6 +81,7 @@ export default function HodStatisticsPage() {
     let eReportRemarks = 0;
     let pReportDone = 0;
     let pReportRemarks = 0;
+    let totalDebt = 0;
 
     initialHodDisciplinesData.forEach(d => {
       const dNorm = d.profilesCount * 2;
@@ -89,23 +93,25 @@ export default function HodStatisticsPage() {
       eReportRemarks += d.eReportRemarks;
       pReportDone += d.pReportDone;
       pReportRemarks += d.pReportRemarks;
-    });
 
-    const diff = groupFact - groupNorm;
+      const eMissing = Math.max(0, d.classFact - d.eReportDone);
+      const pMissing = includePaper ? Math.max(0, d.classFact - d.pReportDone) : 0;
+      totalDebt += Math.max(eMissing, pMissing);
+    });
 
     return {
       groupNorm,
       groupFact,
-      diff,
       classNorm,
       classFact,
       eReportDone,
       eReportRemarks,
       pReportDone,
       pReportRemarks,
-      allPassed: diff >= 0 && eReportRemarks === 0 && pReportRemarks === 0
+      totalDebt,
+      allPassed: totalDebt === 0
     };
-  }, []);
+  }, [includePaper]);
 
   return (
     <div className="main-container">
@@ -135,45 +141,52 @@ export default function HodStatisticsPage() {
           <GraduationCap size={20} color="var(--accent-blue-c)" />
           <span className="text text-bold">Сводка по кафедре:</span>
         </div>
-        <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
-            <span className="text text-blind">Групп (план): </span>
-            <span className="text text-bold">{departmentTotals.groupNorm}</span>
+            <span className="text text-blind">Групп (план / факт): </span>
+            <span className="text text-bold">{departmentTotals.groupNorm} / {departmentTotals.groupFact}</span>
           </div>
           <div>
-            <span className="text text-blind">Групп (факт): </span>
-            <span className="text text-bold">{departmentTotals.groupFact}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="text text-blind">Разница:</span>
-            <Capsule variant={departmentTotals.diff >= 0 ? 'success' : 'danger'}>
-              {departmentTotals.diff >= 0 ? `+${departmentTotals.diff}` : departmentTotals.diff}
-            </Capsule>
+            <span className="text text-blind">Дисциплины (план / факт): </span>
+            <span className="text text-bold">{departmentTotals.classNorm} / {departmentTotals.classFact}</span>
           </div>
           <div>
             <span className="text text-blind">Эл. отчёты: </span>
             <span className="text text-bold">{departmentTotals.eReportDone}</span>
             {departmentTotals.eReportRemarks > 0 && (
-              <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
-                ({departmentTotals.eReportRemarks} замеч.)
+              <span style={{ color: 'var(--accent-red-c)', marginLeft: '6px', fontSize: '12px', fontWeight: 600 }}>
+                (замечаний: {departmentTotals.eReportRemarks})
               </span>
             )}
           </div>
-          <div>
-            <span className="text text-blind">Бум. отчёты: </span>
-            <span className="text text-bold">{departmentTotals.pReportDone}</span>
-            {departmentTotals.pReportRemarks > 0 && (
-              <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '12px' }}>
-                ({departmentTotals.pReportRemarks} замеч.)
-              </span>
-            )}
+          {includePaper ? (
+            <div>
+              <span className="text text-blind">Бум. отчёты: </span>
+              <span className="text text-bold">{departmentTotals.pReportDone}</span>
+              {departmentTotals.pReportRemarks > 0 && (
+                <span style={{ color: 'var(--accent-red-c)', marginLeft: '6px', fontSize: '12px', fontWeight: 600 }}>
+                  (замечаний: {departmentTotals.pReportRemarks})
+                </span>
+              )}
+            </div>
+          ) : (
+            <div>
+              <span className="text text-blind">Бум. отчёты: </span>
+              <span className="text text-bold" style={{ color: 'var(--secondary-lock-font-c)' }}>не требуются</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="text text-blind">Недосдано отчётов:</span>
+            <Capsule variant={departmentTotals.totalDebt === 0 ? 'success' : 'danger'}>
+              {departmentTotals.totalDebt === 0 ? '0' : `-${departmentTotals.totalDebt}`}
+            </Capsule>
           </div>
         </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', gap: '14px', flex: 1, minWidth: '320px', flexWrap: 'wrap' }}>
-          <div style={{ minWidth: '240px', flex: 1 }}>
+          <div style={{ minWidth: '220px', flex: 1 }}>
             <Search
               hint="Поиск по дисциплине, преподавателю, группе..."
               value={searchQuery}
@@ -181,7 +194,7 @@ export default function HodStatisticsPage() {
               size="large"
             />
           </div>
-          <div style={{ width: '220px' }}>
+          <div style={{ width: '200px' }}>
             <Dropdown
               label="Семестр"
               options={semesterOptions}
@@ -191,6 +204,18 @@ export default function HodStatisticsPage() {
             />
           </div>
           <div style={{ width: '220px' }}>
+            <Dropdown
+              label="Форма отчётности (ЛПР)"
+              options={[
+                { value: 'both', label: 'Электронные + Бумажные' },
+                { value: 'electronic_only', label: 'Только электронные' }
+              ]}
+              value={reportRequirement}
+              onChange={(val) => setReportRequirement(val as 'both' | 'electronic_only')}
+              placeholder="Форма отчётности"
+            />
+          </div>
+          <div style={{ width: '180px' }}>
             <Dropdown
               label="Курс"
               options={courseOptions}
@@ -222,13 +247,12 @@ export default function HodStatisticsPage() {
               <th style={{ textAlign: 'left', padding: '12px 14px' }}>Дисциплина кафедры</th>
               <th style={{ padding: '12px 6px', width: '130px' }}>Курс / Семестр</th>
               <th style={{ padding: '12px 6px', width: '70px' }}>Профили</th>
-              <th style={{ padding: '12px 6px', width: '85px' }}>План</th>
-              <th style={{ padding: '12px 6px', width: '85px' }}>Факт</th>
-              <th style={{ padding: '12px 6px', width: '80px' }}>Разница</th>
-              <th style={{ padding: '12px 6px', width: '110px' }}>Занятия</th>
+              <th style={{ padding: '12px 6px', width: '75px' }}>План</th>
+              <th style={{ padding: '12px 6px', width: '75px' }}>Факт</th>
+              <th style={{ padding: '12px 6px', width: '90px' }}>Занятия</th>
               <th style={{ padding: '12px 6px', width: '100px' }}>Эл. отчёты</th>
-              <th style={{ padding: '12px 6px', width: '100px' }}>Бум. отчёты</th>
-              <th style={{ padding: '12px 8px', width: '65px' }}>Сдано</th>
+              {includePaper && <th style={{ padding: '12px 6px', width: '100px' }}>Бум. отчёты</th>}
+              <th style={{ padding: '12px 8px', width: '110px' }}>Сдача отчётов</th>
             </tr>
           </thead>
           <tbody>
@@ -279,34 +303,48 @@ export default function HodStatisticsPage() {
                       </Capsule>
                     </td>
                     <td>{disc.profilesCount}</td>
-                    <td><strong className="text-bold">{dNorm}</strong></td>
                     <td>{disc.groupFact}</td>
-                    <td>
-                      <Capsule variant={diff >= 0 ? 'success' : 'danger'}>
-                        {diff >= 0 ? `+${diff}` : diff}
-                      </Capsule>
-                    </td>
                     <td>{disc.classNorm} / {disc.classFact}</td>
                     <td>
-                      <span className="text text-bold">{disc.eReportDone}</span>
-                      {disc.eReportRemarks > 0 && (
-                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
-                          ({disc.eReportRemarks})
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span className="text text-bold">{disc.pReportDone}</span>
-                      {disc.pReportRemarks > 0 && (
-                        <span style={{ color: 'var(--accent-red-c)', marginLeft: '4px', fontSize: '11px' }}>
-                          ({disc.pReportRemarks})
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-                        <CheckBox text="" type={allPassed ? 'blue' : 'red'} state={true} />
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span className="text text-bold">{disc.eReportDone}</span>
+                        {disc.eReportRemarks > 0 && (
+                          <span style={{ color: 'var(--accent-red-c)', fontSize: '11px', marginTop: '2px', lineHeight: '1.2' }}>
+                            замечаний: {disc.eReportRemarks}
+                          </span>
+                        )}
                       </div>
+                    </td>
+                    {includePaper && (
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <span className="text text-bold">{disc.pReportDone}</span>
+                          {disc.pReportRemarks > 0 && (
+                            <span style={{ color: 'var(--accent-red-c)', fontSize: '11px', marginTop: '2px', lineHeight: '1.2' }}>
+                              замечаний: {disc.pReportRemarks}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                    <td>
+                      {(() => {
+                        const eMissing = Math.max(0, disc.classFact - disc.eReportDone);
+                        const pMissing = includePaper ? Math.max(0, disc.classFact - disc.pReportDone) : 0;
+                        const discDebt = Math.max(eMissing, pMissing);
+                        const discHasRemarks = disc.eReportRemarks > 0 || (includePaper && disc.pReportRemarks > 0);
+                        return (
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            {discDebt > 0 ? (
+                              <Capsule variant="danger">-{discDebt}</Capsule>
+                            ) : discHasRemarks ? (
+                              <Capsule variant="warning">Замечания</Capsule>
+                            ) : (
+                              <Capsule variant="success">Сдано</Capsule>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
 
@@ -348,20 +386,27 @@ export default function HodStatisticsPage() {
                         <td>—</td>
                         <td>1</td>
                         <td>1</td>
-                        <td>
-                          <Capsule variant="success">0</Capsule>
-                        </td>
                         <td>2 / 2</td>
                         <td>
                           <Capsule variant={eVariant}>{eStatusText}</Capsule>
                         </td>
+                        {includePaper && (
+                          <td>
+                            <Capsule variant={pVariant}>{pStatusText}</Capsule>
+                          </td>
+                        )}
                         <td>
-                          <Capsule variant={pVariant}>{pStatusText}</Capsule>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-                            <CheckBox text="" type={grp.allPassed ? 'blue' : 'red'} state={true} />
-                          </div>
+                          {(() => {
+                            const isDone = grp.eReportStatus === 'done' && (!includePaper || grp.pReportStatus === 'done');
+                            const hasRemarks = grp.eReportStatus === 'remarks' || (includePaper && grp.pReportStatus === 'remarks');
+                            return (
+                              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <Capsule variant={isDone ? 'success' : hasRemarks ? 'warning' : 'danger'}>
+                                  {isDone ? 'Сдано' : hasRemarks ? 'Замечания' : 'Не сдан'}
+                                </Capsule>
+                              </div>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );
