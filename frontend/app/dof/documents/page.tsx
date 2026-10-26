@@ -19,6 +19,7 @@ import {
     getDeanSchedules,
     rejectReport,
     rejectSchedule,
+    setPaperReportDelivery,
     ReportDocument,
     ReportFilterOptions,
     ScheduleDocument,
@@ -381,9 +382,10 @@ export default function DeanDocuments() {
                                 <th>Номер группы</th>
                                 <th>Дисциплина</th>
                                 <th>ФИО преподавателя</th>
+                                <th>Электронный отчёт</th>
+                                <th>Бумажный отчёт</th>
                                 <th>Скачать</th>
                                 <th>Действия</th>
-                                <th>Статус</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -394,6 +396,46 @@ export default function DeanDocuments() {
                                     <td>{report.groupNumber ?? "—"}</td>
                                     <td>{report.disciplineName ?? "—"}</td>
                                     <td>{report.teacherName ?? "—"}</td>
+                                    <td>
+                                        <StatusCell
+                                            status={report.status}
+                                            label={report.statusLabel}
+                                        />
+                                    </td>
+                                    <td>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                            <Capsule
+                                                variant={
+                                                    report.paperStatus === "submitted"
+                                                        ? "success"
+                                                        : report.paperStatus === "pending"
+                                                            ? "warning"
+                                                            : "default"
+                                                }
+                                            >
+                                                {report.paperStatusLabel}
+                                            </Capsule>
+                                            {report.status === "signed" && (
+                                                <Button
+                                                    color="btn-blue"
+                                                    disabled={busyId === report.id}
+                                                    onClick={() =>
+                                                        runAction(report.id, () =>
+                                                            setPaperReportDelivery(
+                                                                report.id,
+                                                                report.paperStatus !== "submitted"
+                                                            )
+                                                        )
+                                                    }
+                                                    style={{ whiteSpace: "nowrap" }}
+                                                >
+                                                    {report.paperStatus === "submitted"
+                                                        ? "Отменить отметку"
+                                                        : "Отметить сданным"}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td>
                                         <DownloadButton
                                             busy={busyId === report.id}
@@ -416,12 +458,6 @@ export default function DeanDocuments() {
                                             onReject={() =>
                                                 runAction(report.id, () => rejectReport(report.id))
                                             }
-                                        />
-                                    </td>
-                                    <td>
-                                        <StatusCell
-                                            status={report.status}
-                                            label={report.statusLabel}
                                         />
                                     </td>
                                 </tr>

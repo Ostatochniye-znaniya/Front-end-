@@ -3,8 +3,8 @@ import Navbar from "@/components/navbar/Navbar";
 import { CalendarDays, FileText } from "lucide-react";
 
 const teacherLinks = [
-  { label: "Согласование дат", href: "/teacher/dates", icon: CalendarDays },
-  { label: "Отчеты", href: "/teacher/report", icon: FileText },
+  { label: "Тестирования на согласование", href: "/teacher/dates", icon: CalendarDays },
+  { label: "Отчёты", href: "/teacher/report", icon: FileText },
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {

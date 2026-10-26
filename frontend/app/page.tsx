@@ -30,7 +30,7 @@ export default function LprList() {
                 } else if (status.status === 'guest') {
                     router.push('/guest');
                 } else {
-                    router.push('/teacher/main');
+                    router.push('/teacher/dates');
                 }
             } catch (error) {
                 console.warn("Ошибка проверки статуса пользователя, перенаправление на страницу входа:", error);
