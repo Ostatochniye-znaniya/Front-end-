@@ -1,55 +1,38 @@
-.dialog::backdrop {
-  background: rgb(0 0 0 / 60%);
-}
-
-.dialog {
-  width: min(900px, calc(100% - 32px));
-  max-height: 90vh;
-  margin: auto;
-  padding: 20px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--background-main-element-c);
-  color: var(--secondary-font-c);
-}
-
-.dialog[open] {
+.content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
-.header,
-.actions {
+.footerActions {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
+  width: 100%;
 }
 
-.header {
-  justify-content: space-between;
-}
-
-.header h2 {
-  margin: 0;
-  font-size: 18px;
+.section h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
 }
 
 .summary {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
 }
 
 .summary div {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--secondary-border-c);
 }
 
 .summary dt {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .summary dd {

@@ -1,15 +1,20 @@
 "use client";
 
 import Button from "@/components/button/Button";
+import MiniAlert from "@/components/alert/MiniAlert";
 import CheckBox from "@/components/checkbox/CheckBox";
 import Dropdown from "@/components/dropdown/Dropdown";
+import TestingHistoryHeader from "@/components/groupsTesting/TestingHistory";
+import { getGroupCourse } from "@/services/groupCourse";
 import { Check, X } from "lucide-react";
-import type {
-  GroupsTestingResponse,
-  PlannedTestingCell,
-  TestingGroup,
-  TestingSemester,
-  TestingStudyProgram,
+import {
+  autoFillPlannedTestings,
+  getGroupsTesting,
+  updateGroupsTesting,
+  type GroupsTestingResponse,
+  type TestingGroup,
+  type TestingSemester,
+  type TestingStudyProgram,
 } from "@/services/groupsTesting";
 import {
   changeTestingSelection,
@@ -17,83 +22,8 @@ import {
   isTestingPlanned,
   type TestingSelection,
 } from "@/services/groupTestingSelection";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
-
-// Только статические данные для вёрстки. Они не отправляются в API.
-const unassignedTestings: PlannedTestingCell[] = [
-  { semesterId: 8, planned: false, author: null, editable: true, restrictionReason: null },
-  { semesterId: 15, planned: false, author: null, editable: true, restrictionReason: null },
-  { semesterId: 31, planned: false, author: null, editable: true, restrictionReason: null },
-];
-
-const STATIC_PLAN: GroupsTestingResponse = {
-  currentSemesterId: 8,
-  semesters: [
-    { id: 2, semesterYear: 2025, semesterPart: 1, period: "past" },
-    { id: 4, semesterYear: 2025, semesterPart: 2, period: "past" },
-    { id: 5, semesterYear: 2026, semesterPart: 1, period: "past" },
-    { id: 8, semesterYear: 2026, semesterPart: 2, period: "current" },
-    { id: 15, semesterYear: 2027, semesterPart: 1, period: "future" },
-    { id: 31, semesterYear: 2027, semesterPart: 2, period: "future" },
-  ],
-  studyPrograms: [
-    {
-      studyProgramId: 7,
-      studyProgramName: "Разработка и интеграция корпоративных информационных систем",
-      cypherOfTheDirection: "09.03.03",
-      facultyId: 1,
-      facultyName: "Факультет информационных технологий",
-      groups: [
-        {
-          groupId: 12, groupNumber: "241-111", course: 3,
-          testingHistory: [
-            { semesterId: 2, completed: true },
-            { semesterId: 4, completed: false },
-            { semesterId: 5, completed: true },
-          ],
-          plannedTestings: [
-            { semesterId: 8, planned: true, author: "automatic", editable: false, restrictionReason: "Назначено автоматическим подбором" },
-            { semesterId: 15, planned: true, author: "automatic", editable: false, restrictionReason: "Назначено автоматическим подбором" },
-            { semesterId: 31, planned: true, author: "automatic", editable: false, restrictionReason: "Назначено автоматическим подбором" },
-          ],
-        },
-        { groupId: 13, groupNumber: "261-111", course: 1, testingHistory: [], plannedTestings: unassignedTestings },
-        { groupId: 14, groupNumber: "261-112", course: 1, testingHistory: [], plannedTestings: unassignedTestings },
-      ],
-    },
-    {
-      studyProgramId: 9,
-      studyProgramName: "Прикладная информатика в анализе данных",
-      cypherOfTheDirection: "09.03.03",
-      facultyId: 1,
-      facultyName: "Факультет информационных технологий",
-      groups: [
-        { groupId: 21, groupNumber: "261-121", course: 1, testingHistory: [], plannedTestings: unassignedTestings },
-        { groupId: 22, groupNumber: "261-122", course: 1, testingHistory: [], plannedTestings: unassignedTestings },
-        { groupId: 23, groupNumber: "261-123", course: 1, testingHistory: [], plannedTestings: unassignedTestings },
-      ],
-    },
-    {
-      studyProgramId: 20,
-      studyProgramName: "Финансовый анализ и управление",
-      cypherOfTheDirection: "38.03.01",
-      facultyId: 2,
-      facultyName: "Институт экономики и управления",
-      groups: [
-        {
-          groupId: 31, groupNumber: "261-311", course: 1, testingHistory: [],
-          plannedTestings: [
-            unassignedTestings[0],
-            { semesterId: 15, planned: true, author: "manual", editable: true, restrictionReason: null },
-            unassignedTestings[2],
-          ],
-        },
-        { groupId: 32, groupNumber: "261-312", course: 1, testingHistory: [], plannedTestings: unassignedTestings },
-      ],
-    },
-  ],
-};
 
 function semesterLabel(semester: TestingSemester): string {
   return `${semester.semesterPart === 1 ? "Весна" : "Осень"} ${semester.semesterYear}`;
@@ -128,17 +58,92 @@ function HistoryMark({ group, semester }: {
 }
 
 export default function LprRecommendedGroupsPage() {
-  const data = STATIC_PLAN;
-  const [hasPlan, setHasPlan] = useState(false);
+  const [data, setData] = useState<GroupsTestingResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [action, setAction] = useState<"auto" | "save" | "refresh" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [needsReload, setNeedsReload] = useState(false);
   const [selection, setSelection] = useState<TestingSelection>({});
   const [facultyId, setFacultyId] = useState("");
   const [directionCode, setDirectionCode] = useState("");
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void getGroupsTesting({}, controller.signal).then((response) => {
+      if (!controller.signal.aborted) setData(response);
+    }).catch((caught: unknown) => {
+      if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Не удалось загрузить план");
+    }).finally(() => {
+      if (!controller.signal.aborted) setIsLoading(false);
+    });
+    return () => controller.abort();
+  }, []);
+
   const changedCount = Object.keys(selection).length;
+  const busy = isLoading || action !== null;
+  const editDisabled = busy || needsReload || data?.requiresRecalculation === true;
+
+  const handleAutoFill = async () => {
+    if (busy || changedCount > 0) return;
+    setAction("auto");
+    setError(null);
+    setNotice(null);
+    try {
+      setData(await autoFillPlannedTestings());
+      setSelection({});
+      setFacultyId("");
+      setDirectionCode("");
+      setNeedsReload(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось выполнить подбор");
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (busy || (changedCount > 0 && !needsReload)) return;
+    setAction("refresh");
+    setError(null);
+    setNotice(null);
+    try {
+      setData(await getGroupsTesting());
+      setSelection({});
+      setNeedsReload(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось обновить план");
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!data || editDisabled || changedCount === 0) return;
+    setAction("save");
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await updateGroupsTesting({
+        currentSemesterId: data.currentSemesterId,
+        version: data.version,
+        changes: Object.values(selection),
+      });
+      setData(response);
+      setSelection({});
+      setNotice("Выбор сохранён, зависимые назначения пересчитаны");
+    } catch (caught) {
+      setNeedsReload(true);
+      const message = caught instanceof Error ? caught.message : "Не удалось подтвердить сохранение";
+      setError(message + " Обновите список перед дальнейшими изменениями.");
+    } finally {
+      setAction(null);
+    }
+  };
 
   const faculties = useMemo(() => {
     const options = new Map<string, string>();
-    for (const program of data.studyPrograms) {
+    for (const program of data?.studyPrograms ?? []) {
       if (program.facultyId !== null) {
         options.set(String(program.facultyId), program.facultyName ?? "Без названия");
       }
@@ -152,7 +157,7 @@ export default function LprRecommendedGroupsPage() {
 
   const directionOptions = useMemo(() => {
     const codes = new Set<string>();
-    for (const program of data.studyPrograms) {
+    for (const program of data?.studyPrograms ?? []) {
       if ((!facultyId || String(program.facultyId) === facultyId)
         && program.cypherOfTheDirection) codes.add(program.cypherOfTheDirection);
     }
@@ -163,7 +168,7 @@ export default function LprRecommendedGroupsPage() {
   }, [data, facultyId]);
 
   const programs = useMemo(
-    () => data.studyPrograms
+    () => (data?.studyPrograms ?? [])
       .filter((program) => program.groups.length > 0
         && (!facultyId || String(program.facultyId) === facultyId)
         && (!directionCode || program.cypherOfTheDirection === directionCode))
@@ -175,21 +180,23 @@ export default function LprRecommendedGroupsPage() {
     [data, facultyId, directionCode],
   );
 
-  // После подключения API открывать план только после успешного autoFillPlannedTestings.
-  if (!hasPlan) {
+  if (isLoading || !data) {
     return (
       <div className="main-container">
         <div className="p-block-header">
           <h1 className="text-bold">Формирование списка рекомендуемых групп</h1>
         </div>
-        <div className={`p-block-with-padding ${styles.start}`}>
+        {error && <div className="p-block-with-padding" role="alert"><MiniAlert type="error" text={error} /></div>}
+        {isLoading ? <div className="p-block-with-padding text" role="status">Загрузка плана тестирований...</div> : <div className={`p-block-with-padding ${styles.start}`}>
           <p className="text">Выполните автоматический подбор групп на текущий и два следующих семестра.</p>
           <Button
-            title="Выполнить автоматический подбор"
+            title={action === "auto" ? "Выполняется подбор..." : "Выполнить автоматический подбор"}
             color="btn-blue"
-            onClick={() => setHasPlan(true)}
+            disabled={busy}
+            onClick={() => void handleAutoFill()}
           />
-        </div>
+          {error && <Button title="Повторить загрузку" color="btn-blue" disabled={busy} onClick={() => void handleRefresh()} />}
+        </div>}
       </div>
     );
   }
@@ -205,18 +212,28 @@ export default function LprRecommendedGroupsPage() {
   const directionKey = (program: TestingStudyProgram): string =>
     `${program.facultyId ?? "none"}:${program.cypherOfTheDirection ?? "none"}`;
 
-  const directionRowCounts = new Map<string, number>();
+  const directions = new Map<string, TestingStudyProgram[]>();
   for (const program of programs) {
     const key = directionKey(program);
-    directionRowCounts.set(key, (directionRowCounts.get(key) ?? 0) + program.groups.length);
+    const directionPrograms = directions.get(key) ?? [];
+    directionPrograms.push(program);
+    directions.set(key, directionPrograms);
   }
+  const tableColumnCount = 4 + planningSemesters.length;
 
   return (
-    <div className="main-container">
+    <div className="main-container" aria-busy={busy}>
       <div className="p-block-header">
         <h1 className="text-bold">Формирование списка рекомендуемых групп</h1>
       </div>
 
+      {error && <div className="p-block-with-padding" role="alert"><MiniAlert type="error" text={error} /></div>}
+      {notice && <div className="p-block-with-padding" role="status"><MiniAlert type="success" text={notice} /></div>}
+      {data.requiresRecalculation && <div className="p-block-with-padding" role="status">
+        <MiniAlert type="info" text="История тестирований изменилась. Выполните пересчёт плана." />
+        <Button title={action === "auto" ? "Пересчёт..." : "Пересчитать назначения"} color="btn-blue"
+          disabled={busy || changedCount > 0} onClick={() => void handleAutoFill()} />
+      </div>}
       <div className="p-block-with-padding">
         <p className="text">Текущий семестр: {currentSemester && semesterLabel(currentSemester)}</p>
         <p className="text">
@@ -224,6 +241,7 @@ export default function LprRecommendedGroupsPage() {
           Для остальных групп возможность выбора определяется планом.
           Назначайте тестирование на текущий семестр и, по желанию, на следующие.
           На каждый семестр можно выбрать не более одной группы каждого профиля.
+          Сохраните ручной выбор, чтобы система пересчитала доступность следующих семестров.
         </p>
         <div className={styles.filters}>
           <Dropdown
@@ -255,22 +273,14 @@ export default function LprRecommendedGroupsPage() {
               <caption className={styles.caption}>План тестирований по направлениям и профилям</caption>
               <thead>
                 <tr>
-                  <th scope="col" rowSpan={2}>Направление</th>
                   <th scope="col" rowSpan={2}>Профиль</th>
                   <th scope="col" rowSpan={2}>Группа</th>
                   <th scope="col" rowSpan={2}>Курс</th>
-                  {previousSemesters.length > 0 ? (
-                    <th scope="colgroup" colSpan={previousSemesters.length}>Предыдущие тестирования</th>
-                  ) : (
-                    <th scope="col" rowSpan={2}>Предыдущие тестирования</th>
-                  )}
-                  <th scope="colgroup" colSpan={1}>Текущее тестирование</th>
-                  <th scope="colgroup" colSpan={futureSemesters.length}>Запланировать тестирование</th>
+                  <TestingHistoryHeader semesters={previousSemesters} />
+                  <th scope="colgroup" className={styles.testingHeading} colSpan={1}>Текущее тестирование</th>
+                  <th scope="colgroup" className={styles.testingHeading} colSpan={futureSemesters.length}>Запланировать тестирование</th>
                 </tr>
                 <tr>
-                  {previousSemesters.map((semester) => (
-                    <th scope="col" className={styles.semesterHeading} key={semester.id}>{semesterLabel(semester)}</th>
-                  ))}
                   <th scope="col" className={styles.semesterHeading}>
                     {currentSemester ? semesterLabel(currentSemester) : "Текущий семестр"}
                   </th>
@@ -279,33 +289,34 @@ export default function LprRecommendedGroupsPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {programs.flatMap((program, programIndex) => {
-                  const key = directionKey(program);
-                  const firstInDirection = programIndex === 0
-                    || directionKey(programs[programIndex - 1]) !== key;
-                  return program.groups.map((group, groupIndex) => (
+              {[...directions].map(([key, directionPrograms]) => (
+                <tbody key={key}>
+                  <tr className={styles.directionRow}>
+                    <th scope="rowgroup" colSpan={tableColumnCount}>
+                      <strong>{directionPrograms[0].cypherOfTheDirection ?? "Без шифра"}</strong>{" "}
+                      <span>{directionPrograms[0].facultyName ?? "Факультет не указан"}</span>
+                    </th>
+                  </tr>
+                  {directionPrograms.flatMap((program) => program.groups.map((group, groupIndex) => (
                     <tr key={group.groupId}>
-                      {firstInDirection && groupIndex === 0 && (
-                        <td rowSpan={directionRowCounts.get(key)} className={styles.groupingCell}>
-                          <strong>{program.cypherOfTheDirection ?? "Без шифра"}</strong>
-                          <small>{program.facultyName ?? "Факультет не указан"}</small>
-                        </td>
-                      )}
                       {groupIndex === 0 && (
                         <td rowSpan={program.groups.length} className={styles.groupingCell}>
                           {program.studyProgramName}
                         </td>
                       )}
                       <td>{group.groupNumber}</td>
-                      <td>{group.course ?? "—"}</td>
-                      {previousSemesters.length === 0 ? (
-                        <td>Нет предыдущих семестров</td>
-                      ) : previousSemesters.map((semester) => (
-                        <td className={styles.statusCell} key={semester.id}>
-                          <HistoryMark group={group} semester={semester} />
-                        </td>
-                      ))}
+                      <td>{currentSemester ? getGroupCourse(group.groupNumber, currentSemester) ?? "—" : "—"}</td>
+                      <td className={styles.historyCell}>
+                        <div className={styles.historyViewport}>
+                          <div className={`${styles.historyStrip} ${styles.historyValues}`}>
+                            {previousSemesters.map((semester) => (
+                              <span className={styles.historySemester} key={semester.id}>
+                                <HistoryMark group={group} semester={semester} />
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </td>
                       {planningSemesters.map((semester) => {
                         const cell = group.plannedTestings.find((item) => item.semesterId === semester.id)!;
                         const checked = isTestingPlanned(group.groupId, cell, selection);
@@ -320,7 +331,7 @@ export default function LprRecommendedGroupsPage() {
                           <td key={semester.id} className={styles.statusCell} title={reason ?? undefined}>
                             {cell.editable ? (
                               <fieldset className={styles.planningChoice}
-                                disabled={occupiedElsewhere}>
+                                disabled={editDisabled || occupiedElsewhere}>
                                 <CheckBox
                                   text={`Назначить тестирование: ${group.groupNumber}, ${semesterLabel(semester)}`}
                                   type="blue"
@@ -329,6 +340,7 @@ export default function LprRecommendedGroupsPage() {
                                     setSelection((previous) => changeTestingSelection(
                                       program, group.groupId, semester.id, planned, previous,
                                     ));
+                                    setNotice(null);
                                   }}
                                 />
                               </fieldset>
@@ -345,29 +357,21 @@ export default function LprRecommendedGroupsPage() {
                         );
                       })}
                     </tr>
-                  ));
-                })}
-              </tbody>
+                  )))}
+                </tbody>
+              ))}
             </table>
           </div>
         )}
       </div>
 
       <div className={`p-block-with-padding ${styles.actions}`}>
-        <button type="button" className="btn btn-green" disabled
-          title="Сохранение будет доступно после подключения API">
-          Сохранить выбор
-        </button>
-        <Button
-          title="Отменить изменения"
-          color="btn-orange"
-          disabled={changedCount === 0}
-          onClick={() => setSelection({})}
-        />
-        <button type="button" className="btn btn-blue" disabled
-          title="Обновление будет доступно после подключения API">
-          Обновить список
-        </button>
+        <Button title={action === "save" ? "Сохранение..." : "Сохранить выбор"} color="btn-green"
+          disabled={editDisabled || changedCount === 0} onClick={() => void handleSave()} />
+        <Button title="Отменить изменения" color="btn-orange" disabled={busy || needsReload || changedCount === 0}
+          onClick={() => { setSelection({}); setNotice(null); }} />
+        <Button title={action === "refresh" ? "Обновление..." : "Обновить список"} color="btn-blue"
+          disabled={busy || (changedCount > 0 && !needsReload)} onClick={() => void handleRefresh()} />
         {changedCount > 0 && (
           <span className="text" role="status">Несохранённых изменений: {changedCount}</span>
         )}

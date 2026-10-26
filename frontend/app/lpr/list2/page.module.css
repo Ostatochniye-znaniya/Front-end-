@@ -24,8 +24,57 @@
 }
 
 .table {
+  --history-semester-width: 144px;
+  --history-viewport-width: calc(3 * var(--history-semester-width));
+
   width: 100%;
-  min-width: 1220px;
+  min-width: 1010px;
+}
+
+.table .historyColumn,
+.table .historyCell {
+  box-sizing: content-box;
+  width: var(--history-viewport-width);
+  min-width: var(--history-viewport-width);
+  max-width: var(--history-viewport-width);
+  padding: 0;
+}
+
+.historyTitle {
+  padding: 16px 12px;
+}
+
+.historyScroll,
+.historyViewport {
+  width: var(--history-viewport-width);
+  overflow: hidden;
+}
+
+.historyScroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.historyStrip {
+  display: flex;
+  width: max-content;
+}
+
+.historyValues {
+  transform: translateX(calc(-1 * var(--history-offset, 0px)));
+}
+
+.historySemester {
+  display: inline-flex;
+  box-sizing: border-box;
+  flex: 0 0 var(--history-semester-width);
+  align-items: center;
+  justify-content: center;
+  width: var(--history-semester-width);
+  min-height: 50px;
+  padding: 12px;
+  border-right: 1px solid var(--secondary-border-c);
+  white-space: nowrap;
 }
 
 .caption {
@@ -41,14 +90,28 @@
   max-width: 260px;
 }
 
-.groupingCell small {
-  display: block;
-  margin-top: 8px;
+.table .directionRow th {
+  padding-block: 12px;
+  text-align: left;
+  background-color: var(--secondary-divider-bg-c);
 }
 
-.semesterHeading {
+.directionRow strong {
+  margin-right: 16px;
+}
+
+.directionRow span {
+  font-weight: 400;
+}
+
+.table .semesterHeading {
   min-width: 120px;
   white-space: nowrap;
+}
+
+.table .semesterHeading,
+.table .testingHeading {
+  padding-inline: 12px;
 }
 
 .statusCell {

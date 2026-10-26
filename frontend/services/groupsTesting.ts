@@ -41,6 +41,8 @@ export interface TestingStudyProgram {
 
 export interface GroupsTestingResponse {
   currentSemesterId: number;
+  version: number;
+  requiresRecalculation: boolean;
   semesters: TestingSemester[];
   studyPrograms: TestingStudyProgram[];
 }
@@ -53,6 +55,7 @@ export interface GroupsTestingChange {
 
 export interface UpdateGroupsTestingRequest {
   currentSemesterId: number;
+  version: number;
   changes: GroupsTestingChange[];
 }
 
@@ -76,6 +79,8 @@ function invalidResponse(): never {
 // Проверяем контракт, чтобы отсутствие editable не превращалось в разрешение.
 export function parseGroupsTestingResponse(value: unknown): GroupsTestingResponse {
   if (!isObject(value) || !isId(value.currentSemesterId)
+    || typeof value.version !== "number" || !Number.isSafeInteger(value.version) || value.version < 0
+    || typeof value.requiresRecalculation !== "boolean"
     || !Array.isArray(value.semesters) || !Array.isArray(value.studyPrograms)) {
     return invalidResponse();
   }
@@ -100,7 +105,7 @@ export function parseGroupsTestingResponse(value: unknown): GroupsTestingRespons
 
   const current = value.semesters.filter((semester) => semester.period === "current");
   if (current.length !== 1 || current[0].id !== value.currentSemesterId
-    || futureIds.size !== 2 || pastIds.size !== 3) return invalidResponse();
+    || futureIds.size !== 2 || pastIds.size !== 8) return invalidResponse();
 
   const programIds = new Set<number>();
   const groupIds = new Set<number>();
@@ -150,7 +155,7 @@ export function parseGroupsTestingResponse(value: unknown): GroupsTestingRespons
           occupiedSemesters.add(cell.semesterId);
         }
       }
-      if (planningIds.size !== planningSemesterIds.size) return invalidResponse();
+      if (historyIds.size !== pastIds.size || planningIds.size !== planningSemesterIds.size) return invalidResponse();
     }
   }
 
@@ -196,11 +201,12 @@ export async function autoFillPlannedTestings(): Promise<GroupsTestingResponse> 
   return parseGroupsTestingResponse(await response.json());
 }
 
-export async function updateGroupsTesting(data: UpdateGroupsTestingRequest): Promise<void> {
+export async function updateGroupsTesting(data: UpdateGroupsTestingRequest): Promise<GroupsTestingResponse> {
   const response = await fetch(`${API_BASE_URL}/updateGroupsTesting`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!response.ok) throw await readError(response, "Не удалось сохранить выбранные тестирования");
+  return parseGroupsTestingResponse(await response.json());
 }
