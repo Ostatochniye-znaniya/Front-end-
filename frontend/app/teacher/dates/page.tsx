@@ -16,6 +16,7 @@ import {
   rejectTesting,
   saveTestingDelivery,
   saveTestingTime,
+  validateTestingSchedule,
   TeacherStageDeadlines,
   TeacherTesting,
 } from "@/services/teacherWorkflow";
@@ -170,6 +171,15 @@ export default function TeacherDates() {
     setError("");
     setNotice("");
     try {
+      const scheduledPair = item.scheduledPair ??
+        PAIRS.find((pair) => pair.time.startsWith(item.scheduledTime?.slice(0, 5) ?? ""))?.number;
+      if (item.scheduledDate && scheduledPair) {
+        await validateTestingSchedule(item.testingId, item.scheduledDate, scheduledPair, {
+          isInPerson: draft.isInPerson,
+          room: draft.isInPerson ? draft.room : null,
+          lmsUrl: draft.isInPerson ? null : draft.lmsUrl,
+        });
+      }
       const updated = await saveTestingDelivery(item.testingId, {
         isInPerson: draft.isInPerson,
         room: draft.isInPerson ? draft.room : null,
@@ -191,6 +201,17 @@ export default function TeacherDates() {
     setError("");
     setNotice("");
     try {
+      const scheduledPair = item.scheduledPair ??
+        PAIRS.find((pair) => pair.time.startsWith(item.scheduledTime?.slice(0, 5) ?? ""))?.number;
+      if (!item.scheduledDate || !scheduledPair) {
+        setError("Сначала выберите дату и пару.");
+        return;
+      }
+      await validateTestingSchedule(item.testingId, item.scheduledDate, scheduledPair, {
+        isInPerson: item.isInPerson === true,
+        room: item.isInPerson === true ? item.room : null,
+        lmsUrl: item.isInPerson === false ? item.lmsUrl : null,
+      });
       updateItem(await approveTesting(item.testingId));
       setNotice("Назначение согласовано.");
     } catch (reason) {
@@ -210,6 +231,11 @@ export default function TeacherDates() {
     setError("");
     setNotice("");
     try {
+      await validateTestingSchedule(item.testingId, draft.date, Number(draft.pairNumber), {
+        isInPerson: item.isInPerson === true,
+        room: item.isInPerson === true ? item.room : null,
+        lmsUrl: item.isInPerson === false ? item.lmsUrl : null,
+      });
       const updated = await saveTestingTime(item, draft.date, Number(draft.pairNumber));
       updateItem(updated);
       setNotice(item.approvalStatus === "approved" && updated.approvalStatus === "pending"

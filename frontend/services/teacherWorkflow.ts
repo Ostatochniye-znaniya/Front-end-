@@ -126,6 +126,22 @@ export function saveTestingDelivery(
   });
 }
 
+export async function validateTestingSchedule(
+  testingId: number,
+  date: string,
+  pairNumber: number,
+  delivery: TestingDelivery,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/ValidateTestingSchedule/${testingId}/availability`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, pairNumber, ...delivery }),
+  });
+  if (!response.ok) {
+    throw await readError(response, "Это время или место проведения уже занято");
+  }
+}
+
 export function approveTesting(testingId: number): Promise<TeacherTesting> {
   return requestJson(`/ApproveTesting/${testingId}/approve`, "Не удалось согласовать назначение", {
     method: "POST",
