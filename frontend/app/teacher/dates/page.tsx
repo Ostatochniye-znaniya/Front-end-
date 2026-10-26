@@ -11,9 +11,13 @@ import Modal from "@/components/modal/Modal";
 import Input from "@/components/input/Input";
 import {
   approveTesting,
+  getTeacherStageDeadlines,
   getTeacherTestings,
   rejectTesting,
   saveTestingDelivery,
+  saveTestingTime,
+  validateTestingSchedule,
+  TeacherStageDeadlines,
   TeacherTesting,
 } from "@/services/teacherWorkflow";
 
@@ -22,6 +26,28 @@ type DeliveryDraft = {
   room: string;
   lmsUrl: string;
 };
+
+type TimeDraft = {
+  date: string;
+  pairNumber: string;
+};
+
+type StageDeadlineRow = {
+  id: string;
+  stage: string;
+  date: string;
+  variant: "danger" | "success";
+};
+
+const PAIRS = [
+  { number: 1, time: "09:00–10:30" },
+  { number: 2, time: "10:40–12:10" },
+  { number: 3, time: "12:40–14:10" },
+  { number: 4, time: "14:20–15:50" },
+  { number: 5, time: "16:00–17:30" },
+  { number: 6, time: "17:40–19:10" },
+  { number: 7, time: "19:20–20:50" },
+];
 
 const PAGE_SIZE = 10;
 
@@ -52,9 +78,13 @@ function getApprovalStatus(status: string): {
 
 export default function TeacherDates() {
   const [items, setItems] = useState<TeacherTesting[]>([]);
+  const [stageDeadlines, setStageDeadlines] = useState<TeacherStageDeadlines | null>(null);
   const [drafts, setDrafts] = useState<Record<number, DeliveryDraft>>({});
+  const [timeDrafts, setTimeDrafts] = useState<Record<number, TimeDraft>>({});
   const [loading, setLoading] = useState(true);
+  const [deadlinesLoading, setDeadlinesLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deadlinesError, setDeadlinesError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,6 +101,10 @@ export default function TeacherDates() {
           room: item.room ?? "",
           lmsUrl: item.lmsUrl ?? "",
         }])));
+        setTimeDrafts(Object.fromEntries(rows.map((item) => [item.testingId, {
+          date: item.scheduledDate ?? item.selectionPeriodStart ?? "",
+          pairNumber: String(item.scheduledPair ?? 1),
+        }])));
         setError("");
       })
       .catch((reason: unknown) => {
@@ -80,6 +114,19 @@ export default function TeacherDates() {
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
+      });
+    getTeacherStageDeadlines(controller.signal)
+      .then((rows) => {
+        setStageDeadlines(rows);
+        setDeadlinesError("");
+      })
+      .catch((reason: unknown) => {
+        if (!controller.signal.aborted) {
+          setDeadlinesError(reason instanceof Error ? reason.message : "Не удалось загрузить сроки этапов");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setDeadlinesLoading(false);
       });
     return () => controller.abort();
   }, []);
@@ -103,7 +150,20 @@ export default function TeacherDates() {
         lmsUrl: updated.lmsUrl ?? "",
       },
     }));
+    setTimeDrafts((current) => ({
+      ...current,
+      [updated.testingId]: {
+        date: updated.scheduledDate ?? updated.selectionPeriodStart ?? "",
+        pairNumber: String(updated.scheduledPair ?? 1),
+      },
+    }));
   };
+
+  const timeDraftFor = (item: TeacherTesting): TimeDraft =>
+    timeDrafts[item.testingId] ?? {
+      date: item.scheduledDate ?? item.selectionPeriodStart ?? "",
+      pairNumber: String(item.scheduledPair ?? 1),
+    };
 
   const saveDelivery = async (item: TeacherTesting) => {
     const draft = draftFor(item);
@@ -111,13 +171,24 @@ export default function TeacherDates() {
     setError("");
     setNotice("");
     try {
+      const scheduledPair = item.scheduledPair ??
+        PAIRS.find((pair) => pair.time.startsWith(item.scheduledTime?.slice(0, 5) ?? ""))?.number;
+      if (item.scheduledDate && scheduledPair) {
+        await validateTestingSchedule(item.testingId, item.scheduledDate, scheduledPair, {
+          isInPerson: draft.isInPerson,
+          room: draft.isInPerson ? draft.room : null,
+          lmsUrl: draft.isInPerson ? null : draft.lmsUrl,
+        });
+      }
       const updated = await saveTestingDelivery(item.testingId, {
         isInPerson: draft.isInPerson,
         room: draft.isInPerson ? draft.room : null,
         lmsUrl: draft.isInPerson ? null : draft.lmsUrl,
       });
       updateItem(updated);
-      setNotice("Формат проведения сохранён.");
+      setNotice(item.approvalStatus === "approved" && updated.approvalStatus === "pending"
+        ? "Формат проведения изменён. Теперь согласуйте назначение."
+        : "Формат проведения сохранён.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Не удалось сохранить формат проведения");
     } finally {
@@ -130,10 +201,48 @@ export default function TeacherDates() {
     setError("");
     setNotice("");
     try {
+      const scheduledPair = item.scheduledPair ??
+        PAIRS.find((pair) => pair.time.startsWith(item.scheduledTime?.slice(0, 5) ?? ""))?.number;
+      if (!item.scheduledDate || !scheduledPair) {
+        setError("Сначала выберите дату и пару.");
+        return;
+      }
+      await validateTestingSchedule(item.testingId, item.scheduledDate, scheduledPair, {
+        isInPerson: item.isInPerson === true,
+        room: item.isInPerson === true ? item.room : null,
+        lmsUrl: item.isInPerson === false ? item.lmsUrl : null,
+      });
       updateItem(await approveTesting(item.testingId));
       setNotice("Назначение согласовано.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Не удалось согласовать назначение");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const saveTime = async (item: TeacherTesting) => {
+    const draft = timeDraftFor(item);
+    if (!draft.date || !draft.pairNumber) {
+      setError("Выберите дату и номер пары.");
+      return;
+    }
+    setBusyId(item.testingId);
+    setError("");
+    setNotice("");
+    try {
+      await validateTestingSchedule(item.testingId, draft.date, Number(draft.pairNumber), {
+        isInPerson: item.isInPerson === true,
+        room: item.isInPerson === true ? item.room : null,
+        lmsUrl: item.isInPerson === false ? item.lmsUrl : null,
+      });
+      const updated = await saveTestingTime(item, draft.date, Number(draft.pairNumber));
+      updateItem(updated);
+      setNotice(item.approvalStatus === "approved" && updated.approvalStatus === "pending"
+        ? "Дата и время изменены. Теперь согласуйте назначение."
+        : "Дата и время тестирования сохранены.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Не удалось сохранить дату и время");
     } finally {
       setBusyId(null);
     }
@@ -173,12 +282,69 @@ export default function TeacherDates() {
     { header: "Дисциплина", accessor: "disciplineName" },
     {
       header: "Дата и время",
-      accessor: (item) => (
-        <div>
-          <div>{formatDate(item.scheduledDate)}</div>
-          <div className="text-blind">{item.scheduledTime?.slice(0, 5) ?? "Время не назначено"}</div>
-        </div>
-      ),
+      accessor: (item) => {
+        const draft = timeDraftFor(item);
+        const canChooseTime = Boolean(item.selectionPeriodStart && item.selectionPeriodEnd) &&
+          (item.approvalStatus === "approved" || item.approvalStatus === "pending");
+        return (
+          <div style={{ minWidth: 170 }}>
+            {canChooseTime ? (
+              <>
+                <input
+                  className="input-field"
+                  type="date"
+                  aria-label={`Дата проверки для ${item.groupName}`}
+                  min={item.selectionPeriodStart ?? undefined}
+                  max={item.selectionPeriodEnd ?? undefined}
+                  value={draft.date}
+                  onChange={(event) => setTimeDrafts((current) => ({
+                    ...current,
+                    [item.testingId]: { ...draft, date: event.target.value },
+                  }))}
+                />
+                <select
+                  className="input-field"
+                  aria-label={`Пара для ${item.groupName}`}
+                  value={draft.pairNumber}
+                  onChange={(event) => setTimeDrafts((current) => ({
+                    ...current,
+                    [item.testingId]: { ...draft, pairNumber: event.target.value },
+                  }))}
+                  style={{ marginTop: 6 }}
+                >
+                  {PAIRS.map((pair) => (
+                    <option key={pair.number} value={pair.number}>
+                      {pair.number}-я пара ({pair.time})
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  color="btn-blue"
+                  onClick={() => void saveTime(item)}
+                  disabled={busyId === item.testingId}
+                  style={{ width: "100%", boxSizing: "border-box", marginTop: 6 }}
+                >
+                  {item.approvalStatus === "approved"
+                    ? "Изменить"
+                    : item.scheduledDate ? "Сохранить" : "Выбрать"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div>{formatDate(item.scheduledDate)}</div>
+                <div className="text-blind">
+                  {item.scheduledTime?.slice(0, 5) ?? "Время не назначено"}
+                </div>
+              </>
+            )}
+            {item.selectionPeriodStart && item.selectionPeriodEnd && (
+              <div className="text-blind" style={{ marginTop: 4 }}>
+                Период: {formatDate(item.selectionPeriodStart)} – {formatDate(item.selectionPeriodEnd)}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: "Очный формат",
@@ -266,30 +432,46 @@ export default function TeacherDates() {
     },
     {
       header: "Действие",
-      accessor: (item) => item.approvalStatus === "pending" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: 112, marginInline: "auto" }}>
-          <Button
-            color="btn-blue"
-            onClick={() => void handleApprove(item)}
-            disabled={busyId === item.testingId}
-            style={{ width: "100%", boxSizing: "border-box", textAlign: "center" }}
-          >
-            Согласовать
-          </Button>
-          <Button
-            color="btn-red"
-            onClick={() => {
-              setRejecting(item);
-              setRejectComment("");
-              setError("");
-            }}
-            disabled={busyId === item.testingId}
-            style={{ width: "100%", boxSizing: "border-box", textAlign: "center" }}
-          >
-            Отклонить
-          </Button>
-        </div>
-      ) : "—",
+      accessor: (item) => {
+        const delivery = draftFor(item);
+        const locationSaved = item.isInPerson !== null &&
+          delivery.isInPerson === item.isInPerson &&
+          (item.isInPerson
+            ? Boolean(item.room?.trim()) && delivery.room.trim() === item.room?.trim()
+            : Boolean(item.lmsUrl?.trim()) && delivery.lmsUrl.trim() === item.lmsUrl?.trim());
+
+        if (item.approvalStatus !== "pending") return "—";
+        if (!item.scheduledDate || !item.scheduledTime) return "Сначала выберите дату и пару.";
+
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, width: 112, marginInline: "auto" }}>
+            {locationSaved ? (
+              <Button
+                color="btn-blue"
+                onClick={() => void handleApprove(item)}
+                disabled={busyId === item.testingId}
+                style={{ width: "100%", boxSizing: "border-box", textAlign: "center" }}
+              >
+                Согласовать
+              </Button>
+            ) : (
+              <div className="text-blind">Сохраните аудиторию или ссылку для согласования.</div>
+            )}
+            <Button
+              color="btn-red"
+              onClick={() => {
+                setRejecting(item);
+                setRejectComment("");
+                setError("");
+              }}
+              disabled={busyId === item.testingId}
+              style={{ width: "100%", boxSizing: "border-box", textAlign: "center" }}
+            >
+              Отклонить
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -301,13 +483,59 @@ export default function TeacherDates() {
     (a.scheduledTime ?? "").localeCompare(b.scheduledTime ?? "")
   );
   const pageItems = groupedItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const formatPeriod = (start: string, end: string) =>
+    `${formatDate(start)} – ${formatDate(end)}`;
+  const stageRows: StageDeadlineRow[] = stageDeadlines ? [
+    {
+      id: `testing-${stageDeadlines.orderId}`,
+      stage: "Контроль знаний",
+      date: formatPeriod(stageDeadlines.testingStartDate, stageDeadlines.testingEndDate),
+      variant: "danger",
+    },
+    {
+      id: `electronic-${stageDeadlines.orderId}`,
+      stage: "Сдача электронных отчетов",
+      date: `до ${formatDate(stageDeadlines.electronicReportDeadline)}`,
+      variant: "success",
+    },
+    {
+      id: `paper-${stageDeadlines.orderId}`,
+      stage: "Сдача бумажных отчетов",
+      date: `до ${formatDate(stageDeadlines.paperReportDeadline)}`,
+      variant: "success",
+    },
+  ] : [];
+  const stageColumns: Column<StageDeadlineRow>[] = [
+    { header: "Этап", accessor: "stage", style: { width: "60%" } },
+    {
+      header: "Дата",
+      accessor: (row) => (
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Capsule variant={row.variant}>{row.date}</Capsule>
+        </div>
+      ),
+      style: { width: "40%" },
+    },
+  ];
 
   return (
     <div className="main-container">
       <p className="title text-bold">Сроки проведения тестирования</p>
-      <p className="text text-blind">
-        Сроки этапов пока не передаются доступным API.
-      </p>
+      {deadlinesLoading ? (
+        <p className="text text-blind">Загружаем сроки этапов…</p>
+      ) : deadlinesError ? (
+        <p role="alert" className="modal-error">{deadlinesError}</p>
+      ) : !stageDeadlines ? (
+        <p className="text text-blind">Сроки этапов ещё не опубликованы.</p>
+      ) : (
+        <div style={{ marginBottom: 24 }}>
+          <Table
+            style={{ width: "100%" }}
+            columns={stageColumns}
+            data={stageRows}
+          />
+        </div>
+      )}
       <p className="title text-bold">
         Согласование дат проведения проверки остаточных знаний
       </p>

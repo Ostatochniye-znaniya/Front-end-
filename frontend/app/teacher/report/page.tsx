@@ -28,13 +28,13 @@ function statusVariant(status: string): "default" | "success" | "warning" | "dan
   return "default";
 }
 
-function paperStatus(value: boolean | null): {
+function paperStatus(status: TeacherReportTask["paperStatus"]): {
   label: string;
-  variant: "default" | "success" | "danger";
+  variant: "default" | "success" | "warning";
 } {
-  if (value === true) return { label: "Сдан", variant: "success" };
-  if (value === false) return { label: "Не сдано", variant: "danger" };
-  return { label: "Не отмечено", variant: "default" };
+  if (status === "submitted") return { label: "Сдан", variant: "success" };
+  if (status === "pending") return { label: "Ожидает сдачи", variant: "warning" };
+  return { label: "Пока не требуется", variant: "default" };
 }
 
 function formatDate(value: string | null): string {
@@ -152,6 +152,38 @@ export default function TeacherReport() {
     },
     { header: "Дисциплина", accessor: "disciplineName" },
     {
+      header: "Скачать шаблон отчёта",
+      accessor: (item) => (
+        <Button
+          color="btn-blue"
+          onClick={() => void handleDownload(item)}
+          disabled={downloadingId === item.groupId}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          <Download size={18} />
+          Скачать
+        </Button>
+      ),
+    },
+    {
+      header: "Загрузить готовый отчёт",
+      accessor: (item) => (
+        <Button
+          color="btn-blue"
+          onClick={() => {
+            setSelected(item);
+            setError("");
+          }}
+          disabled={!item.reportId}
+          title={item.reportId ? "Загрузить DOCX" : "Отчёт ещё не создан"}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          <Upload size={18} />
+          Загрузить
+        </Button>
+      ),
+    },
+    {
       header: "Электронный отчёт",
       accessor: (item) => {
         const tooltipId = `report-file-${item.reportId ?? `${item.groupId}-${item.disciplineId}`}`;
@@ -203,45 +235,17 @@ export default function TeacherReport() {
     {
       header: "Бумажный отчёт",
       accessor: (item) => {
-        const status = paperStatus(item.doneInPaperForm);
-        return <Capsule variant={status.variant}>{status.label}</Capsule>;
+        const status = paperStatus(item.paperStatus);
+        return (
+          <Capsule variant={status.variant}>
+            {item.paperStatusLabel || status.label}
+          </Capsule>
+        );
       },
-    },
-    {
-      header: "Скачать шаблон отчёта",
-      accessor: (item) => (
-        <Button
-          color="btn-blue"
-          onClick={() => void handleDownload(item)}
-          disabled={downloadingId === item.groupId}
-          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-        >
-          <Download size={18} />
-          Скачать
-        </Button>
-      ),
     },
     {
       header: "Замечание ЛПР",
       accessor: (item) => item.reviewComment || "—",
-    },
-    {
-      header: "Загрузить готовый отчёт",
-      accessor: (item) => (
-        <Button
-          color="btn-blue"
-          onClick={() => {
-            setSelected(item);
-            setError("");
-          }}
-          disabled={!item.reportId}
-          title={item.reportId ? "Загрузить DOCX" : "Отчёт ещё не создан"}
-          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-        >
-          <Upload size={18} />
-          Загрузить
-        </Button>
-      ),
     },
   ];
 

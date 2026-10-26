@@ -8,6 +8,9 @@ export interface TeacherTesting {
   disciplineName: string;
   scheduledDate: string | null;
   scheduledTime: string | null;
+  scheduledPair: number | null;
+  selectionPeriodStart: string | null;
+  selectionPeriodEnd: string | null;
   isInPerson: boolean | null;
   room: string | null;
   lmsUrl: string | null;
@@ -28,9 +31,28 @@ export interface TeacherReportTask {
   statusLabel: string;
   reviewComment: string | null;
   uploadedAt: string | null;
+  paperStatus: "not_required" | "pending" | "submitted";
+  paperStatusLabel: string;
   doneInPaperForm: boolean | null;
   doneInElectronicForm: boolean | null;
   allDone: boolean | null;
+}
+
+export interface TeacherStageDeadlines {
+  orderId: number;
+  orderNumber: string;
+  orderDate: string;
+  preparationStartDate: string;
+  preparationEndDate: string;
+  testingStartDate: string;
+  testingEndDate: string;
+  surveyStartDate: string;
+  surveyEndDate: string;
+  resultsProcessingStartDate: string;
+  inspectionSummaryDeadline: string;
+  surveySummaryDeadline: string;
+  paperReportDeadline: string;
+  electronicReportDeadline: string;
 }
 
 export interface TestingDelivery {
@@ -89,6 +111,10 @@ export function getTeacherTestings(signal?: AbortSignal): Promise<TeacherTesting
   return requestJson("/GetTestings", "Не удалось загрузить назначения", { signal });
 }
 
+export function getTeacherStageDeadlines(signal?: AbortSignal): Promise<TeacherStageDeadlines | null> {
+  return requestJson("/GetStageDeadlines", "Не удалось загрузить сроки этапов", { signal });
+}
+
 export function saveTestingDelivery(
   testingId: number,
   delivery: TestingDelivery,
@@ -98,6 +124,22 @@ export function saveTestingDelivery(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(delivery),
   });
+}
+
+export async function validateTestingSchedule(
+  testingId: number,
+  date: string,
+  pairNumber: number,
+  delivery: TestingDelivery,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/ValidateTestingSchedule/${testingId}/availability`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, pairNumber, ...delivery }),
+  });
+  if (!response.ok) {
+    throw await readError(response, "Это время или место проведения уже занято");
+  }
 }
 
 export function approveTesting(testingId: number): Promise<TeacherTesting> {
@@ -111,6 +153,21 @@ export function rejectTesting(testingId: number, comment: string): Promise<Teach
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ comment }),
+  });
+}
+
+export function saveTestingTime(
+  testing: TeacherTesting,
+  date: string,
+  pairNumber: number,
+): Promise<TeacherTesting> {
+  const action = testing.approvalStatus === "approved"
+    ? `UpdateTestingTime/${testing.testingId}/change-time`
+    : `ChooseTestingTime/${testing.testingId}/choose-time`;
+  return requestJson(`/${action}`, "Не удалось сохранить дату и время", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, pairNumber }),
   });
 }
 

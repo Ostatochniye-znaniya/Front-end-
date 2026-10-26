@@ -106,7 +106,7 @@ export default function AuthRedirectPage() {
         if (isAuthLoop || targetPath === "/" || targetPath === "/csh" || targetPath === "/csh/") {
           // Выбираем путь по роли
           if (role === "teacher") {
-            targetPath = "/csh/teacher/main";
+            targetPath = "/csh/teacher/dates";
           } else if (role === "hod") {
             targetPath = "/csh/hod/statistics";
           } else if (role === "lpr") {

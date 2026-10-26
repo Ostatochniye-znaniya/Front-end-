@@ -91,13 +91,13 @@ export default function LoginPage() {
         let target = savedUrl;
         if (!target || target.includes("/login") || target.includes("/auth-redirect")) {
           if (roleSlug === "admin") target = "/access-rights";
-          else if (roleSlug === "teacher") target = "/teacher/main";
+          else if (roleSlug === "teacher") target = "/teacher/dates";
           else if (roleSlug === "hod") target = "/hod/statistics";
           else if (roleSlug === "lpr") target = "/lpr/statistics";
           else if (roleSlug === "rod") target = "/rod/schedule";
           else if (roleSlug === "department_responsible") target = "/hod/statistics";
           else if (roleSlug === "guest") target = "/guest";
-          else target = "/teacher/main";
+          else target = "/teacher/dates";
         }
 
         // Извлекаем относительный путь, если target был абсолютным URL

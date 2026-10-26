@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
 
   reactStrictMode: true,
 
+  // Разрешаем открывать dev-сервер по 127.0.0.1, иначе HMR блокируется и страница не гидратируется
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+
   // Сборка для Docker
   output: 'standalone',
 
