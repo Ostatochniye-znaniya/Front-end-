@@ -7,13 +7,15 @@ interface SearchProps {
   value: string;
   onChange: (value: string) => void;
   size?: 'small' | 'large';
+  label?: string;
 }
 
 const Search: React.FC<SearchProps> = ({ 
   hint, 
   value, 
   onChange,
-  size = 'large'
+  size = 'large',
+  label,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange(e.target.value);
@@ -32,6 +34,7 @@ const Search: React.FC<SearchProps> = ({
         className={inputClassName}
         type="text" 
         placeholder={hint}
+        aria-label={label ?? hint}
         value={value}
         onChange={handleChange}
       />

@@ -15,9 +15,10 @@ interface TableProps<T> {
   columns: Column<T>[];
   data: T[];
   style?: React.CSSProperties;
+  onRowClick?: (row: T) => void;
 }
 
-const Table = <T,>({ columns, data, style }: TableProps<T>) => {
+const Table = <T,>({ columns, data, style, onRowClick }: TableProps<T>) => {
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -71,7 +72,18 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
       </thead>
       <tbody>
         {sortedData.map((row, rowIndex) => (
-          <tr key={rowIndex}>
+          <tr
+            key={rowIndex}
+            onClick={() => onRowClick?.(row)}
+            onKeyDown={(event) => {
+              if (onRowClick && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                onRowClick(row);
+              }
+            }}
+            tabIndex={onRowClick ? 0 : undefined}
+            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+          >
             {columns.map((col, colIndex) => {
               const rowSpan = col.rowSpan?.(row, rowIndex, sortedData) ?? 1;
               if (rowSpan === 0) return null;

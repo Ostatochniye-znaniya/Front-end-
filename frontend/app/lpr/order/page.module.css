@@ -1,0 +1,14 @@
+.header {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h1 {
+  margin-right: auto;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+}
