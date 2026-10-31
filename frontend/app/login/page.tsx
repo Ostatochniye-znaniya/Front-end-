@@ -1,113 +1,232 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { redirectToLogin, getAndClearRedirectUrl } from "@/api/client";
+import { setSessionCookie, setUserCookie, formatUserCookieData } from "@/services/userCookie";
 
-import Button from "@/components/button/Button";
-import Input from "@/components/input/Input";
-import MiniAlert from "@/components/alert/MiniAlert";
+interface MockRoleItem {
+  id: number;
+  role: string;
+  role_slug: string;
+  system_role_name?: string;
+  name?: string;
+  email?: string;
+  description?: string;
+}
 
-import {
-    verifyCredentials,
-    verifyCode,
-    sendVerificationCode,
-    setUserData,
-    getUserData,
-} from "@/api/auth";
-
-import {
-    redirectAfterLogin
-} from "@/api/client";
-
-type AuthStep = "credentials" | "code";
+const DEFAULT_MOCK_ROLES: MockRoleItem[] = [
+  { id: 1, role: "Администратор", role_slug: "admin", name: "Алексеев Алексей Алексеевич", description: "Полный доступ к системе и правам" },
+  { id: 2, role: "Лицо, принимающее решения (ЛПР)", role_slug: "lpr", name: "Дмитриев Дмитрий Дмитриевич", description: "Статистика, приказы и списки групп" },
+  { id: 3, role: "Заведующий кафедрой", role_slug: "hod", name: "Сергеев Сергей Сергеевич", description: "Управление кафедрой и отчетами" },
+  { id: 4, role: "Преподаватель", role_slug: "teacher", name: "Иванов Иван Иванович", description: "Сдача отчетов и проведение тестирований" },
+  { id: 5, role: "Руководитель факультета / института", role_slug: "rod", name: "Михайлов Михаил Михайлович", description: "Контроль успеваемости по институту" },
+  { id: 6, role: "Ответственный за подразделение", role_slug: "department_responsible", name: "Федоров Федор Федорович", description: "Организация тестирований на кафедре" },
+  { id: 7, role: "Студент", role_slug: "student", name: "Сидоров Сидор Сидорович", description: "Прохождение тестирований" },
+  { id: 8, role: "Гость", role_slug: "guest", name: "Гостевой Пользователь", description: "Ограниченный гостевой доступ" },
+];
 
 export default function LoginPage() {
-    const router = useRouter();
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+  const [isMockEnabled, setIsMockEnabled] = useState(false);
+  const [roles, setRoles] = useState<MockRoleItem[]>([]);
+  const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
-    const [login, setLogin] = useState("");
-    const [password, setPassword] = useState("");
-    const [verificationCode, setVerificationCode] = useState("");
-    const [countdown, setCountdown] = useState(0);
-    const [step, setStep] = useState<AuthStep>("credentials");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [fadeIn, setFadeIn] = useState(false);
+  useEffect(() => {
+    let isCancelled = false;
 
-    useEffect(() => {
-        setFadeIn(true);
-    }, []);
+    async function checkBackendMockStatus() {
+      try {
+        const response = await fetch("/csh/api/auth/mock/status", {
+          method: "GET",
+          credentials: "include",
+        });
 
-    const startCountdown = (seconds: number) => {
-        setCountdown(seconds);
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-    };
-
-    const handleCredentialsSubmit = async () => {
-        setError(null);
-        setSuccessMessage(null);
-        setLoading(true);
-
-        try {
-            if (!login.trim()) {
-                throw new Error("Введите логин");
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.enabled) {
+            if (!isCancelled) {
+              setIsMockEnabled(true);
+              setRoles(data.available_roles && data.available_roles.length > 0 ? data.available_roles : DEFAULT_MOCK_ROLES);
+              setChecking(false);
             }
-
-            if (!password.trim()) {
-                throw new Error("Введите пароль");
-            }
-
-            const user = await verifyCredentials({ login, password });
-
-            if (user) {
-                setUserData(login, user);
-                await sendVerificationCode(login);
-                startCountdown(60);
-                setSuccessMessage("Код подтверждения отправлен на вашу почту");
-                setStep("code");
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Ошибка при входе");
-        } finally {
-            setLoading(false);
+            return;
+          }
         }
+      } catch (err) {
+        console.warn("MOCK статус бэкенда недоступен, выполняем стандартный вход:", err);
+      }
+
+      // Если MOCK выключен на бэкенде — оставляем поведение без изменений
+      if (!isCancelled) {
+        setChecking(false);
+        redirectToLogin();
+      }
+    }
+
+    checkBackendMockStatus();
+
+    return () => {
+      isCancelled = true;
     };
+  }, []);
 
-    const handleCodeSubmit = async () => {
-        setError(null);
-        setSuccessMessage(null);
-        setLoading(true);
+  const handleSelectRole = async (roleSlug: string) => {
+    setLoadingRole(roleSlug);
+    try {
+      const response = await fetch(`/csh/api/auth/mock/switch?role=${encodeURIComponent(roleSlug)}`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-        try {
-            if (!verificationCode.trim()) {
-                throw new Error("Введите код подтверждения");
-            }
+      if (response.ok) {
+        const data = await response.json();
+        setSessionCookie();
+        if (data?.user) {
+          setUserCookie(formatUserCookieData(data.user));
+        }
 
-            if (verificationCode.length !== 6) {
-                throw new Error("Код должен состоять из 6 цифр");
-            }
+        const savedUrl = getAndClearRedirectUrl();
+        let target = savedUrl;
+        if (!target || target.includes("/login") || target.includes("/auth-redirect")) {
+          if (roleSlug === "admin") target = "/access-rights";
+          else if (roleSlug === "teacher") target = "/teacher/dates";
+          else if (roleSlug === "hod") target = "/hod/statistics";
+          else if (roleSlug === "lpr") target = "/lpr/statistics";
+          else if (roleSlug === "rod") target = "/rod/schedule";
+          else if (roleSlug === "department_responsible") target = "/hod/statistics";
+          else if (roleSlug === "guest") target = "/guest";
+          else target = "/teacher/dates";
+        }
 
-            const tokens = await verifyCode({
-                login,
-                code: verificationCode,
-            });
+        // Извлекаем относительный путь, если target был абсолютным URL
+        if (target.startsWith("http")) {
+          try {
+            const urlObj = new URL(target);
+            target = urlObj.pathname + urlObj.search;
+          } catch {
+            target = "/";
+          }
+        }
 
-            if (tokens) {
-                setSuccessMessage("Вход выполнен успешно!");
+        // Next.js basePath: '/csh' автоматически добавляет префикс /csh при вызове router.push().
+        // Поэтому обязательно очищаем префикс /csh, чтобы не было дублирования /csh/csh/...
+        if (target.startsWith("/csh")) {
+          target = target.replace(/^\/csh/, "") || "/";
+        }
 
+        router.push(target);
+      } else {
+        alert("Не удалось авторизоваться под выбранной ролью");
+      }
+    } catch (e) {
+      console.error("Ошибка авторизации под mock-ролью:", e);
+      alert("Произошла ошибка при переключении роли");
+    } finally {
+      setLoadingRole(null);
+    }
+  };
+
+  // Экран проверки или стандартного перенаправления
+  if (checking || !isMockEnabled) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+          textAlign: "center",
+          backgroundColor: "var(--background-c, #f8f9fa)",
+          fontFamily: "var(--font-roboto, sans-serif)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "420px",
+            width: "100%",
+            backgroundColor: "var(--background-main-element-c, #ffffff)",
+            borderRadius: "24px",
+            padding: "40px 32px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+            border: "1px solid var(--secondary-border-c, #e5e7eb)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/csh/mpu_logo_l.png"
+            alt="Московский Политех"
+            className="theme-aware-logo"
+            style={{ height: "64px", width: "auto", marginBottom: "24px" }}
+          />
+
+          <div
+            style={{
+              width: "44px",
+              height: "44px",
+              border: "3px solid rgba(0, 102, 204, 0.15)",
+              borderTopColor: "var(--brand-main-c, #0066cc)",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              marginBottom: "20px",
+            }}
+          />
+
+          <h1
+            style={{
+              fontSize: "20px",
+              fontWeight: 700,
+              marginBottom: "10px",
+              color: "var(--main-font-c, #111)",
+            }}
+          >
+            Перенаправление на ЕУЗ...
+          </h1>
+
+          <p
+            style={{
+              fontSize: "14px",
+              color: "var(--secondary-lock-font-c, #666)",
+              lineHeight: "1.5",
+              marginBottom: "24px",
+            }}
+          >
+            Выполняется переход на страницу единой учётной записи Московского Политеха
+          </p>
+
+          <button
+            onClick={() => redirectToLogin()}
+            style={{
+              width: "100%",
+              padding: "12px 20px",
+              borderRadius: "12px",
+              border: "none",
+              backgroundColor: "var(--brand-main-c, #0066cc)",
+              color: "#ffffff",
+              fontSize: "14px",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "opacity 0.2s ease",
+            }}
+          >
+            Нажмите, если переход не произошёл автоматически
+          </button>
+        </div>
+        <style jsx>{`
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
                 setTimeout(() => {
                     const userData = getUserData();
                     const getDefaultPathByRole = () => {
                         if (userData?.role === 'teacher') {
-                            return "/csh/teacher/main";
+                            return "/csh/teacher/dates";
                         } else if (userData?.role === 'student') {
                             return "/csh/student/main";
                         } else if (userData?.role === 'admin') {
@@ -118,331 +237,185 @@ export default function LoginPage() {
                     redirectAfterLogin(router, getDefaultPathByRole());
                 }, 1000);
             }
-        } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "Неверный код подтверждения"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleResendCode = async () => {
-        if (countdown > 0) return;
-        setError(null);
-        setSuccessMessage(null);
-        setLoading(true);
-        try {
-            await sendVerificationCode(login);
-            startCountdown(60);
-            setSuccessMessage("Код отправлен повторно");
-        } catch {
-            setError("Не удалось отправить код. Попробуйте позже");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleBackToCredentials = () => {
-        setStep("credentials");
-        setError(null);
-        setSuccessMessage(null);
-        setVerificationCode("");
-        setCountdown(0);
-        setPassword("");
-    };
-
-    return (
-        <div
-            className="bg-container"
-            style={{
-                minHeight: "100vh",
-                position: "relative",
-                overflow: "hidden",
-            }}
-        >
-            <div className="bg-gradient" />
-
-            <div
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    padding: "20px",
-                    overflowY: "auto",
-                }}
-            >
-                <div
-                    style={{
-                        maxWidth: "480px",
-                        width: "100%",
-                        backgroundColor: "var(--background-main-element-c)",
-                        borderRadius: "24px",
-                        padding: "40px 32px",
-                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-                        border: "1px solid var(--secondary-border-c)",
-                        opacity: fadeIn ? 1 : 0,
-                        transform: fadeIn ? "translateY(0)" : "translateY(20px)",
-                        transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            marginBottom: "32px",
-                        }}
-                    >
-                        <img
-                            src="/csh/mpu_logo_l.png"
-                            alt="Московский Политех"
-                            className="theme-aware-logo"
-                            style={{ height: "70px", width: "auto" }}
-                        />
-                    </div>
-
-                    <div
-                        style={{
-                            textAlign: "center",
-                            marginBottom: "28px",
-                        }}
-                    >
-                        <p
-                            className="title"
-                            style={{
-                                fontSize: "24px",
-                                marginBottom: "8px",
-                                fontWeight: 700,
-                            }}
-                        >
-                            {step === "credentials"
-                                ? "Вход в систему"
-                                : "Подтверждение входа"}
-                        </p>
-
-                        <p
-                            className="text-blind"
-                            style={{ fontSize: "14px" }}
-                        >
-                            {step === "credentials"
-                                ? "Введите свои учетные данные"
-                                : `Код отправлен на почту ${login}`}
-                        </p>
-                    </div>
-
-                    {(error || successMessage) && (
-                        <div style={{ marginBottom: "18px" }}>
-                            {error && (
-                                <MiniAlert type="error" text={error} />
-                            )}
-
-                            {successMessage && (
-                                <MiniAlert
-                                    type="success"
-                                    text={successMessage}
-                                />
-                            )}
-                        </div>
-                    )}
-
-                    {step === "credentials" && (
-                        <>
-                            <div style={{ marginBottom: "20px" }}>
-                                <label
-                                    className="text-bold"
-                                    style={{
-                                        display: "block",
-                                        marginBottom: "8px",
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    Логин
-                                </label>
-
-                                <Input
-                                    hint="Введите ваш логин"
-                                    value={login}
-                                    onChange={setLogin}
-                                    autoComplete="username"
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: "24px" }}>
-                                <label
-                                    className="text-bold"
-                                    style={{
-                                        display: "block",
-                                        marginBottom: "8px",
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    Пароль
-                                </label>
-
-                                <Input
-                                    hint="Введите пароль"
-                                    value={password}
-                                    onChange={setPassword}
-                                    type="password"
-                                    autoComplete="current-password"
-                                />
-                            </div>
-
-                            <Button
-                                title={loading ? "Проверка..." : "Войти"}
-                                color="btn-blue"
-                                onClick={handleCredentialsSubmit}
-                                disabled={loading}
-                                style={{
-                                    width: "100%",
-                                    padding: "14px",
-                                    fontSize: "16px",
-                                }}
-                            />
-                        </>
-                    )}
-
-                    {step === "code" && (
-                        <>
-                            <div style={{ marginBottom: "24px" }}>
-                                <label
-                                    className="text-bold"
-                                    style={{
-                                        display: "block",
-                                        marginBottom: "8px",
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    Код подтверждения
-                                </label>
-
-                                <Input
-                                    hint="Введите 6-значный код"
-                                    value={verificationCode}
-                                    onChange={setVerificationCode}
-                                />
-
-                                <p
-                                    className="text-blind"
-                                    style={{
-                                        fontSize: "12px",
-                                        marginTop: "8px",
-                                        textAlign: "center",
-                                    }}
-                                >
-                                    Введите код из письма, отправленного на вашу
-                                    почту
-                                </p>
-                            </div>
-
-                            <Button
-                                title={
-                                    loading
-                                        ? "Проверка кода..."
-                                        : "Подтвердить"
-                                }
-                                color="btn-blue"
-                                onClick={handleCodeSubmit}
-                                disabled={loading}
-                                style={{
-                                    width: "100%",
-                                    padding: "14px",
-                                    fontSize: "16px",
-                                    marginBottom: "16px",
-                                }}
-                            />
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    gap: "16px",
-                                }}
-                            >
-                                <button
-                                    onClick={handleBackToCredentials}
-                                    className="text"
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        color: "var(--secondary-link-c)",
-                                        fontSize: "14px",
-                                        transition: "opacity 0.2s",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.opacity = "0.7";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.opacity = "1";
-                                    }}
-                                >
-                                    ← Назад
-                                </button>
-
-                                <button
-                                    onClick={handleResendCode}
-                                    disabled={countdown > 0}
-                                    className="text"
-                                    style={{
-                                        background: "none",
-                                        border: "none",
-                                        cursor:
-                                            countdown > 0
-                                                ? "not-allowed"
-                                                : "pointer",
-                                        color:
-                                            countdown > 0
-                                                ? "var(--secondary-lock-font-c)"
-                                                : "var(--secondary-link-c)",
-                                        fontSize: "14px",
-                                        transition: "opacity 0.2s",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (countdown === 0) {
-                                            e.currentTarget.style.opacity = "0.7";
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.opacity = "1";
-                                    }}
-                                >
-                                    {countdown > 0
-                                        ? `Отправить повторно через ${countdown}с`
-                                        : "Отправить код повторно"}
-                                </button>
-                            </div>
-                        </>
-                    )}
-
-                    <div
-                        style={{
-                            marginTop: "32px",
-                            paddingTop: "24px",
-                            borderTop:
-                                "1px solid var(--secondary-border-c)",
-                            textAlign: "center",
-                        }}
-                    >
-                        <p
-                            className="text-blind"
-                            style={{ fontSize: "12px" }}
-                        >
-                            Московский Политехнический Университет
-                            <br />
-                            Система проверки остаточных знаний
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+          }
+        `}</style>
+      </div>
     );
+  }
+
+  // Экран выбора доступных MOCK ролей в виде кнопок
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 16px",
+        backgroundColor: "var(--background-c, #f8f9fa)",
+        fontFamily: "var(--font-roboto, sans-serif)",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "760px",
+          width: "100%",
+          backgroundColor: "var(--background-main-element-c, #ffffff)",
+          borderRadius: "24px",
+          padding: "36px 32px",
+          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.08)",
+          border: "1px solid var(--secondary-border-c, #e5e7eb)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "20px" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/csh/mpu_logo_l.png"
+            alt="Московский Политех"
+            className="theme-aware-logo"
+            style={{ height: "48px", width: "auto" }}
+          />
+          <div>
+            <h1 style={{ fontSize: "22px", fontWeight: 700, margin: 0, color: "var(--main-font-c, #111)" }}>
+              Авторизация в системе
+            </h1>
+            <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--brand-main-c, #0066cc)", fontWeight: 600 }}>
+              Включен режим MOCK-авторизации на бэкенде
+            </p>
+          </div>
+        </div>
+
+        <p style={{ fontSize: "14px", color: "var(--secondary-lock-font-c, #666)", marginBottom: "24px", lineHeight: "1.5" }}>
+          Выберите роль для входа в приложение в качестве тестового пользователя:
+        </p>
+
+        {/* Список ролей в виде кнопок */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+            gap: "12px",
+            marginBottom: "28px",
+          }}
+        >
+          {roles.map((item) => {
+            const isLoading = loadingRole === item.role_slug;
+
+            return (
+              <button
+                key={item.role_slug}
+                onClick={() => !isLoading && handleSelectRole(item.role_slug)}
+                disabled={Boolean(loadingRole)}
+                style={{
+                  textAlign: "left",
+                  padding: "16px 18px",
+                  borderRadius: "14px",
+                  border: "1px solid var(--secondary-border-c, #e2e8f0)",
+                  backgroundColor: "var(--background-secondary-c, #f8fafc)",
+                  cursor: isLoading ? "wait" : "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  transition: "all 0.15s ease",
+                  opacity: loadingRole && !isLoading ? 0.6 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!loadingRole) {
+                    e.currentTarget.style.borderColor = "var(--brand-main-c, #0066cc)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 6px 18px rgba(0, 0, 0, 0.06)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loadingRole) {
+                    e.currentTarget.style.borderColor = "var(--secondary-border-c, #e2e8f0)";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--main-font-c, #0f172a)" }}>
+                    {item.role}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      backgroundColor: "rgba(0, 102, 204, 0.1)",
+                      color: "var(--brand-main-c, #0066cc)",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    {item.role_slug}
+                  </span>
+                </div>
+
+                {item.name && (
+                  <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--brand-main-c, #0066cc)" }}>
+                    {item.name}
+                  </div>
+                )}
+
+                {item.description && (
+                  <div style={{ fontSize: "12px", color: "var(--secondary-lock-font-c, #64748b)", lineHeight: "1.4" }}>
+                    {item.description}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "var(--brand-main-c, #0066cc)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  {isLoading ? "Авторизация..." : "Войти как этот пользователь →"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Альтернативный вход через ЕУЗ */}
+        <div
+          style={{
+            paddingTop: "20px",
+            borderTop: "1px solid var(--secondary-border-c, #e5e7eb)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <span style={{ fontSize: "13px", color: "var(--secondary-lock-font-c, #64748b)" }}>
+            Для выключения MOCK-режима установите <code>MOCK_AUTH_ENABLED=false</code> на бэкенде
+          </span>
+
+          <button
+            onClick={() => redirectToLogin()}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--secondary-border-c, #cbd5e1)",
+              borderRadius: "10px",
+              padding: "8px 14px",
+              fontSize: "13px",
+              color: "var(--main-font-c, #334155)",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            Войти через ЕУЗ Политеха →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -31,9 +31,29 @@ const Navbar: React.FC<NavbarProps> = ({ linkOptions, avatarUrl }) => {
     localStorage.setItem('sidebarCollapsed', String(next));
   };
 
-  const displayName = userData?.name || '';
-  const displaySurname = userData?.surname || '';
-  const displayLastname = userData?.patronymic || '';
+  const userFullName = React.useMemo(() => {
+    if (!userData) return '';
+
+    if (userData.full_name?.trim()) {
+      return userData.full_name.trim();
+    }
+
+    const name = userData.name?.trim() || userData.first_name?.trim() || '';
+    const surname = userData.surname?.trim() || userData.last_name?.trim() || '';
+    const patronymic = userData.patronymic?.trim() || '';
+
+    if (name.includes(' ')) {
+      return name;
+    }
+
+    const parts = [surname, name, patronymic].filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join(' ');
+    }
+
+    return userData.email || '';
+  }, [userData]);
+
   const displayRole = userStatus?.verbose || '';
   const displayAvatarUrl = avatarUrl || '/csh/default_avatar.png';
 
@@ -62,7 +82,7 @@ const Navbar: React.FC<NavbarProps> = ({ linkOptions, avatarUrl }) => {
 
         <div className="navbar-text-container">
           <p className="navbar-user-name" suppressHydrationWarning>
-            {[displaySurname, displayName, displayLastname].filter(Boolean).join(' ')}
+            {userFullName}
           </p>
           <p className="navbar-user-role" suppressHydrationWarning>
             {displayRole}

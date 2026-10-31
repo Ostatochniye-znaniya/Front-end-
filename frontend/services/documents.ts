@@ -26,6 +26,9 @@ export interface ReportDocument {
     uploadedAt: string | null;
     reviewComment: string | null;
     reviewedAt: string | null;
+    paperStatus: 'not_required' | 'pending' | 'submitted';
+    paperStatusLabel: string;
+    doneInPaperForm: boolean | null;
 }
 
 export interface ScheduleDocument {
@@ -120,6 +123,16 @@ async function postJson<T>(path: string, body: unknown, fallback: string): Promi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!response.ok) throw await readError(response, fallback);
+    return response.json() as Promise<T>;
+}
+
+async function putJson<T>(path: string, body: unknown, fallback: string): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
     });
     if (!response.ok) throw await readError(response, fallback);
     return response.json() as Promise<T>;
@@ -220,6 +233,14 @@ export function approveReport(reportId: number): Promise<ReportDocument> {
 
 export function rejectReport(reportId: number, comment?: string): Promise<ReportDocument> {
     return postJson(`/DeanDocuments/RejectReport/${reportId}`, { comment: comment ?? null }, 'Не удалось отклонить отчёт');
+}
+
+export function setPaperReportDelivery(reportId: number, submitted: boolean): Promise<ReportDocument> {
+    return putJson(
+        `/DeanDocuments/SetPaperDelivery/${reportId}/paper-delivery`,
+        { submitted },
+        'Не удалось обновить статус бумажного отчёта'
+    );
 }
 
 export function getDeanSchedules(filters: ScheduleFilters = {}): Promise<ScheduleDocument[]> {
