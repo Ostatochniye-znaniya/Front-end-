@@ -23,6 +23,11 @@
   max-width: none;
 }
 
+.filtersWithPeriod {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: none;
+}
+
 .table {
   --history-semester-width: 144px;
   --history-viewport-width: calc(3 * var(--history-semester-width));

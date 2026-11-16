@@ -4,17 +4,15 @@ import Button from "@/components/button/Button";
 import MiniAlert from "@/components/alert/MiniAlert";
 import CheckBox from "@/components/checkbox/CheckBox";
 import Dropdown from "@/components/dropdown/Dropdown";
-import TestingHistoryHeader from "@/components/groupsTesting/TestingHistory";
-import { getGroupCourse } from "@/services/groupCourse";
-import { Check, X } from "lucide-react";
+import GroupsTestingTable, { TestingMark } from "@/components/groupsTesting/GroupsTestingTable";
+import { historySemesterLabel as semesterLabel } from "@/components/groupsTesting/TestingHistory";
+import StudentListPeriodPicker from "@/components/groupsTesting/StudentListPeriodPicker";
 import {
   autoFillPlannedTestings,
   getGroupsTesting,
   updateGroupsTesting,
   type GroupsTestingResponse,
-  type TestingGroup,
-  type TestingSemester,
-  type TestingStudyProgram,
+  type StudentListFormationPeriod,
 } from "@/services/groupsTesting";
 import {
   changeTestingSelection,
@@ -25,38 +23,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
 
-function semesterLabel(semester: TestingSemester): string {
-  return `${semester.semesterPart === 1 ? "Весна" : "Осень"} ${semester.semesterYear}`;
-}
-
-function TestingMark({ checked, label }: { checked: boolean; label: string }) {
-  const Icon = checked ? Check : X;
-  return (
-    <span className={`${styles.mark} ${checked ? styles.checkedMark : styles.negativeMark}`}
-      role="img" title={label} aria-label={label}>
-      <Icon size={14} strokeWidth={1.8} aria-hidden="true" />
-    </span>
-  );
-}
-
-function HistoryMark({ group, semester }: {
-  group: TestingGroup;
-  semester: TestingSemester;
-}) {
-  const completed = group.testingHistory.find(
-    (cell) => cell.semesterId === semester.id,
-  )?.completed;
-  const label = completed === true
-    ? "Тестирование завершено"
-    : completed === false
-      ? "Тестирование не завершено"
-      : "Нет данных";
-  return (
-    <TestingMark checked={completed === true}
-      label={`${group.groupNumber}, ${semesterLabel(semester)}: ${label}`} />
-  );
-}
-
 export default function LprRecommendedGroupsPage() {
   const [data, setData] = useState<GroupsTestingResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,6 +31,7 @@ export default function LprRecommendedGroupsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [needsReload, setNeedsReload] = useState(false);
   const [selection, setSelection] = useState<TestingSelection>({});
+  const [periodSelection, setPeriodSelection] = useState<StudentListFormationPeriod | null>(null);
   const [facultyId, setFacultyId] = useState("");
   const [directionCode, setDirectionCode] = useState("");
 
@@ -80,7 +47,7 @@ export default function LprRecommendedGroupsPage() {
     return () => controller.abort();
   }, []);
 
-  const changedCount = Object.keys(selection).length;
+  const changedCount = Object.keys(selection).length + (periodSelection ? 1 : 0);
   const busy = isLoading || action !== null;
   const editDisabled = busy || needsReload || data?.requiresRecalculation === true;
 
@@ -92,6 +59,7 @@ export default function LprRecommendedGroupsPage() {
     try {
       setData(await autoFillPlannedTestings());
       setSelection({});
+      setPeriodSelection(null);
       setFacultyId("");
       setDirectionCode("");
       setNeedsReload(false);
@@ -110,6 +78,7 @@ export default function LprRecommendedGroupsPage() {
     try {
       setData(await getGroupsTesting());
       setSelection({});
+      setPeriodSelection(null);
       setNeedsReload(false);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Не удалось обновить план");
@@ -128,9 +97,11 @@ export default function LprRecommendedGroupsPage() {
         currentSemesterId: data.currentSemesterId,
         version: data.version,
         changes: Object.values(selection),
+        ...(periodSelection && { studentListFormationPeriod: periodSelection }),
       });
       setData(response);
       setSelection({});
+      setPeriodSelection(null);
       setNotice("Выбор сохранён, зависимые назначения пересчитаны");
     } catch (caught) {
       setNeedsReload(true);
@@ -171,12 +142,7 @@ export default function LprRecommendedGroupsPage() {
     () => (data?.studyPrograms ?? [])
       .filter((program) => program.groups.length > 0
         && (!facultyId || String(program.facultyId) === facultyId)
-        && (!directionCode || program.cypherOfTheDirection === directionCode))
-      .sort((a, b) =>
-        (a.facultyName ?? "").localeCompare(b.facultyName ?? "", "ru")
-        || (a.facultyId ?? 0) - (b.facultyId ?? 0)
-        || (a.cypherOfTheDirection ?? "").localeCompare(b.cypherOfTheDirection ?? "")
-        || a.studyProgramName.localeCompare(b.studyProgramName, "ru")),
+        && (!directionCode || program.cypherOfTheDirection === directionCode)),
     [data, facultyId, directionCode],
   );
 
@@ -201,25 +167,7 @@ export default function LprRecommendedGroupsPage() {
     );
   }
 
-  const semesters = [...data.semesters].sort(
-    (a, b) => a.semesterYear - b.semesterYear || a.semesterPart - b.semesterPart,
-  );
-  const previousSemesters = semesters.filter((semester) => semester.period === "past");
-  const currentSemester = semesters.find((semester) => semester.id === data.currentSemesterId);
-  const futureSemesters = semesters.filter((semester) => semester.period === "future");
-  const planningSemesters = semesters.filter((semester) => semester.period !== "past");
-
-  const directionKey = (program: TestingStudyProgram): string =>
-    `${program.facultyId ?? "none"}:${program.cypherOfTheDirection ?? "none"}`;
-
-  const directions = new Map<string, TestingStudyProgram[]>();
-  for (const program of programs) {
-    const key = directionKey(program);
-    const directionPrograms = directions.get(key) ?? [];
-    directionPrograms.push(program);
-    directions.set(key, directionPrograms);
-  }
-  const tableColumnCount = 4 + planningSemesters.length;
+  const currentSemester = data.semesters.find(semester => semester.id === data.currentSemesterId);
 
   return (
     <div className="main-container" aria-busy={busy}>
@@ -243,7 +191,7 @@ export default function LprRecommendedGroupsPage() {
           На каждый семестр можно выбрать не более одной группы каждого профиля.
           Сохраните ручной выбор, чтобы система пересчитала доступность следующих семестров.
         </p>
-        <div className={styles.filters}>
+        <div className={`${styles.filters} ${styles.filtersWithPeriod}`}>
           <Dropdown
             label="Факультет/институт"
             options={faculties}
@@ -261,6 +209,12 @@ export default function LprRecommendedGroupsPage() {
             onChange={setDirectionCode}
             placeholder="Все направления"
           />
+          <StudentListPeriodPicker value={periodSelection ?? data.studentListFormationPeriod ?? null} disabled={editDisabled}
+            onChange={period => {
+              const stored = data.studentListFormationPeriod;
+              setPeriodSelection(stored?.startDate === period.startDate && stored?.endDate === period.endDate ? null : period);
+              setNotice(null);
+            }} />
         </div>
       </div>
 
@@ -268,100 +222,42 @@ export default function LprRecommendedGroupsPage() {
         {programs.length === 0 ? (
           <p className="text">Нет групп для выбранных фильтров</p>
         ) : (
-          <div className={`table-wrapper ${styles.tableWrapper}`}>
-            <table className={`table-container ${styles.table}`}>
-              <caption className={styles.caption}>План тестирований по направлениям и профилям</caption>
-              <thead>
-                <tr>
-                  <th scope="col" rowSpan={2}>Профиль</th>
-                  <th scope="col" rowSpan={2}>Группа</th>
-                  <th scope="col" rowSpan={2}>Курс</th>
-                  <TestingHistoryHeader semesters={previousSemesters} />
-                  <th scope="colgroup" className={styles.testingHeading} colSpan={1}>Текущее тестирование</th>
-                  <th scope="colgroup" className={styles.testingHeading} colSpan={futureSemesters.length}>Запланировать тестирование</th>
-                </tr>
-                <tr>
-                  <th scope="col" className={styles.semesterHeading}>
-                    {currentSemester ? semesterLabel(currentSemester) : "Текущий семестр"}
-                  </th>
-                  {futureSemesters.map((semester) => (
-                    <th scope="col" className={styles.semesterHeading} key={semester.id}>{semesterLabel(semester)}</th>
-                  ))}
-                </tr>
-              </thead>
-              {[...directions].map(([key, directionPrograms]) => (
-                <tbody key={key}>
-                  <tr className={styles.directionRow}>
-                    <th scope="rowgroup" colSpan={tableColumnCount}>
-                      <strong>{directionPrograms[0].cypherOfTheDirection ?? "Без шифра"}</strong>{" "}
-                      <span>{directionPrograms[0].facultyName ?? "Факультет не указан"}</span>
-                    </th>
-                  </tr>
-                  {directionPrograms.flatMap((program) => program.groups.map((group, groupIndex) => (
-                    <tr key={group.groupId}>
-                      {groupIndex === 0 && (
-                        <td rowSpan={program.groups.length} className={styles.groupingCell}>
-                          {program.studyProgramName}
-                        </td>
-                      )}
-                      <td>{group.groupNumber}</td>
-                      <td>{currentSemester ? getGroupCourse(group.groupNumber, currentSemester) ?? "—" : "—"}</td>
-                      <td className={styles.historyCell}>
-                        <div className={styles.historyViewport}>
-                          <div className={`${styles.historyStrip} ${styles.historyValues}`}>
-                            {previousSemesters.map((semester) => (
-                              <span className={styles.historySemester} key={semester.id}>
-                                <HistoryMark group={group} semester={semester} />
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </td>
-                      {planningSemesters.map((semester) => {
-                        const cell = group.plannedTestings.find((item) => item.semesterId === semester.id)!;
-                        const checked = isTestingPlanned(group.groupId, cell, selection);
-                        const occupiedGroup = getOccupiedGroup(program, semester.id, selection);
-                        const occupiedElsewhere = occupiedGroup !== null && occupiedGroup !== group.groupId;
-                        const reason = !cell.editable
-                          ? cell.restrictionReason ?? "Изменение недоступно"
-                          : occupiedElsewhere
-                            ? "На этот семестр уже выбрана другая группа профиля"
-                            : null;
-                        return (
-                          <td key={semester.id} className={styles.statusCell} title={reason ?? undefined}>
-                            {cell.editable ? (
-                              <fieldset className={styles.planningChoice}
-                                disabled={editDisabled || occupiedElsewhere}>
-                                <CheckBox
-                                  text={`Назначить тестирование: ${group.groupNumber}, ${semesterLabel(semester)}`}
-                                  type="blue"
-                                  state={checked}
-                                  onChange={(planned) => {
-                                    setSelection((previous) => changeTestingSelection(
-                                      program, group.groupId, semester.id, planned, previous,
-                                    ));
-                                    setNotice(null);
-                                  }}
-                                />
-                              </fieldset>
-                            ) : (
-                              <TestingMark checked={checked}
-                                label={`${group.groupNumber}, ${semesterLabel(semester)}: ${
-                                  checked ? "Тестирование назначено" : "Тестирование не назначено"
-                                }. ${reason ?? "Изменение недоступно"}`} />
-                            )}
-                            {checked && cell.author === "automatic" && (
-                              <small className={styles.automaticLabel}>Автоподбор</small>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  )))}
-                </tbody>
-              ))}
-            </table>
-          </div>
+          <GroupsTestingTable programs={programs} semesters={data.semesters} currentSemesterId={data.currentSemesterId}
+            renderPlanningCell={(program, group, semester) => {
+              const cell = group.plannedTestings.find(item => item.semesterId === semester.id)!;
+              const checked = isTestingPlanned(group.groupId, cell, selection);
+              const occupiedGroup = getOccupiedGroup(program, semester.id, selection);
+              const occupiedElsewhere = occupiedGroup !== null && occupiedGroup !== group.groupId;
+              const reason = !cell.editable
+                ? cell.restrictionReason ?? "Изменение недоступно"
+                : occupiedElsewhere ? "На этот семестр уже выбрана другая группа профиля" : null;
+              return (
+                <td className={styles.statusCell} title={reason ?? undefined}>
+                  {cell.editable ? (
+                    <fieldset className={styles.planningChoice} disabled={editDisabled || occupiedElsewhere}>
+                      <CheckBox text={`Назначить тестирование: ${group.groupNumber}, ${semesterLabel(semester)}`}
+                        type="blue" state={checked} onChange={planned => {
+                          setSelection(previous => changeTestingSelection(
+                            program, group.groupId, semester.id, planned, previous,
+                          ));
+                          setNotice(null);
+                        }} />
+                    </fieldset>
+                  ) : (
+                    <TestingMark checked={checked}
+                      label={`${group.groupNumber}, ${semesterLabel(semester)}: ${checked ? "Тестирование назначено" : "Тестирование не назначено"}. ${reason ?? "Изменение недоступно"}`} />
+                  )}
+                  {checked && cell.author === "automatic" && <small className={styles.automaticLabel}>Автоподбор</small>}
+                  {semester.id === data.currentSemesterId && program.participationDecision
+                    && (group.groupId === program.participationDecision.selectedGroupId
+                      || group.groupId === program.participationDecision.recommendedGroupId) && (
+                    <small className={styles.automaticLabel} title={program.participationDecision.reason ?? undefined}>
+                      Кафедра: {group.groupId === program.participationDecision.selectedGroupId ? "участвует" : "не участвует"}
+                    </small>
+                  )}
+                </td>
+              );
+            }} />
         )}
       </div>
 
@@ -369,7 +265,7 @@ export default function LprRecommendedGroupsPage() {
         <Button title={action === "save" ? "Сохранение..." : "Сохранить выбор"} color="btn-green"
           disabled={editDisabled || changedCount === 0} onClick={() => void handleSave()} />
         <Button title="Отменить изменения" color="btn-orange" disabled={busy || needsReload || changedCount === 0}
-          onClick={() => { setSelection({}); setNotice(null); }} />
+          onClick={() => { setSelection({}); setPeriodSelection(null); setNotice(null); }} />
         <Button title={action === "refresh" ? "Обновление..." : "Обновить список"} color="btn-blue"
           disabled={busy || (changedCount > 0 && !needsReload)} onClick={() => void handleRefresh()} />
         {changedCount > 0 && (

@@ -1,0 +1,50 @@
+.readOnlyChoice :global(.cb-block) {
+  color: var(--background-main-element-c);
+  box-shadow: none;
+}
+
+.reasonCell {
+  cursor: pointer;
+}
+
+.reasonCell:focus-visible {
+  outline: 2px solid var(--accent-blue-c);
+  outline-offset: -2px;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.details dt {
+  margin-bottom: 4px;
+  color: var(--secondary-lock-font-c);
+  font-size: 12px;
+}
+
+.details dd {
+  margin: 0;
+}
+
+.reason label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.reason textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid var(--secondary-border-c);
+  border-radius: 8px;
+  background: var(--background-main-element-c);
+  color: var(--secondary-font-c);
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+}

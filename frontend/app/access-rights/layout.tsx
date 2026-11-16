@@ -3,7 +3,7 @@ import React from "react";
 import Navbar from "@/components/navbar/Navbar";
 import { PieChart, FileText, Users, BookOpen, ShieldCheck } from "lucide-react";
 
-export const accessRightsNavLinks = [
+const accessRightsNavLinks = [
   { label: "Статистика",                href: "/lpr/statistics", icon: PieChart },
   { label: "Приказы",                   href: "/lpr/order",      icon: FileText },
   { label: "Списки рекомедуемых групп", href: "/lpr/list",       icon: Users },
