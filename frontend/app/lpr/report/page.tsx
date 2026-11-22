@@ -6,6 +6,7 @@ import Button from "@/components/button/Button";
 import Capsule from "@/components/capsule/Capsule";
 import Dropdown from "@/components/dropdown/Dropdown";
 import Modal from "@/components/modal/Modal";
+import SegmentedToggle from "@/components/toggle/SegmentedToggle";
 import { DocumentApiError, type FilterOption } from "@/services/documents";
 import {
   downloadLprReport, getLprReportFile, getLprReportFilters, getLprReports, reviewLprReport,
@@ -36,6 +37,7 @@ function keepOrder(previous: LprReport[], next: LprReport[]): LprReport[] {
 }
 
 export default function LprReportPage() {
+  const [activeSection, setActiveSection] = useState<"teachers" | "summary">("teachers");
   const [items, setItems] = useState<LprReport[]>([]);
   const [options, setOptions] = useState<LprReportFilterOptions | null>(null);
   const [faculty, setFaculty] = useState("");
@@ -159,6 +161,13 @@ export default function LprReportPage() {
   return (
     <div className="main-container">
       <p className="title text-bold">Отчёты преподавателей</p>
+      <div className={`p-block-with-padding ${styles.tabs}`}>
+        <SegmentedToggle options={[{ value: "teachers", label: "Отчёты преподавателей" }, { value: "summary", label: "Сводные отчёты" }]}
+          value={activeSection} onChange={value => {
+            if (value === "teachers" || value === "summary") setActiveSection(value);
+          }} />
+      </div>
+      {activeSection === "teachers" ? <>
       <div className={styles.filters}>
         <Dropdown label="Факультет / институт" placeholder="Все факультеты" options={withAny(options?.faculties, "Все факультеты")}
           value={faculty} onChange={value => { setFaculty(value); setDepartment(""); setYear(""); }} />
@@ -243,6 +252,22 @@ export default function LprReportPage() {
           {modalError && <p className="modal-error" id="report-review-error" role="alert">{modalError}</p>}
         </>}
       </Modal>
+      </> : <section aria-labelledby="summary-reports-title" className={styles.summarySection}>
+        <div className={styles.summaryHeader}>
+          <div>
+            <h2 id="summary-reports-title">Сводные отчёты</h2>
+            <p>Отчёты по результатам тестирования, сформированные для процессов проверки.</p>
+          </div>
+          <Button title="Сформировать новый сводный отчёт" color="btn-blue" disabled onClick={() => {}} />
+        </div>
+        <div className={styles.integrationNotice} role="status">
+          Формирование и список сводных отчётов появятся после подключения серверного API.
+        </div>
+        <div className={styles.summaryEmpty}>
+          <h3>Сводных отчётов пока нет</h3>
+          <p>Когда серверная часть будет готова, здесь появятся сформированные отчёты для просмотра и скачивания.</p>
+        </div>
+      </section>}
     </div>
   );
 }
