@@ -1,0 +1,199 @@
+.context,
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.description {
+  margin: 8px 0 20px;
+  color: color-mix(in srgb, var(--secondary-font-c) 72%, var(--background-main-element-c));
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: end;
+  gap: 16px;
+}
+
+.filters :global(.dropdown-container) {
+  min-width: 0;
+  max-width: none;
+}
+
+.filters :global(.dropdown-selected) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.searchBox {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--secondary-border-c);
+  border-radius: 7px;
+  background: var(--background-main-element-c);
+  color: color-mix(in srgb, var(--secondary-font-c) 72%, var(--background-main-element-c));
+}
+
+.searchBox :global(.search-input)::placeholder {
+  color: color-mix(in srgb, var(--secondary-font-c) 65%, var(--background-main-element-c));
+}
+
+.searchBox:focus-within {
+  outline: 2px solid var(--accent-blue-c);
+  outline-offset: 2px;
+}
+
+.searchBox svg {
+  flex-shrink: 0;
+}
+
+.content {
+  padding-top: 0;
+}
+
+.summary {
+  margin-bottom: 14px;
+  color: color-mix(in srgb, var(--secondary-font-c) 72%, var(--background-main-element-c));
+  font-size: 13px;
+}
+
+.table {
+  overflow-x: auto;
+}
+
+.table table {
+  min-width: 800px;
+}
+
+.table :global(.btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #2e2e2e;
+}
+
+.table tbody tr {
+  cursor: pointer;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent-blue-c) 8%, var(--background-main-element-c));
+}
+
+.profileCell,
+.disciplinesCell {
+  text-align: left !important;
+  line-height: 1.6;
+}
+
+.profileCell {
+  width: 28%;
+}
+
+.profileName {
+  display: block;
+  font-weight: 500;
+}
+
+.secondary {
+  display: block;
+  color: color-mix(in srgb, var(--secondary-font-c) 72%, var(--background-main-element-c));
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.selectedList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.selectedList li::marker {
+  color: var(--secondary-lock-font-c);
+}
+
+.progressCell {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+}
+
+.complete,
+.pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.complete {
+  color: var(--accent-green-font-c);
+}
+
+.pending {
+  color: var(--accent-orange-font-c);
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 48px 16px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.link {
+  color: var(--secondary-link-c);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@media (width <= 900px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .searchField {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (width <= 560px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .context,
+  .summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
