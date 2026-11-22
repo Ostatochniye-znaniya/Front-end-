@@ -8,7 +8,10 @@ services:
       - NODE_ENV=production
     expose:
       - "3000"
-    networks: [internal]
+    networks:
+      internal:
+        aliases:
+          - front-${INSTANCE}-nextjs
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/csh >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -24,6 +27,7 @@ services:
     environment:
       - BACKEND_HOST=${BACKEND_HOST:?set BACKEND_HOST}
       - BACKEND_PORT=${BACKEND_PORT:-8080}
+      - FRONTEND_HOST=front-${INSTANCE}-nextjs
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
     depends_on:

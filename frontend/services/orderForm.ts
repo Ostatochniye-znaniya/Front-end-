@@ -14,15 +14,12 @@ export const ORDER_FORM_FIELDS = [
   { key: "preparationEndDate", label: "1 этап — подготовка: окончание", type: "date" },
   { key: "testingStageStartDate", label: "2 этап — тестирование: начало", type: "date" },
   { key: "testingStageEndDate", label: "2 этап — тестирование: окончание", type: "date" },
-  { key: "resultsProcessingStartDate", label: "3 этап — обработка результатов: начало", type: "date" },
-  { key: "inspectionSummaryDeadline", label: "3 этап — окончание / сводный отчёт по проверке до", type: "date" },
   { key: "onlineSeminarDate", label: "Обучающий онлайн-семинар для сотрудников", type: "date" },
-  { key: "surveyStartDate", label: "Анкетирование: начало", type: "date" },
-  { key: "surveyEndDate", label: "Анкетирование: окончание", type: "date" },
-  { key: "surveySummaryDeadline", label: "Сводный отчёт по анкетированию до", type: "date" },
+  { key: "electronicReportDeadline", label: "Сдача электронных отчётов до", type: "date" },
   { key: "requiresPaperReports", label: "Сдавать бумажные отчёты", type: "checkbox" },
   { key: "paperReportDeadline", label: "Сдача бумажных отчётов до", type: "date" },
-  { key: "electronicReportDeadline", label: "Сдача электронных отчётов до", type: "date" },
+  { key: "resultsProcessingStartDate", label: "3 этап — обработка результатов: начало", type: "date" },
+  { key: "inspectionSummaryDeadline", label: "Сводный отчёт по проверке до", type: "date" },
   { key: "educationControlDepartmentHead", label: "Начальник отдела контроля образовательного процесса", type: "text" },
   { key: "educationalMethodicalCenterHead", label: "Начальник центра по учебно-методической работе", type: "text" },
 ] as const satisfies readonly { key: OrderFormField; label: string; type: "text" | "date" | "semester" | "checkbox" }[];
@@ -32,10 +29,9 @@ export type OrderDateField = Extract<(typeof ORDER_FORM_FIELDS)[number], { type:
 // Группировка касается только отображения: поля и HTTP-контракт остаются прежними.
 export const ORDER_FORM_DATE_RANGES = [
   { label: "Общий период мероприятий", start: "testingStartDate", end: "testingEndDate" },
-  { label: "1 этап — подготовка", start: "preparationStartDate", end: "preparationEndDate" },
-  { label: "2 этап — тестирование", start: "testingStageStartDate", end: "testingStageEndDate" },
-  { label: "3 этап — обработка результатов", start: "resultsProcessingStartDate", end: "inspectionSummaryDeadline" },
-  { label: "Анкетирование", start: "surveyStartDate", end: "surveyEndDate" },
+  { label: "1 этап — подготовка тестовых материалов, формирование графика тестирования", start: "preparationStartDate", end: "preparationEndDate" },
+  { label: "2 этап —  тестирование", start: "testingStageStartDate", end: "testingStageEndDate" },
+  { label: "3 этап — сводный отчёт, обработка результатов", start: "resultsProcessingStartDate", end: "inspectionSummaryDeadline" },
 ] as const satisfies readonly { label: string; start: OrderDateField["key"]; end: OrderDateField["key"] }[];
 
 export const ORDER_TEXT_LIMITS: Partial<Record<OrderFormField, number>> = {
@@ -44,7 +40,10 @@ export const ORDER_TEXT_LIMITS: Partial<Record<OrderFormField, number>> = {
 };
 
 export function emptyOrderForm(): OrderFormValues {
-  return { ...Object.fromEntries(ORDER_FORM_FIELDS.map(({ key }) => [key, ""])), requiresPaperReports: false } as OrderFormValues;
+  return {
+    ...Object.fromEntries(ORDER_FORM_FIELDS.map(({ key }) => [key, ""])),
+    requiresPaperReports: false, surveyStartDate: "", surveyEndDate: "", surveySummaryDeadline: "",
+  } as OrderFormValues;
 }
 
 // Tab идёт по строкам, включая чекбокс, date/select, и замыкается на первой строке.
@@ -69,7 +68,11 @@ function isCalendarDate(value: string): boolean {
 }
 
 export function validateOrderForm(values: OrderFormValues, semesters: readonly OrderSemester[]): OrderFormValidation {
-  const trimmed = { ...values };
+  // Обязательные реквизиты старого API заполняются датами видимых этапов.
+  const trimmed = {
+    ...values, surveyStartDate: values.testingStageStartDate,
+    surveyEndDate: values.testingStageEndDate, surveySummaryDeadline: values.inspectionSummaryDeadline
+  };
   for (const field of ORDER_FORM_FIELDS) {
     if (field.type === "checkbox" || (field.key === "paperReportDeadline" && !values.requiresPaperReports)) continue;
     const value = values[field.key].trim();
@@ -103,9 +106,6 @@ export function validateOrderForm(values: OrderFormValues, semesters: readonly O
     if (trimmed[phaseDates[i]] < trimmed[phaseDates[i - 1]]) {
       return { ok: false, field: phaseDates[i], message: "Этапы должны идти последовательно: подготовка, тестирование, обработка результатов" };
     }
-  }
-  if (trimmed.surveyEndDate < trimmed.surveyStartDate || trimmed.surveySummaryDeadline < trimmed.surveyEndDate) {
-    return { ok: false, field: "surveyEndDate", message: "Проверьте последовательность дат анкетирования и сводного отчёта" };
   }
   return { ok: true, request: { ...trimmed, semesterId, paperReportDeadline: values.requiresPaperReports ? trimmed.paperReportDeadline : null } };
 }

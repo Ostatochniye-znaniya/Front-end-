@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertCircle, Check, Clock, Download, Upload } from "lucide-react";
 import Table, { Column } from "@/components/table/Table";
@@ -34,7 +34,7 @@ function paperStatus(status: TeacherReportTask["paperStatus"]): {
 } {
   if (status === "submitted") return { label: "Сдан", variant: "success" };
   if (status === "pending") return { label: "Ожидает сдачи", variant: "warning" };
-  return { label: "Пока не требуется", variant: "default" };
+  return { label: "Не требуется", variant: "default" };
 }
 
 function formatDate(value: string | null): string {
@@ -51,6 +51,7 @@ export default function TeacherReport() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState<TeacherReportTask | null>(null);
   const [uploading, setUploading] = useState(false);
+  const uploadingRef = useRef(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [downloadingBlank, setDownloadingBlank] = useState(false);
@@ -62,21 +63,33 @@ export default function TeacherReport() {
   } | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    getTeacherReports(controller.signal)
-      .then((rows) => {
-        setItems(rows);
-        setError("");
-      })
-      .catch((reason: unknown) => {
-        if (!controller.signal.aborted) {
-          setError(reason instanceof Error ? reason.message : "Не удалось загрузить отчёты");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
+    let active: AbortController | null = null;
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || uploadingRef.current) return;
+      active?.abort();
+      const controller = new AbortController();
+      active = controller;
+      void getTeacherReports(controller.signal)
+        .then((rows) => {
+          if (!controller.signal.aborted) { setItems(rows); setError(""); }
+        })
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted) {
+            setError(reason instanceof Error ? reason.message : "Не удалось загрузить отчёты");
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
+    };
+    refresh();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active?.abort();
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, []);
 
   const handleDownload = async (task: TeacherReportTask) => {
@@ -114,6 +127,7 @@ export default function TeacherReport() {
       return;
     }
 
+    uploadingRef.current = true;
     setUploading(true);
     setUploadProgress(0);
     setError("");
@@ -134,6 +148,7 @@ export default function TeacherReport() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Не удалось загрузить DOCX");
     } finally {
+      uploadingRef.current = false;
       setUploading(false);
       setUploadProgress(0);
     }
@@ -174,8 +189,8 @@ export default function TeacherReport() {
             setSelected(item);
             setError("");
           }}
-          disabled={!item.reportId}
-          title={item.reportId ? "Загрузить DOCX" : "Отчёт ещё не создан"}
+          disabled={!item.reportId || item.status === "signed"}
+          title={item.status === "signed" ? "Отчёт уже принят" : item.reportId ? "Загрузить DOCX" : "Отчёт ещё не создан"}
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
         >
           <Upload size={18} />

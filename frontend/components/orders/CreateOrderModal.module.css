@@ -91,12 +91,24 @@
 }
 
 .table input.paperCheckbox {
+  flex-shrink: 0;
   width: 18px;
   height: 18px;
   min-height: 18px;
   padding: 0;
   accent-color: var(--accent-blue-c);
   cursor: pointer;
+}
+
+.paperControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.paperControls .dateField {
+  flex: 1;
+  min-width: 0;
 }
 
 .table [aria-invalid="true"] {

@@ -28,6 +28,14 @@ export interface TestingGroup {
   course: number | null;
   testingHistory: TestingHistoryCell[];
   plannedTestings: PlannedTestingCell[];
+  isActive?: boolean;
+}
+
+export interface ParticipationDecision {
+  recommendedGroupId: number | null;
+  selectedGroupId: number | null;
+  reason: string | null;
+  decidedAt: string;
 }
 
 export interface TestingStudyProgram {
@@ -37,6 +45,7 @@ export interface TestingStudyProgram {
   facultyId: number | null;
   facultyName: string | null;
   groups: TestingGroup[];
+  participationDecision?: ParticipationDecision | null;
 }
 
 export interface GroupsTestingResponse {
@@ -45,6 +54,12 @@ export interface GroupsTestingResponse {
   requiresRecalculation: boolean;
   semesters: TestingSemester[];
   studyPrograms: TestingStudyProgram[];
+  studentListFormationPeriod?: StudentListFormationPeriod | null;
+}
+
+export interface StudentListFormationPeriod {
+  startDate: string;
+  endDate: string;
 }
 
 export interface GroupsTestingChange {
@@ -57,6 +72,7 @@ export interface UpdateGroupsTestingRequest {
   currentSemesterId: number;
   version: number;
   changes: GroupsTestingChange[];
+  studentListFormationPeriod?: StudentListFormationPeriod;
 }
 
 export interface GroupsTestingFilters {
@@ -83,6 +99,16 @@ export function parseGroupsTestingResponse(value: unknown): GroupsTestingRespons
     || typeof value.requiresRecalculation !== "boolean"
     || !Array.isArray(value.semesters) || !Array.isArray(value.studyPrograms)) {
     return invalidResponse();
+  }
+  const period = value.studentListFormationPeriod;
+  if (period !== undefined && period !== null) {
+    const isDate = (date: unknown): date is string => {
+      if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith("0000-")) return false;
+      const parsed = new Date(`${date}T00:00:00Z`);
+      return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+    };
+    if (!isObject(period) || !isDate(period.startDate) || !isDate(period.endDate) || period.endDate < period.startDate)
+      return invalidResponse();
   }
 
   const semesterIds = new Set<number>();
@@ -120,11 +146,17 @@ export function parseGroupsTestingResponse(value: unknown): GroupsTestingRespons
       return invalidResponse();
     }
     programIds.add(program.studyProgramId);
+    const decision = program.participationDecision;
+    if (decision !== undefined && decision !== null && (!isObject(decision)
+      || !(decision.recommendedGroupId === null || isId(decision.recommendedGroupId))
+      || !(decision.selectedGroupId === null || isId(decision.selectedGroupId))
+      || !isNullableString(decision.reason) || typeof decision.decidedAt !== "string")) return invalidResponse();
     const occupiedSemesters = new Set<number>();
 
     for (const group of program.groups) {
       if (!isObject(group) || !isId(group.groupId) || groupIds.has(group.groupId)
         || typeof group.groupNumber !== "string"
+        || !(group.isActive === undefined || typeof group.isActive === "boolean")
         || !(group.course === null || isId(group.course))
         || !Array.isArray(group.testingHistory) || !Array.isArray(group.plannedTestings)) {
         return invalidResponse();

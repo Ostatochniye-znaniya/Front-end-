@@ -228,11 +228,11 @@ export function downloadDeanReport(reportId: number): Promise<void> {
 }
 
 export function approveReport(reportId: number): Promise<ReportDocument> {
-    return postJson(`/DeanDocuments/ApproveReport/${reportId}`, undefined, 'Не удалось одобрить отчёт');
+    return postJson(`/DeanDocuments/ApproveReport/${reportId}/approve`, undefined, 'Не удалось одобрить отчёт');
 }
 
 export function rejectReport(reportId: number, comment?: string): Promise<ReportDocument> {
-    return postJson(`/DeanDocuments/RejectReport/${reportId}`, { comment: comment ?? null }, 'Не удалось отклонить отчёт');
+    return postJson(`/DeanDocuments/RejectReport/${reportId}/reject`, { comment: comment ?? null }, 'Не удалось отклонить отчёт');
 }
 
 export function setPaperReportDelivery(reportId: number, submitted: boolean): Promise<ReportDocument> {
@@ -261,11 +261,11 @@ export function downloadDeanSchedule(documentId: number): Promise<void> {
 }
 
 export function approveSchedule(documentId: number): Promise<ScheduleDocument> {
-    return postJson(`/DeanDocuments/ApproveSchedule/${documentId}`, undefined, 'Не удалось одобрить график');
+    return postJson(`/DeanDocuments/ApproveSchedule/${documentId}/approve`, undefined, 'Не удалось одобрить график');
 }
 
 export function rejectSchedule(documentId: number, comment?: string): Promise<ScheduleDocument> {
-    return postJson(`/DeanDocuments/RejectSchedule/${documentId}`, { comment: comment ?? null }, 'Не удалось отклонить график');
+    return postJson(`/DeanDocuments/RejectSchedule/${documentId}/reject`, { comment: comment ?? null }, 'Не удалось отклонить график');
 }
 
 export function uploadSchedulePdf(

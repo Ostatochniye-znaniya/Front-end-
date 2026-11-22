@@ -235,16 +235,21 @@ export default function CreateOrderModal({ onClose, onSubmit, onCreated }: {
                     })}
                   </tr>
                 );
-                if (field.key === "paperReportDeadline" && !values.requiresPaperReports) return null;
+                if (field.key === "paperReportDeadline") return null;
                 if (field.type === "checkbox") return (
                   <tr key={field.key}>
                     <th scope="row"><label htmlFor={id}>{field.label}</label></th>
-                    <td colSpan={2}><input id={id} name={field.key} type="checkbox" className={styles.paperCheckbox}
+                    <td colSpan={2}><div className={styles.paperControls}><input id={id} name={field.key} type="checkbox" className={styles.paperCheckbox}
                       checked={values.requiresPaperReports} disabled={isSubmitting}
                       onChange={(event) => {
                         setValues((previous) => ({ ...previous, requiresPaperReports: event.target.checked }));
                         setError(null); setInvalidField(null);
-                      }} /></td>
+                      }} />
+                      {values.requiresPaperReports && <div className={styles.dateField}>
+                        <label htmlFor="order-field-paperReportDeadline" className={styles.borderLabel}>Сдать до</label>
+                        {renderField(ORDER_FORM_FIELDS.find((candidate): candidate is OrderDateField => candidate.key === "paperReportDeadline")!, "Сдача бумажных отчётов до")}
+                      </div>}
+                    </div></td>
                   </tr>
                 );
                 return (
