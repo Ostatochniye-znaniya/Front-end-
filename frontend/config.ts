@@ -1,11 +1,11 @@
 export const BACKEND_URL = process.env.BACKEND_URL || "localhost:8000";
 export const NEXT_PUBLIC_ADMIN_API_URL =
-  process.env.NEXT_PUBLIC_ADMIN_API_URL || "https://admin.kd.mospolytech.ru/api/v1";
+  process.env.NEXT_PUBLIC_ADMIN_API_URL || "https://admin.pd.dezzzmond.online";
 export const NEXT_PUBLIC_ADMIN_AUTH_BASE =
   process.env.NEXT_PUBLIC_ADMIN_AUTH_BASE ||
   (process.env.NEXT_PUBLIC_ADMIN_API_URL
     ? process.env.NEXT_PUBLIC_ADMIN_API_URL.replace(/\/api\/v1\/?$/, "")
-    : "https://admin.kd.mospolytech.ru");
+    : "https://admin.pd.dezzzmond.online");
 export const NEXT_PUBLIC_SERVICE_ID =
   process.env.NEXT_PUBLIC_SERVICE_ID || "5f67adcd-101d-420d-b5f5-68f081f1a4ea";
 export const NEXT_PUBLIC_SERVICE_NAME =
