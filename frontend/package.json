@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "admin-api-stub": "node scripts/admin-api-stub.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "clsx": "^2.1.1",

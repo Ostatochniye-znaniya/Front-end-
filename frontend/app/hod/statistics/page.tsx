@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Search from '@/components/search/Search';
 import Button from '@/components/button/Button';
 import Capsule from '@/components/capsule/Capsule';
+import { DisciplineStat } from '@/components/statistics/statisticsData';
 import {
-  initialHodDisciplinesData
-} from '@/components/statistics/statisticsData';
+  getDepartmentStatisticsDetails,
+  getStatisticsFilters,
+  StatisticsSemesterOption,
+} from '@/services/statistics';
 import {
   ChevronRight,
   ChevronDown,
@@ -16,15 +19,93 @@ import {
 } from 'lucide-react';
 
 export default function HodStatisticsPage() {
-  const [reportRequirement, setReportRequirement] = useState<'both' | 'electronic_only'>('both');
+  const [semesters, setSemesters] = useState<StatisticsSemesterOption[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState('');
+  const [disciplines, setDisciplines] = useState<DisciplineStat[]>([]);
+  const [departmentName, setDepartmentName] = useState('Кафедра');
+  const [facultyCode, setFacultyCode] = useState<string | null>(null);
+  const [includePaper, setIncludePaper] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [expandedDisciplines, setExpandedDisciplines] = useState<Record<string, boolean>>({
-    disc_net: true,
-    disc_db: true
-  });
+  const [expandedDisciplines, setExpandedDisciplines] = useState<Record<string, boolean>>({});
 
-  const includePaper = reportRequirement === 'both';
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const filters = await getStatisticsFilters();
+        if (cancelled) return;
+        setSemesters(filters.semesters);
+        if (filters.semesters.length > 0) {
+          setSelectedSemester(String(filters.semesters[0].id));
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Не удалось загрузить семестры');
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSemester) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const details = await getDepartmentStatisticsDetails({
+          semesterId: Number(selectedSemester),
+        });
+        if (cancelled) return;
+        setDepartmentName(details.departmentName);
+        setFacultyCode(details.facultyCode);
+        setIncludePaper(details.requiresPaperReports);
+        const mapped: DisciplineStat[] = details.disciplines.map(d => ({
+          id: String(d.id),
+          title: d.title,
+          course: d.course,
+          semester: d.semester,
+          profilesCount: d.profilesCount,
+          groupFact: d.groupFact,
+          classNorm: d.classNorm,
+          classFact: d.classFact,
+          eReportDone: d.eReportDone,
+          eReportRemarks: d.eReportRemarks,
+          pReportDone: d.pReportDone,
+          pReportRemarks: d.pReportRemarks,
+          groups: d.groups.map(g => ({
+            groupNumber: g.groupNumber,
+            course: g.course,
+            teacher: g.teacher,
+            eReportStatus: g.eReportStatus,
+            pReportStatus: g.pReportStatus,
+            allPassed: g.allPassed,
+          })),
+        }));
+        setDisciplines(mapped);
+        setExpandedDisciplines(Object.fromEntries(mapped.slice(0, 2).map(d => [d.id, true])));
+      } catch (err) {
+        if (!cancelled) {
+          setDisciplines([]);
+          setError(err instanceof Error ? err.message : 'Не удалось загрузить статистику кафедры');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSemester]);
 
   const courseOptions = [
     { value: 'all', label: 'Все курсы' },
@@ -33,6 +114,11 @@ export default function HodStatisticsPage() {
     { value: '4', label: '4 курс (Бакалавриат)' },
     { value: 'mag', label: '2 курс (Магистратура)' }
   ];
+
+  const semesterOptions = useMemo(
+    () => semesters.map(s => ({ value: String(s.id), label: s.label })),
+    [semesters]
+  );
 
   const toggleDiscipline = (id: string) => {
     setExpandedDisciplines(prev => ({
@@ -43,7 +129,7 @@ export default function HodStatisticsPage() {
 
   const expandAll = () => {
     const all: Record<string, boolean> = {};
-    initialHodDisciplinesData.forEach(d => { all[d.id] = true; });
+    disciplines.forEach(d => { all[d.id] = true; });
     setExpandedDisciplines(all);
   };
 
@@ -52,9 +138,9 @@ export default function HodStatisticsPage() {
   };
 
   const filteredDisciplines = useMemo(() => {
-    return initialHodDisciplinesData.filter(d => {
+    return disciplines.filter(d => {
       if (courseFilter !== 'all') {
-        if (courseFilter === 'mag' && !d.semester.includes('маг')) return false;
+        if (courseFilter === 'mag' && !d.semester.toLowerCase().includes('маг')) return false;
         if (courseFilter !== 'mag' && String(d.course) !== courseFilter) return false;
       }
       if (searchQuery.trim()) {
@@ -66,7 +152,7 @@ export default function HodStatisticsPage() {
       }
       return true;
     });
-  }, [courseFilter, searchQuery]);
+  }, [disciplines, courseFilter, searchQuery]);
 
   const departmentTotals = useMemo(() => {
     let groupNorm = 0;
@@ -79,7 +165,7 @@ export default function HodStatisticsPage() {
     let pReportRemarks = 0;
     let totalDebt = 0;
 
-    initialHodDisciplinesData.forEach(d => {
+    disciplines.forEach(d => {
       const dNorm = d.profilesCount * 2;
       groupNorm += dNorm;
       groupFact += d.groupFact;
@@ -107,23 +193,22 @@ export default function HodStatisticsPage() {
       totalDebt,
       allPassed: totalDebt === 0
     };
-  }, [includePaper]);
+  }, [disciplines, includePaper]);
 
   return (
     <div className="main-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-            Статистика кафедры «Информационные технологии»
+            Статистика кафедры «{departmentName}»
           </h1>
-          <Capsule variant="default">ФИТ</Capsule>
+          {facultyCode && <Capsule variant="default">{facultyCode}</Capsule>}
         </div>
       </div>
-      <p role="note" className="text" style={{ marginBottom: '20px' }}>
-        Демонстрационные данные кафедры за весну 2025. API сводной статистики
-        не подключён. Переключение формы отчётности меняет только просмотр,
-        настройки ЛПР не сохраняются.
-      </p>
+
+      {error && (
+        <p className="text" style={{ color: 'var(--accent-red-c)', marginBottom: '16px' }}>{error}</p>
+      )}
 
       <div
         style={{
@@ -187,24 +272,21 @@ export default function HodStatisticsPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', gap: '14px', flex: 1, minWidth: '320px', flexWrap: 'wrap' }}>
+          <div style={{ width: '220px' }}>
+            <Dropdown
+              label="Семестр"
+              options={semesterOptions}
+              value={selectedSemester}
+              onChange={setSelectedSemester}
+              placeholder="Выберите семестр"
+            />
+          </div>
           <div style={{ minWidth: '220px', flex: 1 }}>
             <Search
               hint="Поиск по дисциплине, преподавателю, группе..."
               value={searchQuery}
               onChange={setSearchQuery}
               size="large"
-            />
-          </div>
-          <div style={{ width: '220px' }}>
-            <Dropdown
-              label="Форма отчётности (демонстрация)"
-              options={[
-                { value: 'both', label: 'Электронные + Бумажные' },
-                { value: 'electronic_only', label: 'Только электронные' }
-              ]}
-              value={reportRequirement}
-              onChange={(val) => setReportRequirement(val as 'both' | 'electronic_only')}
-              placeholder="Форма отчётности"
             />
           </div>
           <div style={{ width: '180px' }}>
@@ -232,6 +314,11 @@ export default function HodStatisticsPage() {
         </div>
       </div>
 
+      {loading ? (
+        <p className="text">Загрузка статистики…</p>
+      ) : filteredDisciplines.length === 0 ? (
+        <p className="text">Нет данных за выбранный семестр.</p>
+      ) : (
       <div className="table-wrapper">
         <table className="table-container" style={{ width: '100%', borderCollapse: 'separate', fontSize: '13px' }}>
           <thead>
@@ -249,10 +336,7 @@ export default function HodStatisticsPage() {
           </thead>
           <tbody>
             {filteredDisciplines.map(disc => {
-              const dNorm = disc.profilesCount * 2;
-              const diff = disc.groupFact - dNorm;
               const isExpanded = !!expandedDisciplines[disc.id];
-              const allPassed = diff >= 0 && disc.eReportRemarks === 0 && disc.pReportRemarks === 0;
 
               return (
                 <React.Fragment key={disc.id}>
@@ -378,7 +462,7 @@ export default function HodStatisticsPage() {
                         <td>—</td>
                         <td>1</td>
                         <td>1</td>
-                        <td>2 / 2</td>
+                        <td>1 / 1</td>
                         <td>
                           <Capsule variant={eVariant}>{eStatusText}</Capsule>
                         </td>
@@ -409,6 +493,7 @@ export default function HodStatisticsPage() {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }

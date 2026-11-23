@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Button from '@/components/button/Button';
 import Capsule from '@/components/capsule/Capsule';
+import { FacultyStat, mapFacultyStatistics } from '@/components/statistics/statisticsData';
 import {
-  FacultyStat,
-  semesterOptions,
-  calculateGroupNorm
-} from '@/components/statistics/statisticsData';
+  getStatisticsFilters,
+  getStatisticsSummary,
+  StatisticsSemesterOption,
+} from '@/services/statistics';
 import {
   ChevronRight,
   ChevronDown,
@@ -16,31 +17,92 @@ import {
 } from 'lucide-react';
 
 interface FacultiesStatisticsProps {
-  faculties: FacultyStat[];
   title: string;
   summaryLabel: string;
+  facultyId?: number | null;
+  departmentId?: number | null;
   children?: React.ReactNode;
 }
 
-export default function FacultiesStatistics({ faculties, title, summaryLabel, children }: FacultiesStatisticsProps) {
-  const [selectedSemester, setSelectedSemester] = useState<string>('spring2025');
-  const [reportRequirement, setReportRequirement] = useState<'both' | 'electronic_only'>('both');
-  const [expandedFaculties, setExpandedFaculties] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(faculties.slice(0, 1).map(faculty => [faculty.id, true]))
+export default function FacultiesStatistics({
+  title,
+  summaryLabel,
+  facultyId = null,
+  departmentId = null,
+  children,
+}: FacultiesStatisticsProps) {
+  const [semesters, setSemesters] = useState<StatisticsSemesterOption[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>('');
+  const [faculties, setFaculties] = useState<FacultyStat[]>([]);
+  const [includePaper, setIncludePaper] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedFaculties, setExpandedFaculties] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const filters = await getStatisticsFilters();
+        if (cancelled) return;
+        setSemesters(filters.semesters);
+        if (filters.semesters.length > 0) {
+          setSelectedSemester(String(filters.semesters[0].id));
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Не удалось загрузить семестры');
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSemester) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const summary = await getStatisticsSummary({
+          semesterId: Number(selectedSemester),
+          facultyId,
+          departmentId,
+        });
+        if (cancelled) return;
+        const mapped = mapFacultyStatistics(summary.faculties);
+        setFaculties(mapped);
+        setIncludePaper(summary.requiresPaperReports);
+        setExpandedFaculties(Object.fromEntries(mapped.slice(0, 1).map(faculty => [faculty.id, true])));
+      } catch (err) {
+        if (!cancelled) {
+          setFaculties([]);
+          setError(err instanceof Error ? err.message : 'Не удалось загрузить статистику');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSemester, facultyId, departmentId]);
+
+  const semesterOptions = useMemo(
+    () => semesters.map(s => ({ value: String(s.id), label: s.label })),
+    [semesters]
   );
 
-  const includePaper = reportRequirement === 'both';
-
-  const currentSemesterObj = useMemo(() => {
-    return semesterOptions.find(s => s.value === selectedSemester) || semesterOptions[1];
-  }, [selectedSemester]);
-
-  const isSpring = currentSemesterObj.isSpring;
-
-  const toggleFaculty = (facultyId: string) => {
+  const toggleFaculty = (facultyIdValue: string) => {
     setExpandedFaculties(prev => ({
       ...prev,
-      [facultyId]: !prev[facultyId]
+      [facultyIdValue]: !prev[facultyIdValue]
     }));
   };
 
@@ -70,8 +132,7 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
 
     faculty.departments.forEach(dept => {
       profiles += dept.profilesCount;
-      const deptNorm = calculateGroupNorm(dept.profilesCount, dept.coursesCount, isSpring, dept.magistracyCount);
-      groupNorm += deptNorm;
+      groupNorm += dept.groupNorm;
       groupFact += dept.groupFact;
       classNorm += dept.classNorm;
       classFact += dept.classFact;
@@ -102,7 +163,7 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
       hasRemarks,
       allPassed
     };
-  }, [isSpring, includePaper]);
+  }, [includePaper]);
 
   const universityTotals = useMemo(() => {
     let profiles = 0;
@@ -154,12 +215,11 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
           </h1>
         </div>
       </div>
-      <div role="note" className="text" style={{ marginBottom: '20px' }}>
-        Демонстрационные данные. API сводной статистики не подключён.
-        Выбор семестра меняет расчёт норматива, но не загружает исторические данные.
-        Форма отчётности переключается только для просмотра, настройки ЛПР не сохраняются.
-      </div>
       {children}
+
+      {error && (
+        <p className="text" style={{ color: 'var(--accent-red-c)', marginBottom: '16px' }}>{error}</p>
+      )}
 
       <div
         style={{
@@ -232,19 +292,6 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
               placeholder="Выберите семестр"
             />
           </div>
-
-          <div style={{ width: '270px' }}>
-            <Dropdown
-              label="Форма отчётности (демонстрация)"
-              options={[
-                { value: 'both', label: 'Электронные + Бумажные' },
-                { value: 'electronic_only', label: 'Только электронные' }
-              ]}
-              value={reportRequirement}
-              onChange={(val) => setReportRequirement(val as 'both' | 'electronic_only')}
-              placeholder="Форма отчётности"
-            />
-          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -261,6 +308,11 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
         </div>
       </div>
 
+      {loading ? (
+        <p className="text">Загрузка статистики…</p>
+      ) : faculties.length === 0 ? (
+        <p className="text">Нет данных за выбранный семестр.</p>
+      ) : (
       <div className="table-wrapper">
         <table className="table-container" style={{ width: '100%', borderCollapse: 'separate', fontSize: '13px' }}>
           <thead>
@@ -362,7 +414,6 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
                   </tr>
 
                   {isExpanded && faculty.departments.map(dept => {
-                    const deptNorm = calculateGroupNorm(dept.profilesCount, dept.coursesCount, isSpring, dept.magistracyCount);
                     const eMissing = Math.max(0, dept.classFact - dept.eReportDone);
                     const pMissing = includePaper ? Math.max(0, dept.classFact - dept.pReportDone) : 0;
                     const deptDebt = Math.max(eMissing, pMissing);
@@ -384,7 +435,7 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
                             </span>
                           </div>
                         </td>
-                        <td>{deptNorm}</td>
+                        <td>{dept.groupNorm}</td>
                         <td>{dept.groupFact}</td>
                         <td>{dept.classNorm}</td>
                         <td>{dept.classFact}</td>
@@ -430,6 +481,7 @@ export default function FacultiesStatistics({ faculties, title, summaryLabel, ch
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
