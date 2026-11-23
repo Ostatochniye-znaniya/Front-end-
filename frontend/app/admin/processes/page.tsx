@@ -1,403 +1,160 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Table from '@/components/table/Table';
 import Button from '@/components/button/Button';
-import Input from '@/components/input/Input';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Search from '@/components/search/Search';
 import Capsule from '@/components/capsule/Capsule';
-import Alert from '@/components/alert/Alert';
-import { initialProcesses, ProcessItem } from '@/components/admin/mockData';
-import { Lock, Calendar, RotateCcw } from 'lucide-react';
+import { adminRequest } from '@/services/adminRequest';
+import { ProcessFilters, ProcessItem, ProcessPage } from '@/services/adminProcesses';
+
+const initialQuery = { search: '', approvalStatus: '', stage: '', reportStatus: '', semesterId: '', facultyId: '', departmentId: '', page: 1, pageSize: 25 };
+type ProcessAction = { kind: 'reschedule' | 'rollback'; process: ProcessItem };
 
 export default function ProcessesPage() {
-  const [processes, setProcesses] = useState<ProcessItem[]>(initialProcesses);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  
-  const [rescheduleModal, setRescheduleModal] = useState<ProcessItem | null>(null);
-  const [newDate, setNewDate] = useState<string>('');
-  const [newTime, setNewTime] = useState<string>('');
-  const [rescheduleReason, setRescheduleReason] = useState<string>('');
+  const [query, setQuery] = useState(initialQuery);
+  const [data, setData] = useState<ProcessPage | null>(null);
+  const [filters, setFilters] = useState<ProcessFilters | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filterError, setFilterError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [action, setAction] = useState<ProcessAction | null>(null);
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [mutationError, setMutationError] = useState('');
+  const [success, setSuccess] = useState('');
+  const pending = useRef(false);
 
-  const [rollbackModal, setRollbackModal] = useState<ProcessItem | null>(null);
-  const [rollbackReason, setRollbackReason] = useState<string>('');
-
-  const [alertInfo, setAlertInfo] = useState<{ title: string; text: string; type: 'success' | 'warning' } | null>(null);
-
-  const statusOptions = [
-    { value: 'all', label: 'Все статусы' },
-    { value: 'Согласовано', label: 'Согласовано' },
-    { value: 'На согласовании', label: 'На согласовании' },
-    { value: 'Отклонено', label: 'Отклонено' },
-    { value: 'Срок истёк', label: 'Срок истёк' }
-  ];
-
-  const filteredProcesses = useMemo(() => {
-    return processes.filter(p => {
-      if (statusFilter !== 'all' && p.status !== statusFilter) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesGroup = p.group.toLowerCase().includes(q);
-        const matchesSubject = p.subject.toLowerCase().includes(q);
-        const matchesTeacher = p.teacher.toLowerCase().includes(q);
-        const matchesDept = p.department.toLowerCase().includes(q);
-        if (!matchesGroup && !matchesSubject && !matchesTeacher && !matchesDept) return false;
-      }
-      return true;
+  useEffect(() => {
+    const controller = new AbortController();
+    setFilterError('');
+    adminRequest<ProcessFilters>('/processes/filters', { signal: controller.signal }).then(value => {
+      if (!controller.signal.aborted) setFilters(value);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setFilterError(cause instanceof Error ? cause.message : 'Не удалось загрузить фильтры.');
     });
-  }, [processes, statusFilter, searchQuery]);
+    return () => controller.abort();
+  }, [reload]);
 
-  const handleApplyReschedule = () => {
-    if (!rescheduleModal) return;
-    if (!newDate.trim() || !rescheduleReason.trim()) {
-      alert("Для изменения согласованного процесса обязательно укажите новую дату и причину изменения!");
-      return;
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setData(null);
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== '') params.set(key, String(value));
+    });
+    adminRequest<ProcessPage>(`/processes?${params}`, { signal: controller.signal }).then(value => {
+      if (!controller.signal.aborted) setData(value);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не удалось загрузить процессы.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [query, reload]);
+
+  function openAction(kind: ProcessAction['kind'], process: ProcessItem) {
+    setAction({ kind, process });
+    setDate(process.scheduledDate ?? '');
+    setTime(process.scheduledTime?.slice(0, 5) ?? '');
+    setReason('');
+    setMutationError('');
+    setSuccess('');
+  }
+
+  async function submitAction(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!action || pending.current) return;
+    if (!reason.trim()) { setMutationError('Укажите причину изменения.'); return; }
+    pending.current = true;
+    setSaving(true);
+    setMutationError('');
+    try {
+      const result = await adminRequest<ProcessItem>(`/processes/${action.process.id}/${action.kind}`, {
+        method: 'POST',
+        body: JSON.stringify(action.kind === 'reschedule' ? { date, time, reason: reason.trim() } : { comment: reason.trim() }),
+      });
+      setSuccess(action.kind === 'reschedule'
+        ? `Сервер сохранил перенос: ${result.groupName ?? result.id}, ${result.scheduledDate} ${result.scheduledTime?.slice(0, 5)}.`
+        : `Сервер подтвердил откат: ${result.groupName ?? result.id}, этап «${result.stageLabel}».`);
+      setAction(null);
+      setReload(value => value + 1);
+    } catch (cause) {
+      setMutationError(cause instanceof Error ? cause.message : 'Не удалось изменить процесс.');
+    } finally {
+      pending.current = false;
+      setSaving(false);
     }
-
-    setProcesses(prev => prev.map(item => {
-      if (item.id === rescheduleModal.id) {
-        return {
-          ...item,
-          scheduledDate: newDate,
-          scheduledTime: newTime || item.scheduledTime
-        };
-      }
-      return item;
-    }));
-
-    setAlertInfo({
-      type: 'success',
-      title: 'Дата успешно изменена',
-      text: `Для группы ${rescheduleModal.group} (${rescheduleModal.subject}) назначена дата ${newDate}.`
-    });
-
-    setRescheduleModal(null);
-    setNewDate('');
-    setNewTime('');
-    setRescheduleReason('');
-  };
-
-  const handleApplyRollback = () => {
-    if (!rollbackModal) return;
-    if (!rollbackReason.trim()) {
-      alert("Для возврата процесса на доработку обязательно укажите причину!");
-      return;
-    }
-
-    setProcesses(prev => prev.map(item => {
-      if (item.id === rollbackModal.id) {
-        return {
-          ...item,
-          status: 'На согласовании',
-          isLocked: false
-        };
-      }
-      return item;
-    }));
-
-    setAlertInfo({
-      type: 'warning',
-      title: 'Процесс возвращен на этап согласования',
-      text: `Процесс группы ${rollbackModal.group} возвращен на согласование кафедрой.`
-    });
-
-    setRollbackModal(null);
-    setRollbackReason('');
-  };
+  }
 
   const columns = [
-    {
-      header: 'Группа',
-      accessor: (row: ProcessItem) => (
-        <span className="text-bold" style={{ fontSize: '14px' }}>
-          {row.group}
-        </span>
-      ),
-      sortFn: (a: ProcessItem, b: ProcessItem) => a.group.localeCompare(b.group)
-    },
-    {
-      header: 'Дисциплина / Кафедра',
-      accessor: (row: ProcessItem) => (
-        <div style={{ textAlign: 'left' }}>
-          <div className="text-bold">{row.subject}</div>
-          <div className="text text-blind" style={{ fontSize: '12px', marginTop: '2px' }}>
-            {row.department}
-          </div>
-        </div>
-      ),
-      sortFn: (a: ProcessItem, b: ProcessItem) => a.subject.localeCompare(b.subject)
-    },
-    {
-      header: 'Преподаватель',
-      accessor: (row: ProcessItem) => (
-        <span className="text">{row.teacher}</span>
-      ),
-      sortFn: (a: ProcessItem, b: ProcessItem) => a.teacher.localeCompare(b.teacher)
-    },
-    {
-      header: 'Дата и время',
-      accessor: (row: ProcessItem) => (
-        <div>
-          <span className="text text-bold">{row.scheduledDate}</span>
-          <span className="text text-blind" style={{ marginLeft: '6px', fontSize: '12px' }}>{row.scheduledTime}</span>
-        </div>
-      )
-    },
-    {
-      header: 'Статус этапа',
-      accessor: (row: ProcessItem) => {
-        const variant =
-          row.status === 'Согласовано' ? 'success' :
-          row.status === 'На согласовании' ? 'info' : 'danger';
-        return (
-          <Capsule
-            variant={variant}
-            icon={row.isLocked ? <Lock size={12} /> : undefined}
-          >
-            {row.status}
-          </Capsule>
-        );
-      }
-    },
-    {
-      header: 'Отчет кафедры',
-      accessor: (row: ProcessItem) => {
-        const isDone = row.reportStatus.includes('сдан') || row.reportStatus.includes('Подписан');
-        return (
-          <Capsule variant={isDone ? 'success' : 'default'}>
-            {row.reportStatus}
-          </Capsule>
-        );
-      }
-    },
-    {
-      header: 'Безопасные сценарии',
-      accessor: (row: ProcessItem) => (
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button
-            title="Перенос даты"
-            color="btn-blue"
-            onClick={() => {
-              setRescheduleModal(row);
-              setNewDate(row.scheduledDate);
-              setNewTime(row.scheduledTime);
-            }}
-          />
-          {row.status === 'Согласовано' && (
-            <Button
-              title="Откат этапа"
-              color="btn-orange"
-              onClick={() => {
-                setRollbackModal(row);
-              }}
-            />
-          )}
-        </div>
-      )
-    }
+    { header: 'Группа', accessor: (row: ProcessItem) => row.groupName ?? '—' },
+    { header: 'Дисциплина / Кафедра', accessor: (row: ProcessItem) => <div>{row.disciplineName ?? '—'}<br /><span className="text-blind">{row.departmentName ?? '—'}</span></div> },
+    { header: 'Преподаватель', accessor: (row: ProcessItem) => row.teacherNames || 'Не назначен' },
+    { header: 'Дата и время', accessor: (row: ProcessItem) => <div>{row.scheduledDate ?? 'Не назначена'}<br />{row.scheduledTime?.slice(0, 5)}</div> },
+    { header: 'Согласование / Этап', accessor: (row: ProcessItem) => <div><Capsule variant={row.approvalStatus === 'approved' ? 'success' : 'warning'}>{row.approvalStatusLabel}</Capsule><br />{row.stageLabel}{row.isLocked && <span> · Заблокирован</span>}</div> },
+    { header: 'Отчёт кафедры', accessor: (row: ProcessItem) => row.reportStatusLabel },
+    { header: 'Действия', accessor: (row: ProcessItem) => <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <Button title="Перенос даты" color="btn-blue" disabled={saving || row.approvalStatus !== 'approved'} onClick={() => openAction('reschedule', row)} />
+      <Button title="Откат этапа" color="btn-orange" disabled={saving || ['not_assigned', 'time_selection'].includes(row.stage)} onClick={() => openAction('rollback', row)} />
+    </div> },
   ];
 
   return (
-    <div className="main-container">
-      <div style={{ marginBottom: '24px' }}>
-        <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-          Бизнес-процессы
-        </h1>
+    <div className="main-container text">
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
+        <h1 className="text-bold" style={{ fontSize: 24, margin: 0 }}>Бизнес-процессы</h1>
+        <Button title="Обновить" color="btn-blue" disabled={loading || saving} onClick={() => setReload(value => value + 1)} />
       </div>
-
-      {alertInfo && (
-        <div style={{ marginBottom: '24px' }}>
-          <Alert
-            type={alertInfo.type}
-            title={alertInfo.title}
-            text={alertInfo.text}
-          />
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '280px' }}>
-          <Search
-            hint="Поиск по группе, дисциплине, преподавателю..."
-            value={searchQuery}
-            onChange={setSearchQuery}
-            size="large"
-          />
-        </div>
-        <div style={{ width: '220px' }}>
-          <Dropdown
-            label="Статус этапа"
-            options={statusOptions}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            placeholder="Все статусы"
-          />
-        </div>
+      <p className="text text-blind">Данные загружаются из API. Перенос доступен только для согласованных процессов; причина передаётся в аудит.</p>
+      {success && <p role="status">{success}</p>}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 24 }}>
+        <Search hint="Поиск по группе, дисциплине, преподавателю..." value={query.search} onChange={value => setQuery(current => ({ ...current, search: value, page: 1 }))} size="large" />
+        {([
+          ['approvalStatus', 'Согласование', filters?.approvalStatuses],
+          ['stage', 'Этап', filters?.stages],
+          ['reportStatus', 'Отчёт', filters?.reportStatuses],
+          ['semesterId', 'Семестр', filters?.semesters],
+          ['facultyId', 'Факультет', filters?.faculties],
+          ['departmentId', 'Кафедра', filters?.departments],
+        ] as const).map(([key, label, options]) => <Dropdown key={key} label={label} options={[{ value: '', label: 'Все' }, ...(options ?? [])]} value={query[key]} onChange={value => setQuery(current => ({ ...current, [key]: value, page: 1 }))} />)}
       </div>
-
-      <div className="table-wrapper">
-        <Table columns={columns} data={filteredProcesses} />
-      </div>
-
-      {rescheduleModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
-          onClick={() => setRescheduleModal(null)}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--background-c)',
-              borderRadius: '16px',
-              border: '1px solid var(--secondary-border-c)',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
-              padding: '28px',
-              maxWidth: '540px',
-              width: '100%'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <Calendar size={20} color="var(--accent-blue-c)" />
-              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-                Перенос даты
-              </h2>
-            </div>
-            
-            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0' }}>
-              Группа: <strong>{rescheduleModal.group}</strong> ({rescheduleModal.subject})
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-              <div>
-                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-                  Новая дата проведения (ДД.ММ.ГГГГ):
-                </label>
-                <Input
-                  hint="Например, 20.06.2026"
-                  value={newDate}
-                  onChange={setNewDate}
-                />
-              </div>
-
-              <div>
-                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-                  Время проведения:
-                </label>
-                <Input
-                  hint="Например, 12:00 - 13:30"
-                  value={newTime}
-                  onChange={setNewTime}
-                />
-              </div>
-
-              <div>
-                <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-                  Официальная причина переноса (обязательно для аудита):
-                </label>
-                <Input
-                  hint="Служебная записка деканата / совпадение с аудиторным фондом"
-                  value={rescheduleReason}
-                  onChange={setRescheduleReason}
-                  multiline
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <Button
-                title="Отмена"
-                color="btn-red"
-                onClick={() => setRescheduleModal(null)}
-              />
-              <Button
-                title="Применить с записью в аудит"
-                color="btn-blue"
-                onClick={handleApplyReschedule}
-              />
-            </div>
-          </div>
+      {filterError && <p role="alert">Фильтры недоступны: {filterError}</p>}
+      {error && <p role="alert" style={{ color: 'var(--accent-red-c)' }}>{error}</p>}
+      {loading && <p role="status">Загрузка процессов…</p>}
+      {!loading && data && <>
+        {data.items.length ? <div className="table-wrapper"><Table columns={columns} data={data.items} /></div> : <p>Процессы не найдены.</p>}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 20 }}>
+          <Button title="Назад" color="btn-blue" disabled={data.page <= 1} onClick={() => setQuery(current => ({ ...current, page: data.page - 1 }))} />
+          <span>Страница {data.page} из {Math.max(1, Math.ceil(data.total / data.pageSize))}; всего: {data.total}</span>
+          <Button title="Вперёд" color="btn-blue" disabled={data.page * data.pageSize >= data.total} onClick={() => setQuery(current => ({ ...current, page: data.page + 1 }))} />
         </div>
-      )}
-
-      {rollbackModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
-          onClick={() => setRollbackModal(null)}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--background-c)',
-              borderRadius: '16px',
-              border: '1px solid var(--secondary-border-c)',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
-              padding: '28px',
-              maxWidth: '540px',
-              width: '100%'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <RotateCcw size={20} color="var(--accent-orange-c)" />
-              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-                Возврат процесса на согласование
-              </h2>
+      </>}
+      {action && <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+        <form role="dialog" aria-modal="true" aria-labelledby="process-action-title" onSubmit={submitAction} style={{ backgroundColor: 'var(--background-c)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }}>
+          <h2 id="process-action-title">{action.kind === 'reschedule' ? 'Перенос даты' : 'Откат на предыдущий этап'}</h2>
+          <p>{action.process.groupName} — {action.process.disciplineName}</p>
+          <p>Текущий этап: {action.process.stageLabel}</p>
+          {mutationError && <p role="alert" style={{ color: 'var(--accent-red-c)' }}>{mutationError}</p>}
+          <fieldset disabled={saving} style={{ border: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {action.kind === 'reschedule' && <>
+              <label>Новая дата<input className="input-field" type="date" required value={date} onChange={event => setDate(event.target.value)} /></label>
+              <label>Новое время<input className="input-field" type="time" required value={time} onChange={event => setTime(event.target.value)} /></label>
+            </>}
+            <label>Причина изменения<textarea className="input-field" required value={reason} onChange={event => setReason(event.target.value)} rows={3} /></label>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <Button title="Отмена" color="btn-red" onClick={() => setAction(null)} />
+              <button className="btn btn-blue" type="submit">{saving ? 'Сохранение…' : 'Подтвердить изменение'}</button>
             </div>
-
-            <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 18px 0' }}>
-              Группа: <strong>{rollbackModal.group}</strong> ({rollbackModal.subject})
-            </p>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-                Причина возврата на этап согласования:
-              </label>
-              <Input
-                hint="Например: Необходима замена ответственного преподавателя по заявлению кафедры"
-                value={rollbackReason}
-                onChange={setRollbackReason}
-                multiline
-                rows={3}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <Button
-                title="Отмена"
-                color="btn-red"
-                onClick={() => setRollbackModal(null)}
-              />
-              <Button
-                title="Подтвердить откат статуса"
-                color="btn-orange"
-                onClick={handleApplyRollback}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+          </fieldset>
+        </form>
+      </div>}
     </div>
   );
 }

@@ -1,212 +1,84 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Button from '@/components/button/Button';
 import Input from '@/components/input/Input';
 import Alert from '@/components/alert/Alert';
-import CheckBox from '@/components/checkbox/CheckBox';
-import { initialSettings, SystemSettings } from '@/components/admin/mockData';
-import { Mail, HelpCircle, ShieldCheck } from 'lucide-react';
+import { getAdminSettings, updateAdminSettings, SystemSettings, SettingsValues } from '@/services/adminSettings';
+
+const fields: { key: keyof SettingsValues; label: string; multiline?: boolean; hint: string }[] = [
+  { key: 'supportEmail', label: 'Почта техподдержки (обязательно, до 255 символов)', hint: 'support@example.ru' },
+  { key: 'supportPhone', label: 'Телефон техподдержки (до 32 символов)', hint: 'Телефон' },
+  { key: 'welcomeText', label: 'Текст для новых пользователей (до 4000 символов)', hint: 'Приветствие', multiline: true },
+  { key: 'accessRequestInstructions', label: 'Инструкция по запросу доступа (до 4000 символов)', hint: 'Инструкция', multiline: true },
+  { key: 'notificationTemplate', label: 'Шаблон уведомления (до 4000 символов)', hint: 'Шаблон уведомления', multiline: true },
+];
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<SystemSettings>(initialSettings);
-  const [alertInfo, setAlertInfo] = useState<{ title: string; text: string; type: 'success' | 'info' } | null>(null);
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [reload, setReload] = useState(0);
+  const pending = useRef(false);
 
-  const handleSave = () => {
-    setAlertInfo({
-      type: 'success',
-      title: 'Настройки успешно сохранены',
-      text: 'Изменения параметров применены без необходимости перезапуска сервисов.'
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setSaved(false);
+    getAdminSettings(controller.signal).then(value => {
+      if (!controller.signal.aborted) setSettings(value);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не удалось загрузить настройки.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
     });
-  };
+    return () => controller.abort();
+  }, [reload]);
 
-  const handleReset = () => {
-    setSettings(initialSettings);
-    setAlertInfo({
-      type: 'info',
-      title: 'Параметры сброшены к исходным значениям',
-      text: 'Восстановлены стандартные регламентные интервалы и шаблоны сообщений.'
-    });
-  };
+  async function save() {
+    if (!settings || loading || pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    setError('');
+    setSaved(false);
+    try {
+      const result = await updateAdminSettings(settings);
+      setSettings(result);
+      setSaved(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Не удалось сохранить настройки.');
+    } finally {
+      pending.current = false;
+      setSaving(false);
+    }
+  }
 
   return (
-    <div className="main-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-            Настройки системы
-          </h1>
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Button
-            title="Сбросить к исходным"
-            color="btn-orange"
-            onClick={handleReset}
-          />
-          <Button
-            title="Сохранить изменения"
-            color="btn-blue"
-            onClick={handleSave}
-          />
+    <div className="main-container text">
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+        <h1 className="text-bold" style={{ fontSize: 24, margin: 0 }}>Настройки системы</h1>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button title="Загрузить значения с сервера" color="btn-orange" disabled={loading || saving} onClick={() => setReload(value => value + 1)} />
+          <Button title={saving ? 'Сохранение…' : 'Сохранить изменения'} color="btn-blue" disabled={!settings || loading || saving} onClick={save} />
         </div>
       </div>
-
-      {alertInfo && (
-        <div style={{ marginBottom: '24px' }}>
-          <Alert
-            type={alertInfo.type}
-            title={alertInfo.title}
-            text={alertInfo.text}
-          />
-        </div>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '960px' }}>
-        <div
-          style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '16px',
-            padding: '24px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Mail size={18} color="var(--accent-blue-c)" />
-            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              Поддержка и контакты
-            </h2>
-          </div>
-          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
-            Адрес электронной почты для связи пользователей с технической поддержкой и методическим отделом. Отображается в интерфейсе гостя и в уведомлениях.
-          </p>
-
-          <div>
-            <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-              Email для обращений преподавателей и кафедр:
-            </label>
-            <Input
-              hint="support@mospolytech.ru"
-              value={settings.supportEmail}
-              onChange={(val) => setSettings({ ...settings, supportEmail: val })}
-            />
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '16px',
-            padding: '24px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <HelpCircle size={18} color="var(--accent-blue-c)" />
-            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              Сообщение для новых пользователей
-            </h2>
-          </div>
-          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
-            Сообщение, которое видит авторизованный сотрудник, которому ещё не назначена роль (страница /guest).
-          </p>
-
-          <div>
-            <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-              Текст сообщения на экране ожидания роли:
-            </label>
-            <Input
-              hint="Введите текст приветствия..."
-              value={settings.welcomeGuestText}
-              onChange={(val) => setSettings({ ...settings, welcomeGuestText: val })}
-              multiline
-              rows={4}
-            />
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '16px',
-            padding: '24px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <HelpCircle size={18} color="var(--accent-blue-c)" />
-            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              Инструкция по получению доступа
-            </h2>
-          </div>
-          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
-            Пошаговые действия для заведующих кафедрами и преподавателей для получения корректных прав доступа.
-          </p>
-
-          <div>
-            <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-              Текст регламента запроса доступа:
-            </label>
-            <Input
-              hint="Введите регламент..."
-              value={settings.accessRequestInstructions}
-              onChange={(val) => setSettings({ ...settings, accessRequestInstructions: val })}
-              multiline
-              rows={4}
-            />
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: 'var(--background-main-element-c)',
-            border: '1px solid var(--secondary-border-c)',
-            borderRadius: '16px',
-            padding: '24px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <ShieldCheck size={18} color="var(--accent-blue-c)" />
-            <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-              Параметры безопасности
-            </h2>
-          </div>
-          <p className="text text-blind" style={{ fontSize: '13px', margin: '0 0 16px 0', lineHeight: '1.4' }}>
-            Глобальные правила изменения данных в соответствии с концепцией безопасного аудита.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label className="text text-bold" style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>
-                Срок автоматической фиксации (блокировки) процесса после сдачи тестирования (в днях):
-              </label>
-              <Input
-                hint="3"
-                value={String(settings.autoLockDaysAfterExam)}
-                onChange={(val) => setSettings({ ...settings, autoLockDaysAfterExam: Number(val) || 0 })}
-              />
-            </div>
-
-            <div>
-              <CheckBox
-                text="Требовать обязательное обоснование при переносе дат и отмене согласований"
-                state={settings.requireReasonForOverrides}
-                type="blue"
-                onChange={(val) => setSettings({ ...settings, requireReasonForOverrides: val })}
-              />
-            </div>
-
-            <div>
-              <CheckBox
-                text="Включить режим регламентного обслуживания (вход только для Администраторов)"
-                state={settings.maintenanceMode}
-                type="red"
-                onChange={(val) => setSettings({ ...settings, maintenanceMode: val })}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      {loading && <p role="status">Загрузка настроек…</p>}
+      {error && <p role="alert" style={{ color: 'var(--accent-red-c)' }}>{error}</p>}
+      {saved && <Alert type="success" title="Настройки сохранены" text="Сервер подтвердил сохранение изменений." />}
+      {!loading && !settings && <p>Настройки недоступны. Повторите загрузку с сервера.</p>}
+      {settings && <>
+        <p className="text text-blind">Последнее изменение: {settings.updatedAt ? new Date(settings.updatedAt).toLocaleString('ru-RU') : '—'}; автор: {settings.updatedBy ?? '—'}</p>
+        <fieldset disabled={loading || saving} style={{ border: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 960 }}>
+          {fields.map(field => <label key={field.key} style={{ display: 'block', backgroundColor: 'var(--background-main-element-c)', border: '1px solid var(--secondary-border-c)', borderRadius: 16, padding: 24 }}>
+            <span className="text text-bold" style={{ display: 'block', marginBottom: 12 }}>{field.label}</span>
+            <Input hint={field.hint} value={settings[field.key] ?? ''} multiline={field.multiline} rows={4}
+              onChange={value => { setSettings({ ...settings, [field.key]: value }); setSaved(false); }} />
+          </label>)}
+        </fieldset>
+      </>}
     </div>
   );
 }

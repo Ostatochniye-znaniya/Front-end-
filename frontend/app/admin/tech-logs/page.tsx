@@ -1,257 +1,131 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import Table from '@/components/table/Table';
 import Button from '@/components/button/Button';
 import Dropdown from '@/components/dropdown/Dropdown';
 import Search from '@/components/search/Search';
 import Capsule from '@/components/capsule/Capsule';
-import { initialTechLogs, TechLog } from '@/components/admin/mockData';
-import { Terminal, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { TechLog, TechLogDetails, TechFilters, TechQuery, TechLogPage, getTechLogs, getTechFilters, getTechLog } from '@/services/adminLogs';
+
+const initialQuery: TechQuery = { dateFrom: '', dateTo: '', level: '', service: '', traceId: '', search: '', page: 1, pageSize: 50 };
 
 export default function TechLogsPage() {
-  const [logs, setLogs] = useState<TechLog[]>(initialTechLogs);
-  const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [serviceFilter, setServiceFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedLog, setSelectedLog] = useState<TechLog | null>(null);
+  const [query, setQuery] = useState(initialQuery);
+  const [data, setData] = useState<TechLogPage | null>(null);
+  const [filters, setFilters] = useState<TechFilters | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filterError, setFilterError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<TechLogDetails | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detailReload, setDetailReload] = useState(0);
 
-  const levelOptions = [
-    { value: 'all', label: 'Все уровни' },
-    { value: 'error', label: 'Ошибка (Error)' },
-    { value: 'warning', label: 'Предупреждение (Warning)' },
-    { value: 'info', label: 'Информация (Info)' }
-  ];
-
-  const serviceOptions = [
-    { value: 'all', label: 'Все сервисы' },
-    { value: 'Backend API', label: 'Backend API' },
-    { value: 'Auth Service', label: 'Auth Service' },
-    { value: 'Schedule Worker', label: 'Schedule Worker' },
-    { value: 'Report Generator', label: 'Report Generator' },
-    { value: '1C Integration', label: '1C Integration' },
-    { value: 'Notification Bus', label: 'Notification Bus' }
-  ];
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      if (levelFilter !== 'all' && log.level !== levelFilter) return false;
-      if (serviceFilter !== 'all' && log.service !== serviceFilter) return false;
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesMsg = log.message.toLowerCase().includes(query);
-        const matchesTrace = log.traceId.toLowerCase().includes(query);
-        const matchesService = log.service.toLowerCase().includes(query);
-        if (!matchesMsg && !matchesTrace && !matchesService) return false;
-      }
-      return true;
+  useEffect(() => {
+    const controller = new AbortController();
+    setFilterError('');
+    getTechFilters(controller.signal).then(value => {
+      if (!controller.signal.aborted) setFilters(value);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setFilterError(cause instanceof Error ? cause.message : 'Не удалось загрузить фильтры.');
     });
-  }, [logs, levelFilter, serviceFilter, searchQuery]);
+    return () => controller.abort();
+  }, [reload]);
 
-  const errorCount = logs.filter(l => l.level === 'error').length;
-  const warningCount = logs.filter(l => l.level === 'warning').length;
-  const infoCount = logs.filter(l => l.level === 'info').length;
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setData(null);
+    getTechLogs(query, controller.signal).then(value => {
+      if (!controller.signal.aborted) setData(value);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не удалось загрузить технические логи.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [query, reload]);
+
+  useEffect(() => {
+    if (selectedId === null) return;
+    const controller = new AbortController();
+    setDetail(null);
+    setDetailError('');
+    setDetailLoading(true);
+    getTechLog(selectedId, controller.signal).then(value => {
+      if (!controller.signal.aborted) setDetail(value);
+    }).catch((cause: unknown) => {
+      if (!controller.signal.aborted) setDetailError(cause instanceof Error ? cause.message : 'Не удалось загрузить запись.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setDetailLoading(false);
+    });
+    return () => controller.abort();
+  }, [selectedId, detailReload]);
+
+  function changeFilter(key: keyof TechQuery, value: string | number) {
+    setQuery(current => ({ ...current, [key]: value, page: 1 }));
+    setSelectedId(null);
+  }
 
   const columns = [
-    {
-      header: 'Уровень',
-      accessor: (row: TechLog) => {
-        const variant =
-          row.level === 'error' ? 'danger' :
-          row.level === 'warning' ? 'warning' : 'info';
-        return (
-          <Capsule variant={variant}>
-            {row.level.toUpperCase()}
-          </Capsule>
-        );
-      },
-      sortFn: (a: TechLog, b: TechLog) => a.level.localeCompare(b.level)
-    },
-    {
-      header: 'Дата и время',
-      accessor: (row: TechLog) => (
-        <span className="text text-bold" style={{ fontSize: '13px' }}>
-          {row.timestamp}
-        </span>
-      ),
-      sortFn: (a: TechLog, b: TechLog) => a.timestamp.localeCompare(b.timestamp)
-    },
-    {
-      header: 'Сервис-источник',
-      accessor: (row: TechLog) => (
-        <span className="text-bold">{row.service}</span>
-      ),
-      sortFn: (a: TechLog, b: TechLog) => a.service.localeCompare(b.service)
-    },
-    {
-      header: 'Сообщение об ошибке / событии',
-      accessor: (row: TechLog) => (
-        <span className="text" style={{ textAlign: 'left', display: 'block' }}>
-          {row.message}
-        </span>
-      )
-    },
-    {
-      header: 'Trace ID',
-      accessor: (row: TechLog) => (
-        <span className="text text-blind" style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-          {row.traceId}
-        </span>
-      )
-    },
-    {
-      header: 'Диагностика',
-      accessor: (row: TechLog) => (
-        <Button
-          title="Стек ошибки"
-          color="btn-blue"
-          onClick={() => setSelectedLog(row)}
-        />
-      )
-    }
+    { header: 'Уровень', accessor: (row: TechLog) => <Capsule variant={row.level === 'error' ? 'danger' : row.level === 'warning' ? 'warning' : 'info'}>{row.level.toUpperCase()}</Capsule> },
+    { header: 'Дата и время', accessor: (row: TechLog) => new Date(row.timestamp).toLocaleString('ru-RU') },
+    { header: 'Сервис / Категория', accessor: (row: TechLog) => <div>{row.service}<br />{row.category}</div> },
+    { header: 'Сообщение', accessor: (row: TechLog) => row.message },
+    { header: 'Trace ID', accessor: (row: TechLog) => row.traceId ?? '—' },
+    { header: 'Запрос', accessor: (row: TechLog) => `${row.requestMethod ?? ''} ${row.requestPath ?? '—'}` },
+    { header: 'Диагностика', accessor: (row: TechLog) => <Button title={row.hasDetails ? 'Детали события' : 'Карточка события'} color="btn-blue" onClick={() => { setDetail(null); setDetailError(''); setDetailLoading(true); setSelectedId(row.id); }} /> },
   ];
 
   return (
-    <div className="main-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 className="text-bold" style={{ fontSize: '24px', margin: 0 }}>
-            Технические логи
-          </h1>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Capsule variant="danger" icon={<AlertCircle size={13} />}>
-            {errorCount} Ошибок
-          </Capsule>
-          <Capsule variant="warning" icon={<AlertTriangle size={13} />}>
-            {warningCount} Предупреждений
-          </Capsule>
-          <Capsule variant="info" icon={<Info size={13} />}>
-            {infoCount} Инфо
-          </Capsule>
-        </div>
+    <div className="main-container text">
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
+        <h1 className="text-bold" style={{ fontSize: 24, margin: 0 }}>Технические логи</h1>
+        <Button title="Обновить" color="btn-blue" disabled={loading} onClick={() => setReload(value => value + 1)} />
       </div>
-
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '280px' }}>
-          <Search
-            hint="Поиск по сообщению, Trace ID, сервису..."
-            value={searchQuery}
-            onChange={setSearchQuery}
-            size="large"
-          />
-        </div>
-        <div style={{ width: '220px' }}>
-          <Dropdown
-            label="Уровень логирования"
-            options={levelOptions}
-            value={levelFilter}
-            onChange={setLevelFilter}
-            placeholder="Все уровни"
-          />
-        </div>
-        <div style={{ width: '220px' }}>
-          <Dropdown
-            label="Сервис-источник"
-            options={serviceOptions}
-            value={serviceFilter}
-            onChange={setServiceFilter}
-            placeholder="Все сервисы"
-          />
-        </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div style={{ minWidth: 280, flex: 1 }}><Search hint="Поиск по сообщению или категории…" value={query.search} onChange={value => changeFilter('search', value)} size="large" /></div>
+        <Dropdown label="Уровень" options={[{ value: '', label: 'Все уровни' }, ...(filters?.levels ?? [])]} value={query.level} onChange={value => changeFilter('level', value)} />
+        <Dropdown label="Сервис" options={[{ value: '', label: 'Все сервисы' }, ...(filters?.services ?? [])]} value={query.service} onChange={value => changeFilter('service', value)} />
+        <label>Trace ID<input className="input-field" value={query.traceId} onChange={event => changeFilter('traceId', event.target.value)} /></label>
+        <label>Дата с (МСК)<input className="input-field" type="date" value={query.dateFrom} onChange={event => changeFilter('dateFrom', event.target.value)} /></label>
+        <label>Дата по (МСК)<input className="input-field" type="date" value={query.dateTo} onChange={event => changeFilter('dateTo', event.target.value)} /></label>
+        <Dropdown label="Записей на странице" options={[25, 50, 100, 200].map(value => ({ value: String(value), label: String(value) }))} value={String(query.pageSize)} onChange={value => changeFilter('pageSize', Number(value))} />
       </div>
-
-      <div className="table-wrapper">
-        <Table columns={columns} data={filteredLogs} />
-      </div>
-
-      {selectedLog && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
-          onClick={() => setSelectedLog(null)}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--background-c)',
-              borderRadius: '16px',
-              border: '1px solid var(--secondary-border-c)',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
-              padding: '28px',
-              maxWidth: '680px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <Terminal size={20} color="var(--accent-blue-c)" />
-              <h2 className="title text-bold" style={{ fontSize: '18px', margin: 0 }}>
-                Диагностика события {selectedLog.id}
-              </h2>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
-                <span className="text text-blind">Время:</span>
-                <span className="text text-bold">{selectedLog.timestamp}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
-                <span className="text text-blind">Сервис:</span>
-                <span className="text text-bold">{selectedLog.service}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
-                <span className="text text-blind">Trace ID:</span>
-                <span className="text text-bold" style={{ fontFamily: 'monospace' }}>{selectedLog.traceId}</span>
-              </div>
-              <div style={{ borderBottom: '1px solid var(--secondary-border-c)', paddingBottom: '8px' }}>
-                <span className="text text-blind" style={{ display: 'block', marginBottom: '4px' }}>Сообщение:</span>
-                <span className="text text-bold" style={{ color: selectedLog.level === 'error' ? 'var(--accent-red-c)' : 'var(--secondary-font-c)' }}>
-                  {selectedLog.message}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <p className="text text-bold" style={{ marginBottom: '6px' }}>Стек вызовов / Детализация:</p>
-              <pre
-                style={{
-                  backgroundColor: 'var(--background-inner-main-element-c)',
-                  color: 'var(--secondary-font-c)',
-                  padding: '16px',
-                  borderRadius: '10px',
-                  fontSize: '12px',
-                  overflowX: 'auto',
-                  lineHeight: '1.5',
-                  fontFamily: 'monospace',
-                  margin: 0
-                }}
-              >
-                {selectedLog.details || 'Дополнительный стек вызова отсутствует для данного уровня логирования.'}
-              </pre>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <Button
-                title="Закрыть"
-                color="btn-blue"
-                onClick={() => setSelectedLog(null)}
-              />
-            </div>
-          </div>
+      {filterError && <p role="alert">Фильтры недоступны: {filterError}</p>}
+      {error && <p role="alert" style={{ color: 'var(--accent-red-c)' }}>{error}</p>}
+      {loading && <p role="status">Загрузка технических логов…</p>}
+      {!loading && data && <>
+        <p className="text text-blind">Количество по уровням для выбранного периода, сервиса, Trace ID и поиска (до фильтра по уровню):</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>{data.levelCounts.map(count => <Capsule key={count.value} variant={count.value === 'error' ? 'danger' : count.value === 'warning' ? 'warning' : 'info'}>{count.label}: {count.count}</Capsule>)}</div>
+        {data.items.length ? <Table columns={columns} data={data.items} /> : <p>Технические логи не найдены.</p>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 20 }}>
+          <Button title="Назад" color="btn-blue" disabled={data.page <= 1} onClick={() => setQuery(current => ({ ...current, page: data.page - 1 }))} />
+          <span>Страница {data.page} из {Math.max(1, Math.ceil(data.total / data.pageSize))}; всего: {data.total}</span>
+          <Button title="Вперёд" color="btn-blue" disabled={data.page * data.pageSize >= data.total} onClick={() => setQuery(current => ({ ...current, page: data.page + 1 }))} />
         </div>
-      )}
+      </>}
+      {selectedId !== null && <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }} onClick={() => setSelectedId(null)}>
+        <section role="dialog" aria-modal="true" aria-labelledby="tech-title" style={{ backgroundColor: 'var(--background-c)', borderRadius: 16, padding: 28, width: '100%', maxWidth: 760, maxHeight: '90vh', overflowY: 'auto' }} onClick={event => event.stopPropagation()}>
+          <h2 id="tech-title">Диагностика события #{selectedId}</h2>
+          {detailLoading && <p role="status">Загрузка записи…</p>}
+          {detailError && <><p role="alert">{detailError}</p><Button title="Повторить" color="btn-blue" disabled={detailLoading} onClick={() => setDetailReload(value => value + 1)} /></>}
+          {detail && <>
+            <dl>{[
+              ['Время', new Date(detail.timestamp).toLocaleString('ru-RU')], ['Уровень', detail.level],
+              ['Сервис', detail.service], ['Категория', detail.category], ['Trace ID', detail.traceId],
+              ['Метод запроса', detail.requestMethod], ['Путь запроса', detail.requestPath], ['Сообщение', detail.message],
+            ].map(([label, value]) => <div key={label} style={{ marginBottom: 12 }}><dt className="text-bold">{label}</dt><dd style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{value ?? '—'}</dd></div>)}</dl>
+            <h3>Стек вызовов / Детализация</h3>
+            <pre style={{ backgroundColor: 'var(--background-inner-main-element-c)', padding: 16, borderRadius: 10, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{detail.details ?? 'Дополнительные сведения отсутствуют.'}</pre>
+          </>}
+          <Button title="Закрыть" color="btn-blue" onClick={() => setSelectedId(null)} />
+        </section>
+      </div>}
     </div>
   );
 }

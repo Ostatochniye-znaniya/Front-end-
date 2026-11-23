@@ -5,11 +5,8 @@ import Dropdown from '@/components/dropdown/Dropdown';
 import Search from '@/components/search/Search';
 import Button from '@/components/button/Button';
 import Capsule from '@/components/capsule/Capsule';
-import CheckBox from '@/components/checkbox/CheckBox';
 import {
-  DisciplineStat,
-  initialHodDisciplinesData,
-  semesterOptions
+  initialHodDisciplinesData
 } from '@/components/statistics/statisticsData';
 import {
   ChevronRight,
@@ -19,7 +16,6 @@ import {
 } from 'lucide-react';
 
 export default function HodStatisticsPage() {
-  const [selectedSemester, setSelectedSemester] = useState<string>('spring2025');
   const [reportRequirement, setReportRequirement] = useState<'both' | 'electronic_only'>('both');
   const [courseFilter, setCourseFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -123,6 +119,11 @@ export default function HodStatisticsPage() {
           <Capsule variant="default">ФИТ</Capsule>
         </div>
       </div>
+      <p role="note" className="text" style={{ marginBottom: '20px' }}>
+        Демонстрационные данные кафедры за весну 2025. API сводной статистики
+        не подключён. Переключение формы отчётности меняет только просмотр,
+        настройки ЛПР не сохраняются.
+      </p>
 
       <div
         style={{
@@ -194,18 +195,9 @@ export default function HodStatisticsPage() {
               size="large"
             />
           </div>
-          <div style={{ width: '200px' }}>
-            <Dropdown
-              label="Семестр"
-              options={semesterOptions}
-              value={selectedSemester}
-              onChange={setSelectedSemester}
-              placeholder="Семестр"
-            />
-          </div>
           <div style={{ width: '220px' }}>
             <Dropdown
-              label="Форма отчётности (ЛПР)"
+              label="Форма отчётности (демонстрация)"
               options={[
                 { value: 'both', label: 'Электронные + Бумажные' },
                 { value: 'electronic_only', label: 'Только электронные' }
