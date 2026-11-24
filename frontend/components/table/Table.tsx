@@ -2,19 +2,23 @@
 
 import React, { useState } from 'react';
 
-interface Column<T = any> {
+interface Column<T> {
   header: React.ReactNode;
   accessor: keyof T | ((row: T) => React.ReactNode);
   sortFn?: (a: T, b: T) => number; // если есть - можно сортировать, если нет - нельзя
+  style?: React.CSSProperties;
+  className?: string;
+  rowSpan?: (row: T, rowIndex: number, rows: T[]) => number;
 }
 
-interface TableProps<T = any> {
+interface TableProps<T> {
   columns: Column<T>[];
   data: T[];
   style?: React.CSSProperties;
+  onRowClick?: (row: T) => void;
 }
 
-const Table = <T,>({ columns, data, style }: TableProps<T>) => {
+const Table = <T,>({ columns, data, style, onRowClick }: TableProps<T>) => {
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -55,7 +59,8 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
             <th 
               key={i} 
               onClick={() => handleSort(i)}
-              style={{ cursor: col.sortFn ? 'pointer' : 'default' }}
+              className={col.className}
+              style={{ cursor: col.sortFn ? 'pointer' : 'default', ...col.style }}
             >
               {col.header}
               {col.sortFn && sortColumn === i && (
@@ -67,13 +72,30 @@ const Table = <T,>({ columns, data, style }: TableProps<T>) => {
       </thead>
       <tbody>
         {sortedData.map((row, rowIndex) => (
-          <tr key={rowIndex}>
+          <tr
+            key={rowIndex}
+            onClick={() => onRowClick?.(row)}
+            onKeyDown={(event) => {
+              if (onRowClick && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                onRowClick(row);
+              }
+            }}
+            tabIndex={onRowClick ? 0 : undefined}
+            style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+          >
             {columns.map((col, colIndex) => {
+              const rowSpan = col.rowSpan?.(row, rowIndex, sortedData) ?? 1;
+              if (rowSpan === 0) return null;
+
               const value = typeof col.accessor === 'function'
                 ? col.accessor(row)
                 : row[col.accessor] as React.ReactNode;
-              
-              return <td key={colIndex}>{value}</td>;
+              return (
+                <td key={colIndex} rowSpan={rowSpan} className={col.className} style={col.style}>
+                  {value}
+                </td>
+              );
             })}
           </tr>
         ))}

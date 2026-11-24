@@ -26,6 +26,9 @@ export interface ReportDocument {
     uploadedAt: string | null;
     reviewComment: string | null;
     reviewedAt: string | null;
+    paperStatus: 'not_required' | 'pending' | 'submitted';
+    paperStatusLabel: string;
+    doneInPaperForm: boolean | null;
 }
 
 export interface ScheduleDocument {
@@ -64,11 +67,15 @@ export interface ReportFilters {
     departmentId?: number | null;
     academicYear?: string | null;
     status?: DocumentStatus | null;
+    /** Факультет декана; пока подставляется вручную — до интеграции авторизации */
+    facultyId?: number | null;
 }
 
 export interface ScheduleFilters {
     semesterId?: number | null;
     status?: DocumentStatus | null;
+    /** Факультет декана; пока подставляется вручную — до интеграции авторизации */
+    facultyId?: number | null;
 }
 
 export type UploadProgressHandler = (percent: number) => void;
@@ -116,6 +123,16 @@ async function postJson<T>(path: string, body: unknown, fallback: string): Promi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!response.ok) throw await readError(response, fallback);
+    return response.json() as Promise<T>;
+}
+
+async function putJson<T>(path: string, body: unknown, fallback: string): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
     });
     if (!response.ok) throw await readError(response, fallback);
     return response.json() as Promise<T>;
@@ -197,6 +214,7 @@ export function getDeanReports(filters: ReportFilters = {}): Promise<ReportDocum
         departmentId: filters.departmentId,
         academicYear: filters.academicYear,
         status: filters.status,
+        facultyId: filters.facultyId,
     });
     return getJson(`/DeanDocuments/GetReports${query}`, 'Не удалось загрузить отчёты');
 }
@@ -210,15 +228,27 @@ export function downloadDeanReport(reportId: number): Promise<void> {
 }
 
 export function approveReport(reportId: number): Promise<ReportDocument> {
-    return postJson(`/DeanDocuments/ApproveReport/${reportId}`, undefined, 'Не удалось одобрить отчёт');
+    return postJson(`/DeanDocuments/ApproveReport/${reportId}/approve`, undefined, 'Не удалось одобрить отчёт');
 }
 
 export function rejectReport(reportId: number, comment?: string): Promise<ReportDocument> {
-    return postJson(`/DeanDocuments/RejectReport/${reportId}`, { comment: comment ?? null }, 'Не удалось отклонить отчёт');
+    return postJson(`/DeanDocuments/RejectReport/${reportId}/reject`, { comment: comment ?? null }, 'Не удалось отклонить отчёт');
+}
+
+export function setPaperReportDelivery(reportId: number, submitted: boolean): Promise<ReportDocument> {
+    return putJson(
+        `/DeanDocuments/SetPaperDelivery/${reportId}/paper-delivery`,
+        { submitted },
+        'Не удалось обновить статус бумажного отчёта'
+    );
 }
 
 export function getDeanSchedules(filters: ScheduleFilters = {}): Promise<ScheduleDocument[]> {
-    const query = buildQuery({ semesterId: filters.semesterId, status: filters.status });
+    const query = buildQuery({
+        semesterId: filters.semesterId,
+        status: filters.status,
+        facultyId: filters.facultyId,
+    });
     return getJson(`/DeanDocuments/GetSchedules${query}`, 'Не удалось загрузить графики');
 }
 
@@ -231,11 +261,11 @@ export function downloadDeanSchedule(documentId: number): Promise<void> {
 }
 
 export function approveSchedule(documentId: number): Promise<ScheduleDocument> {
-    return postJson(`/DeanDocuments/ApproveSchedule/${documentId}`, undefined, 'Не удалось одобрить график');
+    return postJson(`/DeanDocuments/ApproveSchedule/${documentId}/approve`, undefined, 'Не удалось одобрить график');
 }
 
 export function rejectSchedule(documentId: number, comment?: string): Promise<ScheduleDocument> {
-    return postJson(`/DeanDocuments/RejectSchedule/${documentId}`, { comment: comment ?? null }, 'Не удалось отклонить график');
+    return postJson(`/DeanDocuments/RejectSchedule/${documentId}/reject`, { comment: comment ?? null }, 'Не удалось отклонить график');
 }
 
 export function uploadSchedulePdf(

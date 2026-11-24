@@ -30,7 +30,7 @@ const getCheckIcon = (type: string, isDark: boolean) => {
     return (
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{
             pointerEvents: 'none',
-            margin: '1px 0 0 1px',
+            display: 'block',
          }}>
             <mask id="path-1-inside-1_521_3910" fill="white">
             <path d="M0.146447 10.0459C-0.0488155 9.85068 -0.0488155 9.5341 0.146447 9.33883L9.33883 0.146447C9.5341 -0.0488156 9.85068 -0.0488154 10.0459 0.146447C10.2412 0.341709 10.2412 0.658291 10.0459 0.853553L0.853553 10.0459C0.658291 10.2412 0.341709 10.2412 0.146447 10.0459Z"/>
@@ -45,7 +45,7 @@ const getCheckIcon = (type: string, isDark: boolean) => {
     return (
         <svg className="svg-up" width="12" height="9" viewBox="0 0 12 9" fill="none" xmlns="http://www.w3.org/2000/svg" style={{
             pointerEvents: 'none',
-            margin: '2.5px 0 0 0px',
+            display: 'block',
         }}>
             <mask id="path-1-inside-1_521_3906" fill="white">
             <path d="M3.98197 7.92672C3.78671 7.73146 3.78671 7.41488 3.98197 7.21961L11.0551 0.146447C11.2504 -0.0488153 11.567 -0.0488158 11.7622 0.146446C11.9575 0.341708 11.9575 0.658291 11.7622 0.853553L4.68908 7.92672C4.49382 8.12198 4.17723 8.12198 3.98197 7.92672Z"/>
@@ -96,7 +96,7 @@ const CheckBox: React.FC<CheckBoxProps> = ({
       >
         {isActive ? getCheckIcon(type, isDark) : <></>}
       </button>
-      <p className="cb-text">{text}</p>
+      {text && <p className="cb-text">{text}</p>}
     </label>
   );
 }
