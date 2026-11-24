@@ -27,6 +27,12 @@ export default function LprList() {
                     router.push('/hod/statistics');
                 } else if (status.status === 'lpr') {
                     router.push('/lpr/statistics');
+                } else if (status.status === 'rod' || status.status === 'dean' || status.status === 'dof') {
+                    router.push('/dof/statistics');
+                } else if (status.status === 'department_responsible') {
+                    router.push('/rod/statistics');
+                } else if (status.status === 'admin') {
+                    router.push('/admin/processes');
                 } else if (status.status === 'guest') {
                     router.push('/guest');
                 } else {

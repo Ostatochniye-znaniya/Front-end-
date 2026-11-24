@@ -1,22 +1,12 @@
-
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Базовый путь приложения
   basePath: '/csh',
-
-  // Префикс для статических ресурсов
   assetPrefix: '/csh',
-
   reactStrictMode: true,
-
-  // Разрешаем открывать dev-сервер по 127.0.0.1, иначе HMR блокируется и страница не гидратируется
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
-
-  // Сборка для Docker
   output: 'standalone',
 
-  // Перенаправления с корневых путей без /csh
   async redirects() {
     const origin = process.env.PUBLIC_APP_ORIGIN?.replace(/\/$/, '');
 
@@ -52,7 +42,6 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Проксирование запросов к API бэкенда
   async rewrites() {
     let backendUrl: string;
 
@@ -66,20 +55,15 @@ const nextConfig: NextConfig = {
         'http://api:8080';
     }
 
-    // Добавляем протокол, если он отсутствует
     if (!backendUrl.startsWith('http')) {
       backendUrl = `http://${backendUrl}`;
     }
 
-    // Убираем завершающий слеш
     backendUrl = backendUrl.replace(/\/$/, '');
 
     return [
       {
-        // С учётом basePath запрос будет /csh/api/:path*
         source: '/api/:path*',
-
-        // ASP.NET Core API
         destination: `${backendUrl}/csh/api/:path*`,
       },
     ];

@@ -1,8 +1,10 @@
 "use client";
 import Navbar from "@/components/navbar/Navbar";
-import { FileText } from "lucide-react";
+import { CalendarDays, FileText, PieChart } from "lucide-react";
 
 const dofLinks = [
+  { label: "Статистика", href: "/dof/statistics", icon: PieChart },
+  { label: "Составление графика", href: "/dof/schedule", icon: CalendarDays },
   { label: "Рассмотрение документов", href: "/dof/documents", icon: FileText },
 ];
 

@@ -1,9 +1,9 @@
 "use client";
 import Navbar from "@/components/navbar/Navbar";
-import { CalendarDays } from "lucide-react";
+import { PieChart } from "lucide-react";
 
 const rodLinks = [
-  { label: "Составление графика", href: "/rod/schedule", icon: CalendarDays },
+  { label: "Статистика", href: "/rod/statistics", icon: PieChart },
 ];
 
 export default function RodLayout({ children }: { children: React.ReactNode }) {

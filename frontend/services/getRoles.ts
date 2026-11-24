@@ -29,11 +29,11 @@ const mockRoles: RoleDto[] = [
     { id: 2, code: "teacher", name: "Преподаватель" },
     { id: 3, code: "hod", name: "Заведующий кафедрой" },
     { id: 4, code: "lpr", name: "Лицо, принимающее решения" },
+    { code: "rod", name: "Руководитель факультета / института" },
+    { code: "department_responsible", name: "Ответственный за подразделение" },
     { id: 5, code: "guest", name: "Гость" },
 ];
 
-// Список ролей приходит с ручки /Role/GetRoles. Роль "Гость" исключается из
-// вариантов выбора — гость подаёт заявку на другую роль, а не на свою текущую.
 export async function getRoles(): Promise<RoleOption[]> {
     if (mode === "development") {
         return Promise.resolve(mapRoles(mockRoles));
