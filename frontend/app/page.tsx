@@ -21,10 +21,10 @@ export default function LprList() {
                     router.push('/hod/statistics');
                 } else if (status.status === 'lpr') {
                     router.push('/lpr/statistics');
-                } else if (status.status === 'rod') {
-                    router.push('/rod/statistics');
+                } else if (status.status === 'rod' || status.status === 'dean' || status.status === 'dof') {
+                    router.push('/dof/statistics');
                 } else if (status.status === 'department_responsible') {
-                    router.push('/department_responsible/statistics');
+                    router.push('/rod/statistics');
                 } else if (status.status === 'admin') {
                     router.push('/admin/processes');
                 } else {

@@ -5,7 +5,7 @@ import FacultiesStatistics from './FacultiesStatistics';
 export default function FacultyStatistics() {
   return (
     <FacultiesStatistics
-      title="Статистика факультета — декан / ответственный"
+      title="Статистика факультета"
       summaryLabel="Сводка по факультету:"
     />
   );

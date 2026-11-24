@@ -1,5 +1,5 @@
 import FacultyStatistics from '@/components/statistics/FacultyStatistics';
 
-export default function ResponsibleStatisticsPage() {
+export default function DofStatisticsPage() {
   return <FacultyStatistics />;
 }
