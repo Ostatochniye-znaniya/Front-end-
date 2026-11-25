@@ -151,8 +151,10 @@ export default function DeanDocuments() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    // id документа, по которому сейчас идёт действие — блокирует кнопки строки
-    const [busyId, setBusyId] = useState<number | null>(null);
+    // Документы, по которым сейчас идёт действие, — блокируют кнопки своих строк.
+    // Действий может быть несколько сразу, а id отчётов и графиков пересекаются,
+    // поэтому это набор ключей «вкладка:id»
+    const [busyKeys, setBusyKeys] = useState<ReadonlySet<string>>(new Set());
     // Увеличивается после решения декана, чтобы перечитать список с теми же фильтрами
     const [reloadToken, setReloadToken] = useState(0);
     // Токен, с которым список грузился в прошлый раз: отличает перечитывание
@@ -245,6 +247,8 @@ export default function DeanDocuments() {
         [scheduleFilters]
     );
 
+    const isBusy = (id: number) => busyKeys.has(`${tab}:${id}`);
+
     /**
      * Выполняет действие над документом. Решение декана меняет статус, поэтому
      * список после него перечитывается; скачивание ничего не меняет.
@@ -254,7 +258,8 @@ export default function DeanDocuments() {
         action: () => Promise<unknown>,
         { reload = true }: { reload?: boolean } = {}
     ) => {
-        setBusyId(id);
+        const key = `${tab}:${id}`;
+        setBusyKeys((keys) => new Set(keys).add(key));
         setError(null);
         try {
             const updated = await action();
@@ -277,7 +282,7 @@ export default function DeanDocuments() {
         } catch (err) {
             setError(err instanceof Error ? err.message : "Не удалось выполнить действие");
         } finally {
-            setBusyId(null);
+            setBusyKeys((keys) => new Set([...keys].filter((item) => item !== key)));
         }
     };
 
@@ -418,7 +423,7 @@ export default function DeanDocuments() {
                                             {report.status === "signed" && (
                                                 <Button
                                                     color="btn-blue"
-                                                    disabled={busyId === report.id}
+                                                    disabled={isBusy(report.id)}
                                                     onClick={() =>
                                                         runAction(report.id, () =>
                                                             setPaperReportDelivery(
@@ -438,7 +443,7 @@ export default function DeanDocuments() {
                                     </td>
                                     <td>
                                         <DownloadButton
-                                            busy={busyId === report.id}
+                                            busy={isBusy(report.id)}
                                             onClick={() =>
                                                 runAction(
                                                     report.id,
@@ -451,7 +456,7 @@ export default function DeanDocuments() {
                                     <td>
                                         <ReviewButtons
                                             status={report.status}
-                                            busy={busyId === report.id}
+                                            busy={isBusy(report.id)}
                                             onApprove={() =>
                                                 runAction(report.id, () => approveReport(report.id))
                                             }
@@ -482,7 +487,7 @@ export default function DeanDocuments() {
                                     <td>{document.period}</td>
                                     <td>
                                         <DownloadButton
-                                            busy={busyId === document.id}
+                                            busy={isBusy(document.id)}
                                             onClick={() =>
                                                 runAction(
                                                     document.id,
@@ -495,7 +500,7 @@ export default function DeanDocuments() {
                                     <td>
                                         <ReviewButtons
                                             status={document.status}
-                                            busy={busyId === document.id}
+                                            busy={isBusy(document.id)}
                                             onApprove={() =>
                                                 runAction(document.id, () =>
                                                     approveSchedule(document.id)
