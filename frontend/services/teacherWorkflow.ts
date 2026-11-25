@@ -11,6 +11,9 @@ export interface TeacherTesting {
   scheduledPair: number | null;
   selectionPeriodStart: string | null;
   selectionPeriodEnd: string | null;
+  /** Рекомендация зав. кафедрой: дата и пара заданы либо вместе, либо никак. */
+  recommendedDate: string | null;
+  recommendedPair: number | null;
   isInPerson: boolean | null;
   room: string | null;
   lmsUrl: string | null;
