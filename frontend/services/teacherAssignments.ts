@@ -2,12 +2,14 @@
  * Сервис страницы «Выбор преподавателей» (роль «Руководитель подразделения (заведующий кафедрой)»).
  *
  * Бэкенд: KnowledgeApp, TestingAssignmentController (ТЗ, пп. 2.5–2.6).
- * Зав. кафедрой задаёт период проверки и назначает преподавателей; дату и пару внутри периода
- * выбирает преподаватель, остальные назначенные подтверждают или отклоняют (TeacherWorkflow).
+ * Зав. кафедрой задаёт период проверки, назначает преподавателей и может порекомендовать дату и пару;
+ * окончательные дату и пару внутри периода выбирает преподаватель, остальные назначенные подтверждают
+ * или отклоняют (TeacherWorkflow).
  *
  *   GET  /csh/api/Testing/department-testings           — проверки кафедры текущего пользователя
  *   GET  /csh/api/Testing/{id}/available-teachers        — преподаватели дисциплины
- *   PUT  /csh/api/Testing/{id}/teacher-assignments       — { periodStart, periodEnd, teacherIds }
+ *   PUT  /csh/api/Testing/{id}/teacher-assignments       — { periodStart, periodEnd, teacherIds,
+ *                                                            recommendedDate, recommendedPair }
  *   POST /csh/api/Testing/{id}/external-request          — заявка кафедре другого факультета
  *   GET  /csh/api/Testing/pair-slots                     — сетка пар
  *
@@ -48,6 +50,9 @@ export type DepartmentTesting = {
     externalRequestSentAt: string | null;
     periodStart: string | null;
     periodEnd: string | null;
+    /** Рекомендация зав. кафедрой: дата и пара заданы либо вместе, либо никак. */
+    recommendedDate: string | null;
+    recommendedPair: number | null;
     scheduledDate: string | null;
     scheduledTime: string | null;
     scheduledPair: number | null;
@@ -95,17 +100,29 @@ export function getPairSlots(): Promise<PairSlot[]> {
     return request('/pair-slots', 'Не удалось загрузить сетку пар');
 }
 
-/** Задаёт период проверки и заменяет список назначенных преподавателей. */
+export type TimeRecommendation = {
+    date: string;
+    pairNumber: number;
+};
+
+/** Задаёт период проверки и рекомендацию (null — снять) и заменяет список назначенных преподавателей. */
 export async function saveTeacherAssignments(
     testingId: number,
     periodStart: string,
     periodEnd: string,
     teacherIds: number[],
+    recommendation: TimeRecommendation | null,
 ): Promise<void> {
     await request(`/${testingId}/teacher-assignments`, 'Не удалось сохранить назначение', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ periodStart, periodEnd, teacherIds }),
+        body: JSON.stringify({
+            periodStart,
+            periodEnd,
+            teacherIds,
+            recommendedDate: recommendation?.date ?? null,
+            recommendedPair: recommendation?.pairNumber ?? null,
+        }),
     });
 }
 

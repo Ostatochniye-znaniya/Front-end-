@@ -57,6 +57,23 @@ function formatDate(date: string | null): string {
   return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("ru-RU");
 }
 
+function formatRecommendation(item: TeacherTesting): string | null {
+  if (!item.recommendedDate || !item.recommendedPair) return null;
+  const pair = PAIRS.find(({ number }) => number === item.recommendedPair);
+  return `${formatDate(item.recommendedDate)}, ${item.recommendedPair}-я пара${pair ? ` (${pair.time})` : ""}`;
+}
+
+/** Выбранное время, а пока его нет — рекомендация кафедры или начало периода. */
+function initialTimeDraft(item: TeacherTesting): TimeDraft {
+  if (item.scheduledDate) {
+    return { date: item.scheduledDate, pairNumber: String(item.scheduledPair ?? 1) };
+  }
+  return {
+    date: item.recommendedDate ?? item.selectionPeriodStart ?? "",
+    pairNumber: String(item.recommendedPair ?? 1),
+  };
+}
+
 function safeLmsUrl(value: string | null): string | null {
   if (!value) return null;
   try {
@@ -101,10 +118,7 @@ export default function TeacherDates() {
           room: item.room ?? "",
           lmsUrl: item.lmsUrl ?? "",
         }])));
-        setTimeDrafts(Object.fromEntries(rows.map((item) => [item.testingId, {
-          date: item.scheduledDate ?? item.selectionPeriodStart ?? "",
-          pairNumber: String(item.scheduledPair ?? 1),
-        }])));
+        setTimeDrafts(Object.fromEntries(rows.map((item) => [item.testingId, initialTimeDraft(item)])));
         setError("");
       })
       .catch((reason: unknown) => {
@@ -152,18 +166,12 @@ export default function TeacherDates() {
     }));
     setTimeDrafts((current) => ({
       ...current,
-      [updated.testingId]: {
-        date: updated.scheduledDate ?? updated.selectionPeriodStart ?? "",
-        pairNumber: String(updated.scheduledPair ?? 1),
-      },
+      [updated.testingId]: initialTimeDraft(updated),
     }));
   };
 
   const timeDraftFor = (item: TeacherTesting): TimeDraft =>
-    timeDrafts[item.testingId] ?? {
-      date: item.scheduledDate ?? item.selectionPeriodStart ?? "",
-      pairNumber: String(item.scheduledPair ?? 1),
-    };
+    timeDrafts[item.testingId] ?? initialTimeDraft(item);
 
   const saveDelivery = async (item: TeacherTesting) => {
     const draft = draftFor(item);
@@ -284,6 +292,7 @@ export default function TeacherDates() {
       header: "Дата и время",
       accessor: (item) => {
         const draft = timeDraftFor(item);
+        const recommendation = formatRecommendation(item);
         const canChooseTime = Boolean(item.selectionPeriodStart && item.selectionPeriodEnd) &&
           (item.approvalStatus === "approved" || item.approvalStatus === "pending");
         return (
@@ -340,6 +349,11 @@ export default function TeacherDates() {
             {item.selectionPeriodStart && item.selectionPeriodEnd && (
               <div className="text-blind" style={{ marginTop: 4 }}>
                 Период: {formatDate(item.selectionPeriodStart)} – {formatDate(item.selectionPeriodEnd)}
+              </div>
+            )}
+            {recommendation && (
+              <div className="text-blind" style={{ marginTop: 4 }}>
+                Рекомендация кафедры: {recommendation}
               </div>
             )}
           </div>

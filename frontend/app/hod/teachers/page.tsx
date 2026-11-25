@@ -155,10 +155,20 @@ export default function TeacherSelection() {
 
     const hasIncoming = (rows ?? []).some(r => r.kind === "incoming");
 
-    const formatPair = (row: DepartmentTesting) => {
-        const pair = pairs.find(p => p.pairNumber === row.scheduledPair);
-        if (pair) return `${pair.pairNumber} пара, ${pair.startsAt.slice(0, 5)}–${pair.endsAt.slice(0, 5)}`;
-        return row.scheduledTime ? row.scheduledTime.slice(0, 5) : "";
+    const pairLabel = (pairNumber: number | null) => {
+        const pair = pairs.find(p => p.pairNumber === pairNumber);
+        return pair ? `${pair.pairNumber} пара, ${pair.startsAt.slice(0, 5)}–${pair.endsAt.slice(0, 5)}` : null;
+    };
+
+    const formatPair = (row: DepartmentTesting) =>
+        pairLabel(row.scheduledPair) ?? (row.scheduledTime ? row.scheduledTime.slice(0, 5) : "");
+
+    /** Рекомендация кафедры; не показываем, если преподаватель выбрал ровно её. */
+    const formatRecommendation = (row: DepartmentTesting) => {
+        if (!row.recommendedDate || !row.recommendedPair) return null;
+        if (row.scheduledDate === row.recommendedDate && row.scheduledPair === row.recommendedPair) return null;
+        return `рекомендовано: ${formatDate(row.recommendedDate)}, ${
+            pairLabel(row.recommendedPair) ?? `${row.recommendedPair} пара`}`;
     };
 
     const handleSendRequest = async (row: DepartmentTesting) => {
@@ -247,6 +257,7 @@ export default function TeacherSelection() {
                         <tbody>
                             {pageItems.map(row => {
                                 const status = statusOf(row);
+                                const recommendation = formatRecommendation(row);
                                 return (
                                     <tr
                                         key={row.testingId}
@@ -298,6 +309,9 @@ export default function TeacherSelection() {
                                                 </>
                                             ) : (
                                                 "—"
+                                            )}
+                                            {recommendation && (
+                                                <span className="teacher-cell-note">{recommendation}</span>
                                             )}
                                         </td>
                                         <td>
@@ -354,6 +368,7 @@ export default function TeacherSelection() {
                 <AssignTeachersModal
                     key={editing.testingId}
                     testing={editing}
+                    pairs={pairs}
                     onClose={() => setEditing(null)}
                     onSaved={handleSaved}
                 />
