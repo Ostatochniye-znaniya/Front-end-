@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Download, AlertCircle } from "lucide-react";
 import Button from "@/components/button/Button";
 import Capsule from "@/components/capsule/Capsule";
@@ -84,6 +84,9 @@ export default function RodSchedule() {
 
     const semesterId = Number(selectedSemester);
     const isSemesterSelected = semesterId !== ALL_SEMESTERS_ID;
+    // Семестр на экране прямо сейчас: загрузка файла длится долго и за это время
+    // пользователь может переключиться на другой
+    const currentSemesterId = useRef(semesterId);
 
     // Список семестров грузим один раз
     useEffect(() => {
@@ -156,6 +159,7 @@ export default function RodSchedule() {
 
     // Статус загрузки относится к конкретному семестру — при смене сбрасываем его
     const handleSemesterChange = (value: string) => {
+        currentSemesterId.current = Number(value);
         setSelectedSemester(value);
         setUploadedDocument(null);
         setUploadError(null);
@@ -226,14 +230,21 @@ export default function RodSchedule() {
                 return;
             }
 
+            // Ход и итог загрузки показываем только у того семестра, для которого она начата
+            const isCurrent = () => currentSemesterId.current === semesterId;
+
             setUploadProgress(0);
             try {
-                const document = await uploadSchedulePdf(semesterId, file, setUploadProgress);
-                setUploadedDocument(document);
+                const document = await uploadSchedulePdf(semesterId, file, (percent) => {
+                    if (isCurrent()) setUploadProgress(percent);
+                });
+                if (isCurrent()) setUploadedDocument(document);
             } catch (err) {
-                setUploadError(err instanceof Error ? err.message : "Не удалось отправить файл");
+                if (isCurrent()) {
+                    setUploadError(err instanceof Error ? err.message : "Не удалось отправить файл");
+                }
             } finally {
-                setUploadProgress(null);
+                if (isCurrent()) setUploadProgress(null);
             }
         },
         [semesterId]
